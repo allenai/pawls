@@ -1,0 +1,15 @@
+# git artifacts
+.gitignore
+.git/
+
+# Docker artifacts
+Dockerfile
+
+# UI dependencies
+node_modules/
+
+# UI build output
+build/
+
+# UI package manager debug output
+*.log

@@ -1,0 +1,115 @@
+{
+  "name": "ui",
+  "version": "0.1.1",
+  "author": "reviz@allenai.org",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "lint": "eslint '**/*.{js,ts,tsx,json}' && echo 'Lint complete.'",
+    "lint:fix": "eslint '**/*.{js,ts,tsx,json}' --fix && echo 'Lint --fix complete.'",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es6": true
+    },
+    "extends": [
+      "standard",
+      "plugin:prettier/recommended"
+    ],
+    "globals": {
+      "Atomics": "readonly",
+      "SharedArrayBuffer": "readonly"
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module"
+    },
+    "plugins": [
+      "react",
+      "@typescript-eslint",
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": [
+        "error",
+        {
+          "printWidth": 100,
+          "tabWidth": 4,
+          "singleQuote": true,
+          "jsxBracketSameLine": true,
+          "jsxSingleQuote": false
+        }
+      ],
+      "react/jsx-uses-react": 1,
+      "react/jsx-uses-vars": 1,
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "vars": "all",
+          "args": "after-used",
+          "ignoreRestSiblings": false,
+          "argsIgnorePattern": "^_"
+        }
+      ],
+      "no-useless-constructor": "off",
+      "@typescript-eslint/no-useless-constructor": "error"
+    }
+  },
+  "eslintIgnore": [
+    "build/",
+    "*.log",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "dependencies": {
+    "@allenai/varnish": "^0.9.8",
+    "@ant-design/icons": "^4.2.1",
+    "axios": "^0.18.0",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-router-dom": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.9",
+    "@types/node": "11.9.5",
+    "@types/react": "^16.9.0",
+    "@types/react-dom": "^16.9.0",
+    "@types/react-router-dom": "^5.0.1",
+    "@types/styled-components": "^4.1.10",
+    "@typescript-eslint/eslint-plugin": "^2.3.1",
+    "@typescript-eslint/parser": "^2.3.1",
+    "eslint": "^6.7.2",
+    "eslint-config-prettier": "^6.3.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-standard": "^4.0.1",
+    "prettier": "^1.18.2",
+    "react-scripts": "3.4.0",
+    "react-test-renderer": "^16.8.3",
+    "styled-components": "^4.3.2",
+    "typescript": "3.6.3",
+    "webpack": "^4.41.3"
+  },
+  "resolutions": {
+    "react-scripts/webpack": "^4.41.3"
+  }
+}

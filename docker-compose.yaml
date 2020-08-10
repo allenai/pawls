@@ -1,0 +1,31 @@
+version: '3'
+services:
+    sonar:
+        build: ./sonar
+        depends_on:
+            - api
+            - ui
+            - proxy
+    api:
+        build: ./api
+        volumes:
+            - ./api:/usr/local/src/skiff/app/api
+        environment:
+            # This ensures that errors are printed as they occur, which
+            # makes debugging easier.
+            - PYTHONUNBUFFERED=1
+            - LOG_LEVEL=DEBUG
+    ui:
+        build: ./ui
+        # We can't mount the entire UI directory, since JavaScript dependencies
+        # (`node_modules`) live at that location.
+        volumes:
+            - ./ui/src:/usr/local/src/skiff/app/ui/src
+            - ./ui/public:/usr/local/src/skiff/app/ui/public
+            - ./ui/package.json:/usr/local/src/skiff/app/ui/package.json
+            - ./ui/tsconfig.json:/usr/local/src/skiff/app/ui/tsconfig.json
+            - ./ui/yarn.lock:/usr/local/src/skiff/app/ui/yarn.lock
+    proxy:
+        build: ./proxy
+        ports:
+            - 8080:80

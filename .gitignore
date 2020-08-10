@@ -1,0 +1,13 @@
+# Python cache files
+__pycache__
+**/*.pyc
+
+# UI dependencies
+ui/node_modules/
+
+# UI build output
+ui/build/
+
+# UI package manager debug output
+ui/*.log
+.skiff/webapp.yaml
