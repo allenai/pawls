@@ -1,16 +1,8 @@
-# skiff-template
-
-Ahoy! Welcome to your new [skiff](https://github.com/allenai/skiff) template
-application that includes:
-
-* A Python based, [Flask](http://flask.pocoo.org/) HTTP server responsible for
-  serving static assets and dynamic API endpoints.
-* A [TypeScript](https://www.typescriptlang.org/), [ReactJS](https://reactjs.org/)
-  and [Varnish](http://github.com/allenai/varnish) based user interface.
-* Automatic deploys to shared infrastructure and other functionality provided by
-  [skiff](https://github.com/allenai/skiff).
-
-To start a new repository from this template, click [here](https://github.com/allenai/skiff-template/generate).
+# PAWLS 
+**P**DF **A**nnotations with **L**abels and **S**tructure is software that makes it easy
+to collect a series of annotations associated with a PDF document. It was written
+specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org)
+corpus, but can be used with any collection of PDF documents.
 
 ## Prerequisites
 
