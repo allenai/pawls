@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger("uvicorn")
 
 
-app = FastAPI(openapi_prefix="/api")
+app = FastAPI(root_path="/api")
 app.add_middleware(CORSMiddleware,
                    allow_origins=["*"],
                    allow_credentials=True,
