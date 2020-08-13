@@ -33,7 +33,7 @@ app.add_middleware(CORSMiddleware,
 @app.get("/", status_code=204)
 def read_root():
     """
-    Skiff's sonar requires that the server returns a 2XX response from it's
+    Skiff's sonar, and the Kubernetes health check, require that the server returns a 2XX response from it's
     root URL, so it can tell the service is ready for requests.
     """
     return {}
