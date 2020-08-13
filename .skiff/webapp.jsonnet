@@ -193,7 +193,7 @@ function(
                         {
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
-                            args: [ 'app/start.py', '--prod' ],
+                            env: [ { name: "IN_PRODUCTION", value: "prod" }],
                             # The "probes" below allow Kubernetes to determine
                             # if your application is working properly.
                             #
