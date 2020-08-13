@@ -9,16 +9,8 @@ RUN pip install -r requirements.txt
 
 # Copy over the source code
 COPY app app/
-
-# This enables the Flask debugger and activates code that restarts the
-# API as you make changes
-ARG FLASK_ENV=development
-ENV FLASK_ENV $FLASK_ENV
-
-# This allows imports in our API to be fully qualified, i.e. `from app.api`
-# rather than `from api`.
-ENV PYTHONPATH "/usr/local/src/skiff/app/api:${PYTHONPATH}"
+COPY main.py main.py
 
 # Kick things off
-ENTRYPOINT [ "python" ]
-CMD [ "app/start.py" ]
+ENTRYPOINT [ "uvicorn" ]
+CMD ["main:app", "--host", "0.0.0.0"]

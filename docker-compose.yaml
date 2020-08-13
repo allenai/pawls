@@ -15,6 +15,7 @@ services:
             # makes debugging easier.
             - PYTHONUNBUFFERED=1
             - LOG_LEVEL=DEBUG
+        command: ["main:app", "--host", "0.0.0.0", "--reload"]
     ui:
         build: ./ui
         # We can't mount the entire UI directory, since JavaScript dependencies
