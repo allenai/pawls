@@ -4,8 +4,6 @@ import os
 import json
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
-
 
 from app.utils import StackdriverJsonFormatter
 
@@ -23,12 +21,6 @@ logger = logging.getLogger("uvicorn")
 
 
 app = FastAPI(root_path="/api")
-app.add_middleware(CORSMiddleware,
-                   allow_origins=["*"],
-                   allow_credentials=True,
-                   allow_methods=["*"],
-                   allow_headers=["*"])
-
 
 @app.get("/", status_code=204)
 def read_root():
