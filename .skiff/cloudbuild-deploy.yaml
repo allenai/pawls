@@ -27,15 +27,27 @@ steps:
     'docker pull gcr.io/$PROJECT_ID/$REPO_NAME-proxy:latest || exit 0'
   ]
   waitFor: [ '-' ]
+- id: 'decrypt-github-token'
+  name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'gcloud'
+  args: [
+    'kms', 'decrypt',
+    '--plaintext-file', '/workspace/github_token.txt',
+    '--ciphertext-file', '/workspace/encrypted_github_token.txt',
+    '--location', 'global',
+    '--keyring', 'pawls',
+    '--key', 'github-token'
+  ]
+  waitFor: [ '-' ]
 # Build docker images for each piece of the puzzle
 - id: 'api.build'
   name: 'gcr.io/cloud-builders/docker'
   entrypoint: '/bin/bash'
   args: [
     '-c',
-    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest .'
+    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest --build-arg=GITHUB_ACCESS_TOKEN=$(cat /workspace/github_token.txt) .'
   ]
-  waitFor: [ 'api.pull' ]
+  waitFor: [ 'api.pull', 'decrypt-github-token' ]
   dir: 'api'
 - id: 'ui.build'
   name: 'gcr.io/cloud-builders/docker'
@@ -136,8 +148,3 @@ artifacts:
   objects:
     location: 'gs://skiff-archive/$REPO_NAME/$_ENV/$BUILD_ID/$COMMIT_SHA'
     paths: ['.skiff/webapp.yaml']
-
-secrets:
-- kmsKeyName: projects/ai2-reviz/locations/global/keyRings/pawls/cryptoKeys/github-token
-  secretEnv:
-    GITHUB_ACCESS_TOKEN: CiQArhDQKmvL0+PK0Ad/UImMvYfcwIjESdi33c2ET7cWCf1qz1QSUQAslqkNf9k4UTaRhm+oRbrkVk3F2x/3YSbpXEnkjK7/sSiObC7A1f3c1YsIPpBl2Yvo7ydaDsYz3t/c5d/0ul7iw25NMFbVeODTeuFxPtx+PQ==
