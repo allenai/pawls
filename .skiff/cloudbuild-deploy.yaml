@@ -140,4 +140,5 @@ artifacts:
 secrets:
 - kmsKeyName: projects/ai2-reviz/locations/global/keyRings/pawls-keyring/cryptoKeys/pdf-structure-service-github-token
   secretEnv:
-    GITHUB_ACCESS_TOKEN: CiQAzkF2Ko2gB4phQelpal0T5dysylUGusQZw9ugJM/gQBWQReESUQAQ4uT3wXgnYm2RMScjNyaEZlYwV8s0V7eRycPfXY5blzzFienvTfBAeYCpC7AWPzfobNWNR6TOdz+DSgfVUB/JpW26oZ/6z/LFgbQo+qdzkg==
+    GITHUB_ACCESS_TOKEN: CiQAzkF2KtK8rbwR3d3zWLiw8Z2opaw1O+T/9YzWcUHpEBqBkFASUQAQ4uT3s3lEE9eQ5+zfX5cRKGECjfLd7sanJPrN81AzH1wHx7+7B5BXo/MZnBi4f71mBDyrswd5axDjbysgI77BiW7cjUUaUixFyaXc/FPY7g==
+
