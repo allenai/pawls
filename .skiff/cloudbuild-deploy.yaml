@@ -33,7 +33,7 @@ steps:
   entrypoint: '/bin/bash'
   args: [
     '-c',
-    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest --build-arg GITHUB_ACCESS_TOKEN=$$GITHUB_ACCESS_TOKEN'
+    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest --build-arg GITHUB_ACCESS_TOKEN=$$GITHUB_ACCESS_TOKEN .'
   ]
   secretEnv: [ 'GITHUB_ACCESS_TOKEN' ]
   waitFor: [ 'api.pull' ]
