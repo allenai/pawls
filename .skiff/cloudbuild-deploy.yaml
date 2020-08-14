@@ -30,7 +30,7 @@ steps:
 # Build docker images for each piece of the puzzle
 - id: 'api.build'
   name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
+  entrypoint: '/bin/bash'
   args: [
     '-c',
     'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest --build-arg GITHUB_ACCESS_TOKEN=$$GITHUB_ACCESS_TOKEN'
