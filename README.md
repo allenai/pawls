@@ -4,6 +4,14 @@ to collect a series of annotations associated with a PDF document. It was writte
 specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org)
 corpus, but can be used with any collection of PDF documents.
 
+### Secrets
+
+Pawls requires the python client of the [S2 Pdf Structure Service](https://github.com/allenai/s2-pdf-structure-service),
+which you can find [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/i73dbwizxzlu2savgd2pbrzyzq).
+To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
+
+`GITHUB_ACCESS_TOKEN=<password from 1password>`
+
 ## Prerequisites
 
 Make sure that you have the latest version of [Docker 🐳](https://www.docker.com/get-started)
