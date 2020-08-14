@@ -138,7 +138,6 @@ artifacts:
     paths: ['.skiff/webapp.yaml']
 
 secrets:
-- kmsKeyName: projects/ai2-reviz/locations/global/keyRings/pawls-keyring/cryptoKeys/pdf-structure-service-github-token
+- kmsKeyName: projects/ai2-reviz/locations/global/keyRings/pawls/cryptoKeys/github-token
   secretEnv:
-    GITHUB_ACCESS_TOKEN: CiQAzkF2KtK8rbwR3d3zWLiw8Z2opaw1O+T/9YzWcUHpEBqBkFASUQAQ4uT3s3lEE9eQ5+zfX5cRKGECjfLd7sanJPrN81AzH1wHx7+7B5BXo/MZnBi4f71mBDyrswd5axDjbysgI77BiW7cjUUaUixFyaXc/FPY7g==
-
+    GITHUB_ACCESS_TOKEN: CiQArhDQKmvL0+PK0Ad/UImMvYfcwIjESdi33c2ET7cWCf1qz1QSUQAslqkNf9k4UTaRhm+oRbrkVk3F2x/3YSbpXEnkjK7/sSiObC7A1f3c1YsIPpBl2Yvo7ydaDsYz3t/c5d/0ul7iw25NMFbVeODTeuFxPtx+PQ==
