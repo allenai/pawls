@@ -11,7 +11,7 @@ services:
           context: ./api
           args:
             # Token needed for the s2 structure service client package installation.
-            # Get this from lastpass and set it in a .env file.
+            # Get this from 1password (see README.md) and set it in a .env file.
             - GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN
         volumes:
             - ./api:/usr/local/src/skiff/app/api
