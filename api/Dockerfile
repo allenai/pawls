@@ -5,7 +5,6 @@ WORKDIR /usr/local/src/skiff/app/api
 
 ARG GITHUB_ACCESS_TOKEN
 
-RUN echo ${GITHUB_ACCESS_TOKEN}
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel
 COPY requirements.txt .
