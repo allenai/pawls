@@ -13,5 +13,4 @@ pytest
 python-multipart
 
 # pdf-structure service client.
-# This is installed directly in the dockerfile, see ./Dockerfile for the reason why.
-#git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
+git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
