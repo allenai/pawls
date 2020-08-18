@@ -32,7 +32,7 @@ logger = logging.getLogger("uvicorn")
 pdf_structure_client = DefaultApi(ApiClient(Configuration(host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com")))
 
 
-app = FastAPI(root_path="/api")
+app = FastAPI()
 
 @app.get("/", status_code=204)
 def read_root():
@@ -43,7 +43,7 @@ def read_root():
     return {}
 
 
-@app.get("/tokens/{sha}")
+@app.get("/api/tokens/{sha}")
 def get_tokens(sha: str, source: Optional[str] = "all"):
     """
 
@@ -55,17 +55,17 @@ def get_tokens(sha: str, source: Optional[str] = "all"):
     """
     annotations = pdf_structure_client.get_annotations(sha, token_sources=source)
 
-    tokens = annotations.get("tokens", None)
+    tokens = annotations.tokens
     if tokens is None:
-        raise HttpException(status_code=404, detail=f"No PDF found for {sha}, or invalid source ({source})")
+        raise HTTPException(status_code=404, detail=f"No PDF found for {sha}, or invalid source ({source})")
 
-    return tokens["tokens"]["sources"].to_dict()
+    return tokens.to_dict()
 
-@app.get("/elements/{sha}")
+@app.get("/api/elements/{sha}")
 def get_text_elements(sha: str, source= "all"):
     pass
 
-@app.get("/region/{sha}")
+@app.get("/api/region/{sha}")
 def get_region(sha: str, source= "all"):
     pass
 
