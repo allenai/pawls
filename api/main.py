@@ -3,12 +3,20 @@ import logging
 import os
 import json
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+
+from pdfstructure.client.v1.api.default_api import DefaultApi
+from pdfstructure.client.v1.configuration import Configuration
+from pdfstructure.client.v1.api_client import ApiClient
+from pdfstructure.client.v1 import models as model
+
 
 from app.utils import StackdriverJsonFormatter
 
+IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev") 
+
 handlers = None
-if os.getenv("IN_PRODUCTION", "dev") == "prod":
+if  IN_PRODUCTION == "prod":
     json_handler = logging.StreamHandler()
     json_handler.setFormatter(StackdriverJsonFormatter())
     handlers = [json_handler]
@@ -20,7 +28,8 @@ logging.basicConfig(
 logger = logging.getLogger("uvicorn")
 
 
-app = FastAPI(root_path="/api")
+pdf_structure_client = DefaultApi(ApiClient(Configuration(host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com")))
+app = FastAPI()
 
 @app.get("/", status_code=204)
 def read_root():
@@ -29,3 +38,40 @@ def read_root():
     root URL, so it can tell the service is ready for requests.
     """
     return {}
+
+
+@app.get("/api/tokens/{sha}")
+def get_tokens(sha: str, source: Optional[str] = "all"):
+    """
+    sha: str
+        PDF sha to retrieve from the PDF structure service.
+    source: str (default = "all")
+        The comma separated string of annotation sources to fetch. This allows fetching of specific annotations.
+
+    Returns:
+        A JSON response containing model.PdfTokens.
+    """
+    # TODO(Mark): Pull this out and create our own API. 
+    annotations = pdf_structure_client.get_annotations(
+        sha, 
+        token_sources=source,
+        text_element_data=None,
+        text_element_sources=None
+        region_data=None,
+        region_sources=None,
+    )
+
+    tokens = annotations.tokens
+    if tokens is None:
+        raise HTTPException(status_code=404, detail=f"No PDF found for {sha}, or invalid source ({source})")
+
+    return tokens.to_dict()
+
+@app.get("/api/elements/{sha}")
+def get_text_elements(sha: str, source= "all"):
+    pass
+
+@app.get("/api/region/{sha}")
+def get_region(sha: str, source= "all"):
+    pass
+

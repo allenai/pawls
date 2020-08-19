@@ -11,3 +11,6 @@ ui/build/
 # UI package manager debug output
 ui/*.log
 .skiff/webapp.yaml
+
+# Docker compose env files
+.env
