@@ -3,15 +3,11 @@ import logging
 import os
 import json
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query, Response
 
-from pdfstructure.client.v1.api.default_api import DefaultApi
-from pdfstructure.client.v1.configuration import Configuration
-from pdfstructure.client.v1.api_client import ApiClient
-from pdfstructure.client.v1 import models as model
-
-
+from app.pdf_structure import get_annotations
 from app.utils import StackdriverJsonFormatter
+
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev") 
 
@@ -28,7 +24,6 @@ logging.basicConfig(
 logger = logging.getLogger("uvicorn")
 
 
-pdf_structure_client = DefaultApi(ApiClient(Configuration(host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com")))
 app = FastAPI()
 
 @app.get("/", status_code=204)
@@ -41,37 +36,44 @@ def read_root():
 
 
 @app.get("/api/tokens/{sha}")
-def get_tokens(sha: str, source: Optional[str] = "all"):
+def get_tokens(sha: str, sources: Optional[List[str]] = Query(["all"])):
+    """
+    sha: str
+        PDF sha to retrieve from the PDF structure service.
+    sources: List[str] (default = "all")
+        The annotation sources to fetch. This allows fetching of specific annotations.
+    """
+    response = get_annotations(
+        sha, 
+        token_sources=sources,
+    )
+    return response
+
+@app.get("/api/elements/{sha}")
+def get_elements(sha: str, sources: Optional[List[str]] = Query(["all"])):
     """
     sha: str
         PDF sha to retrieve from the PDF structure service.
     source: str (default = "all")
-        The comma separated string of annotation sources to fetch. This allows fetching of specific annotations.
-
-    Returns:
-        A JSON response containing model.PdfTokens.
+        The annotation sources to fetch. This allows fetching of specific annotations.
     """
-    # TODO(Mark): Pull this out and create our own API. 
-    annotations = pdf_structure_client.get_annotations(
+    response = get_annotations(
         sha, 
-        token_sources=source,
-        text_element_data=None,
-        text_element_sources=None
-        region_data=None,
-        region_sources=None,
+        text_element_sources=sources
     )
+    return Response(content=json.dumps(response), media_type="application/json")
 
-    tokens = annotations.tokens
-    if tokens is None:
-        raise HTTPException(status_code=404, detail=f"No PDF found for {sha}, or invalid source ({source})")
 
-    return tokens.to_dict()
-
-@app.get("/api/elements/{sha}")
-def get_text_elements(sha: str, source= "all"):
-    pass
-
-@app.get("/api/region/{sha}")
-def get_region(sha: str, source= "all"):
-    pass
-
+@app.get("/api/regions/{sha}")
+def get_regions(sha: str, sources: Optional[List[str]] = Query(["all"])):
+    """
+    sha: str
+        PDF sha to retrieve from the PDF structure service.
+    source: str (default = "all")
+        The annotation sources to fetch. This allows fetching of specific annotations.
+    """
+    response = get_annotations(
+        sha, 
+        region_sources=sources,
+    )
+    return response
