@@ -13,9 +13,11 @@ services:
             # Token needed for the s2 structure service client package installation.
             # Get this from 1password (see README.md) and set it in a .env file.
             - GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN
+            - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
         volumes:
             - ./api:/usr/local/src/skiff/app/api
-            - /tmp/skiff_files/apps/pawls:/skiff_files/apps/pawls
+            - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.

@@ -6,11 +6,17 @@ python-json-logger==0.1.10
 fastapi
 uvicorn
 
-# used for testing
+# used for testing/formatting
 pytest
+flake8
+black
 
 # used for form parsing
 python-multipart
 
 # pdf-structure service client.
 git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
+
+# S3 access
+boto3
+
