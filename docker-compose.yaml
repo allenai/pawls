@@ -15,6 +15,7 @@ services:
             - GITHUB_ACCESS_TOKEN=$GITHUB_ACCESS_TOKEN
         volumes:
             - ./api:/usr/local/src/skiff/app/api
+            - /tmp/skiff_files/apps/pawls:/skiff_files/apps/pawls
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
