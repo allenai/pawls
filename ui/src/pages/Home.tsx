@@ -12,8 +12,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 
 
 const Home = () => {
-    const canvasRef = useRef<any>(null);
-    const annotationsRef = useRef<any>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const annotationsRef = useRef<HTMLDivElement>(null);
   
     const [pdfRef, setPdfRef] = useState<pdfjsWorker.PDFDocumentProxy>();
     const [currentPage, setCurrentPage] = useState(1);
@@ -23,18 +23,32 @@ const Home = () => {
     const renderPage = useCallback((pageNum, pdf=pdfRef) => {
       pdf && pdf.getPage(pageNum).then((page: any) => {
 
-        const viewport = page.getViewport({scale: 1.5});
         const canvas = canvasRef.current;
+        const annotator = annotationsRef.current;
+        if (canvas !== null && annotator !== null) {
 
-        if (canvas !== null){
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-        }
+        // Calculate dimensions of the PDF.
+        // See: https://github.com/mozilla/pdf.js/blob/7edc5cb79fe829d45fed85e2b4b6d8594522cc10/src/display/api.js#L1039
+        const dims = {
+            width: page.view[2] - page.view[1],
+            height: page.view[3] - page.view[0]
+        };
+        const scale = Math.max(
+            annotator.clientWidth / dims.width,
+            annotator.clientHeight / dims.height
+        );
+        const viewport = page.getViewport({ scale });
+        // TODO(Mark/Sam): Add an event listener for resizing the window
+        // and handle it. 
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
         const renderContext = {
-          canvasContext: canvas.getContext('2d'),
-          viewport: viewport
+        canvasContext: canvas.getContext('2d'),
+        viewport: viewport
         };
         page.render(renderContext);
+        }
       });   
     }, [pdfRef]);
   
