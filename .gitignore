@@ -14,3 +14,6 @@ ui/*.log
 
 # Docker compose env files
 .env
+
+# Ignore any files in ./skiff_files
+skiff_files/*
