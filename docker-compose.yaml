@@ -17,6 +17,7 @@ services:
             - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
         volumes:
             - ./api:/usr/local/src/skiff/app/api
+            - /tmp/skiff_files/apps/pawls:/skiff_files/apps/pawls
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
