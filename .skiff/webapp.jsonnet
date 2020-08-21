@@ -189,11 +189,26 @@ function(
                             ]
                         },
                     },
+                    volumes: [
+                        { 
+                            name: 'skiff-files',
+                            persistentVolumeClaim: {
+                                claimName: 'skiff-files-server-pawls'
+                            }
+                        }
+                    ],
                     containers: [
                         {
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
                             env: [ { name: "IN_PRODUCTION", value: "prod" }],
+                            volumeMounts: [
+                                {
+                                    mountPath: '/skiff_files/apps/pawls',
+                                    name: 'skiff-files',
+                                    readOnly: false
+                                }
+                            ],
                             # The "probes" below allow Kubernetes to determine
                             # if your application is working properly.
                             #
