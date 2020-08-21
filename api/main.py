@@ -2,9 +2,8 @@ from typing import List, Optional, Dict
 import logging
 import os
 import json
-from base64 import b64encode
 
-from fastapi import FastAPI, Query, Response
+from fastapi import FastAPI, Query, Response, HTTPException
 from fastapi.responses import FileResponse
 
 from app.pdf_structure import get_annotations
@@ -40,11 +39,16 @@ def read_root():
 
 
 @app.get("/api/pdf/{sha}")
-def get_pdf(sha: str):
+async def get_pdf(sha: str):
+    """
+    sha: str
+        The sha of the pdf to return.
+    """
 
-    return FileResponse("/skiff_files/")
-
-
+    pdf = f"/skiff_files/apps/pawls/{sha}.pdf"
+    if not os.path.exists(pdf):
+        raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
+    return FileResponse(pdf, media_type="application/pdf")
 
 
 @app.get("/api/tokens/{sha}")

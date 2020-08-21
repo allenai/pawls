@@ -20,3 +20,5 @@ git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@m
 # S3 access
 boto3
 
+# Allows us to use FastAPI's FileResponse for serving pdfs.
+aiofiles
