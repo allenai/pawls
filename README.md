@@ -12,6 +12,12 @@ To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
 
 `GITHUB_ACCESS_TOKEN=<password from 1password>`
 
+Pawls also requires a AWS key with read access to the S2 Pdf buckets. In the deployed app, this is [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/yq475h75a2zaeuh4zhq23otkki).
+
+For local development, your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which you use for day-to-day AI2 work will
+be suitable - just make sure they are set as environment variables when running `docker-compose up`.
+
+
 ## Prerequisites
 
 Make sure that you have the latest version of [Docker 🐳](https://www.docker.com/get-started)
