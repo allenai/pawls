@@ -2,8 +2,10 @@ from typing import List, Optional, Dict
 import logging
 import os
 import json
+from base64 import b64encode
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, Query, Response
+from fastapi.responses import FileResponse
 
 from app.pdf_structure import get_annotations
 from app.utils import StackdriverJsonFormatter
@@ -12,7 +14,8 @@ from app.utils import StackdriverJsonFormatter
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev") 
 
 handlers = None
-if  IN_PRODUCTION == "prod":
+
+if IN_PRODUCTION == "prod":
     json_handler = logging.StreamHandler()
     json_handler.setFormatter(StackdriverJsonFormatter())
     handlers = [json_handler]
@@ -26,6 +29,7 @@ logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
+
 @app.get("/", status_code=204)
 def read_root():
     """
@@ -33,6 +37,14 @@ def read_root():
     root URL, so it can tell the service is ready for requests.
     """
     return {}
+
+
+@app.get("/api/pdf/{sha}")
+def get_pdf(sha: str):
+
+    return FileResponse("/skiff_files/")
+
+
 
 
 @app.get("/api/tokens/{sha}")
