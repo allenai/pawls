@@ -28,7 +28,7 @@ For instance, you can run this command to download the specified PDF:
 
 ```bash
 wget \
-    --output-document skiff_files/apps/pawls/30f63f265c32e26d999aa1fef5286b8308ad.pdf \
+    --output-document skiff_files/apps/pawls/34f25a8704614163c4095b3ee2fc969b60de4698.pdf \
     https://pdfs.semanticscholar.org/6c8b/30f63f265c32e26d999aa1fef5286b8308ad.pdf
 ```
 
