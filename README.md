@@ -1,4 +1,5 @@
-# PAWLS 
+# PAWLS
+
 **P**DF **A**nnotations with **L**abels and **S**tructure is software that makes it easy
 to collect a series of annotations associated with a PDF document. It was written
 specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org)
@@ -17,6 +18,19 @@ Pawls also requires a AWS key with read access to the S2 Pdf buckets. In the dep
 For local development, your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which you use for day-to-day AI2 work will
 be suitable - just make sure they are set as environment variables when running `docker-compose up`.
 
+
+### PDFs
+
+In order to run a local environment you'll need to download the PDFs you'd like the application
+to serve. The PDFs should be put in `skiff_files/apps/pawls`.
+
+For instance, you can run this command to download the specified PDF:
+
+```bash
+wget \
+    --output-document skiff_files/apps/pawls/34f25a8704614163c4095b3ee2fc969b60de4698.pdf \
+    https://pdfs.semanticscholar.org/6c8b/30f63f265c32e26d999aa1fef5286b8308ad.pdf
+```
 
 ## Prerequisites
 
