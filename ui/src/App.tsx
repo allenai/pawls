@@ -9,85 +9,31 @@
  */
 
 import * as React from 'react';
-import styled from 'styled-components';
-import { RouteComponentProps } from 'react-router';
-import { BrowserRouter, Route, Link } from 'react-router-dom';
-import { Header, Layout, Footer, Menu } from '@allenai/varnish';
+import { createGlobalStyle } from 'styled-components';
+import { BrowserRouter, Route, Redirect } from 'react-router-dom';
 
-import Home from './pages/Home';
-import About from './pages/About';
-import { AppRoute } from './AppRoute';
+import { PDFPage } from './pages';
 
-const { HeaderColumns, HeaderTitle } = Header;
+const App = () => (
+    <>
+        <BrowserRouter>
+            <Route path="/" exact>
+                {/* TODO (@codeviking): This is temporary. */}
+                <Redirect to="/pdf/34f25a8704614163c4095b3ee2fc969b60de4698" />
+            </Route>
+            <Route path="/pdf/:sha" component={PDFPage} />
+        </BrowserRouter>
+        <GlobalStyles />
+    </>
+);
 
-/**
- * An array capturing the available routes in your application. You can
- * add or remove routes here.
- */
-const ROUTES: AppRoute[] = [
-    {
-        path: '/',
-        label: 'Home',
-        component: Home
-    },
-    {
-        path: '/about',
-        label: 'About',
-        component: About
+
+// Setup the viewport so it takes up all available real-estate.
+const GlobalStyles = createGlobalStyle`
+    html, body, #root {
+        display: flex;
+        flex-grow: 1;
     }
-];
-
-export default class App extends React.PureComponent<RouteComponentProps> {
-    render() {
-        return (
-            <BrowserRouter>
-                <Route path="/">
-                    <Layout bgcolor="white">
-                        <Header>
-                            <HeaderColumns gridTemplateColumns="min-content auto min-content">
-                                <SimpleLogo>
-                                    <span role="img" aria-label="Skiff Logo">
-                                        {
-                                            ['⛵️', '⚓️', '🐠', '🛶', '🐟', '🐙', '🐡'][
-                                                Math.floor(Math.random() * 7)
-                                            ]
-                                        }
-                                    </span>
-                                </SimpleLogo>
-                                <HeaderTitle>Skiff</HeaderTitle>
-                                <Menu
-                                    defaultSelectedKeys={[this.props.location.pathname]}
-                                    mode="horizontal">
-                                    {ROUTES.map(({ path, label }) => (
-                                        <Menu.Item key={path}>
-                                            <Link to={path}>{label}</Link>
-                                        </Menu.Item>
-                                    ))}
-                                </Menu>
-                            </HeaderColumns>
-                        </Header>
-                        <Layout.Content>
-                            {ROUTES.map(({ path, component }) => (
-                                <Route key={path} path={path} exact component={component} />
-                            ))}
-                        </Layout.Content>
-                        <Footer />
-                    </Layout>
-                </Route>
-            </BrowserRouter>
-        );
-    }
-}
-
-const SimpleLogo = styled.div`
-    border-radius: 25px;
-    width: 50px;
-    height: 50px;
-    line-height: 1;
-    font-size: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    background: ${({ theme }) => theme.color.B2};
 `;
+
+export default App;
