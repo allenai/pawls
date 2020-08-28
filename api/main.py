@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 import logging
 import os
 import json
@@ -10,7 +10,7 @@ from app.pdf_structure import get_annotations
 from app.utils import StackdriverJsonFormatter
 
 
-IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev") 
+IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
 handlers = None
 
@@ -20,8 +20,7 @@ if IN_PRODUCTION == "prod":
     handlers = [json_handler]
 
 logging.basicConfig(
-    level=os.environ.get('LOG_LEVEL', default=logging.INFO),
-    handlers=handlers
+    level=os.environ.get("LOG_LEVEL", default=logging.INFO), handlers=handlers
 )
 logger = logging.getLogger("uvicorn")
 
@@ -59,11 +58,9 @@ def get_tokens(sha: str, sources: Optional[List[str]] = Query(["all"])):
     sources: List[str] (default = "all")
         The annotation sources to fetch. This allows fetching of specific annotations.
     """
-    response = get_annotations(
-        sha, 
-        token_sources=sources,
-    )
+    response = get_annotations(sha, token_sources=sources,)
     return response
+
 
 @app.get("/api/elements/{sha}")
 def get_elements(sha: str, sources: Optional[List[str]] = Query(["all"])):
@@ -73,10 +70,7 @@ def get_elements(sha: str, sources: Optional[List[str]] = Query(["all"])):
     source: str (default = "all")
         The annotation sources to fetch. This allows fetching of specific annotations.
     """
-    response = get_annotations(
-        sha, 
-        text_element_sources=sources
-    )
+    response = get_annotations(sha, text_element_sources=sources)
     return Response(content=json.dumps(response), media_type="application/json")
 
 
@@ -88,8 +82,5 @@ def get_regions(sha: str, sources: Optional[List[str]] = Query(["all"])):
     source: str (default = "all")
         The annotation sources to fetch. This allows fetching of specific annotations.
     """
-    response = get_annotations(
-        sha, 
-        region_sources=sources,
-    )
+    response = get_annotations(sha, region_sources=sources,)
     return response
