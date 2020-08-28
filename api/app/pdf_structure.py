@@ -19,6 +19,7 @@ IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 # See: https://github.com/allenai/s2-pdf-structure-service/issues/11
 
 model.TextElementTypes.to_dict = to_dict_patch
+model.RegionTypes.to_dict = to_dict_patch
 
 PDF_STRUCTURE_CLIENT = DefaultApi(
     ApiClient(
@@ -47,6 +48,85 @@ def _get_annotations(sha: str) -> model.PdfAnnotations:
     return PDF_STRUCTURE_CLIENT.get_annotations(sha)
 
 
+def filter_token_source_for_pages(token_source_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only token source information from the specified
+    pages.
+
+    token_source_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"tokens": {"sources": {}}}
+
+    for source, data in token_source_response["tokens"]["sources"].items():
+
+        new = data.copy()
+        new["pages"] = [data["pages"][page] for page in pages]
+        response["tokens"]["sources"][source] = new
+
+    return response
+
+
+def filter_text_elements_for_pages(text_element_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only text element information from the specified
+    pages.
+
+    text_element_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"text_elements": {"sources": {}}}
+
+    for source, data in text_element_response["text_elements"]["sources"].items():
+
+        new = data.copy()
+
+        for element_type, element_data in data["types"].items():
+
+            new["types"][element_type] = [
+                item for item in element_data
+                if item["start"]["page"] in pages
+                ]
+
+        response["text_elements"]["sources"][source] = new
+
+    return response
+
+def filter_regions_for_pages(regions_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only region information from the specified
+    pages.
+
+    token_source_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"regions": {"sources": {}}}
+
+    for source, data in regions_response["regions"]["sources"].items():
+
+        new = data.copy()
+
+        for element_type, element_data in data["types"].items():
+
+            new["types"][element_type] = [
+                item for item in element_data
+                if item["page"]["index"] in pages
+                ]
+
+        response["regions"]["sources"][source] = new
+
+    return response
+
+
 def get_annotations(
     sha: str,
     token_sources: List[str] = None,
@@ -66,7 +146,6 @@ def get_annotations(
         # Short circuit logic for all annotations.
         if "all" in token_sources:
             response["tokens"] = full_annotations.tokens.to_dict()
-
         else:
             response["tokens"] = {"sources": {}}
             for source in token_sources:

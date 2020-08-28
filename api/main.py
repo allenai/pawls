@@ -5,7 +5,7 @@ import os
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
 
-from app.pdf_structure import get_annotations, Config
+from app import pdf_structure
 from app.utils import StackdriverJsonFormatter, bulk_fetch_pdfs_for_s2_ids
 
 
@@ -49,7 +49,7 @@ async def get_pdf(sha: str, download: bool = False):
         Whether or not to download the pdf from S3 if it
         is not present locally.
     """
-    pdf = os.path.join(Config.PDF_STORE_PATH, f"{sha}.pdf")
+    pdf = os.path.join(pdf_structure.Config.PDF_STORE_PATH, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
 
@@ -68,39 +68,65 @@ async def get_pdf(sha: str, download: bool = False):
 
 
 @app.get("/api/tokens/{sha}")
-def get_tokens(sha: str, sources: Optional[List[str]] = Query(["all"])):
+def get_tokens(
+    sha: str,
+    sources: Optional[List[str]] = Query(["all"]),
+    pages: Optional[List[str]] = Query(None)
+):
     """
     sha: str
         PDF sha to retrieve from the PDF structure service.
     sources: List[str] (default = "all")
         The annotation sources to fetch.
         This allows fetching of specific annotations.
+    pages: Optional[List[str]], (default = None)
+        Optionally provide pdf pages to filter by.
     """
-    response = get_annotations(sha, token_sources=sources,)
+    response = pdf_structure.get_annotations(sha, token_sources=sources,)
+    if pages is not None:
+        response = pdf_structure.filter_token_source_for_pages(response, pages)
+
     return response
 
 
 @app.get("/api/elements/{sha}")
-def get_elements(sha: str, sources: Optional[List[str]] = Query(["all"])):
+def get_elements(
+    sha: str,
+    sources: Optional[List[str]] = Query(["all"]),
+    pages: Optional[List[str]] = Query(None)
+):
     """
     sha: str
         PDF sha to retrieve from the PDF structure service.
     source: str (default = "all")
         The annotation sources to fetch.
         This allows fetching of specific annotations.
+    pages: Optional[List[str]], (default = None)
+        Optionally provide pdf pages to filter by.
     """
-    response = get_annotations(sha, text_element_sources=sources)
+    response = pdf_structure.get_annotations(sha, text_element_sources=sources)
+
+    if pages is not None:
+        response = pdf_structure.filter_text_elements_for_pages(response, pages)
     return response
 
 
 @app.get("/api/regions/{sha}")
-def get_regions(sha: str, sources: Optional[List[str]] = Query(["all"])):
+def get_regions(
+    sha: str,
+    sources: Optional[List[str]] = Query(["all"]),
+    pages: Optional[List[str]] = Query(None)
+):
     """
     sha: str
         PDF sha to retrieve from the PDF structure service.
     source: str (default = "all")
         The annotation sources to fetch.
         This allows fetching of specific annotations.
+    pages: Optional[List[str]], (default = None)
+        Optionally provide pdf pages to filter by.
     """
-    response = get_annotations(sha, region_sources=sources,)
+    response = pdf_structure.get_annotations(sha, region_sources=sources,)
+    if pages is not None:
+        response = pdf_structure.filter_regions_for_pages(response, pages)
     return response
