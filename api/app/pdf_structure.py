@@ -1,6 +1,5 @@
 from typing import List
 import os
-import six
 
 from fastapi import HTTPException
 
@@ -8,6 +7,8 @@ from pdfstructure.client.v1.api.default_api import DefaultApi
 from pdfstructure.client.v1.configuration import Configuration
 from pdfstructure.client.v1.api_client import ApiClient
 from pdfstructure.client.v1 import models as model
+
+from app.patch import to_dict_patch
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
@@ -17,50 +18,9 @@ IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 # This fixes it, so we are monkeypatching the one class we need.
 # See: https://github.com/allenai/s2-pdf-structure-service/issues/11
 
-
-def to_dict_patch(self):
-    """Returns the model properties as a dict"""
-
-    def handle_list(item):
-
-        ret = []
-        for i in item:
-            if hasattr(i, "to_dict"):
-                ret.append(i.to_dict())
-            else:
-                ret.append(i)
-        return ret
-
-    def handle_dict(item):
-        key, value = item
-
-        if hasattr(value, "to_dict"):
-            return (key, value.to_dict())
-        elif isinstance(value, list):
-            return (key, handle_list(value))
-        else:
-            return item
-
-    result = {}
-    for attr, _ in six.iteritems(self.openapi_types):
-        value = getattr(self, attr)
-        if isinstance(value, list):
-            result[attr] = list(
-                map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-            )
-        elif hasattr(value, "to_dict"):
-            result[attr] = value.to_dict()
-        elif isinstance(value, dict):
-            result[attr] = dict(map(handle_dict, value.items()))
-        else:
-            result[attr] = value
-
-    return result
-
-
 model.TextElementTypes.to_dict = to_dict_patch
 
-pdf_structure_client = DefaultApi(
+PDF_STRUCTURE_CLIENT = DefaultApi(
     ApiClient(
         Configuration(
             host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com"
@@ -69,9 +29,22 @@ pdf_structure_client = DefaultApi(
 )
 
 
+class Config:
+    """
+    Configuration for anything related to pdfs. We wrap this up in a class
+    so that it's easier to test.
+
+    PDF_STORE_PATH: str
+        Where the raw pdfs are stored for annotation. In production, this uses
+        Skiff Files.
+    """
+
+    PDF_STORE_PATH: str = "/skiff_files/apps/pawls/pdfs/"
+
+
 # TODO(Mark): Wrap this in a LRU cache.
 def _get_annotations(sha: str) -> model.PdfAnnotations:
-    return pdf_structure_client.get_annotations(sha)
+    return PDF_STRUCTURE_CLIENT.get_annotations(sha)
 
 
 def get_annotations(

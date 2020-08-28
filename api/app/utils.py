@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 import os
 
 import boto3
@@ -31,9 +31,8 @@ S3_BUCKET_PDFS = {"default": "ai2-s2-pdfs", "private": "ai2-s2-pdfs-private"}
 
 def bulk_fetch_pdfs_for_s2_ids(
     s2_ids: List[str], target_dir: str
-) -> Dict[str, List[str]]:
+) -> Dict[str, Set[str]]:
     """
-
     s2_ids: List[str]
         A list of s2 pdf shas to download.
 
@@ -45,8 +44,8 @@ def bulk_fetch_pdfs_for_s2_ids(
     calling this function.  By default, will perform overwriting.
 
     Returns
-    A dict containing "error" and "not_found" keys, listing pdf shas that were either
-    not found or errored when fetching.
+    A dict containing "error", "not_found" and "success" keys,
+    listing pdf shas that were either not found or errored when fetching.
     """
 
     os.makedirs(target_dir, exist_ok=True)
@@ -54,14 +53,17 @@ def bulk_fetch_pdfs_for_s2_ids(
     default_bucket = s3.Bucket(S3_BUCKET_PDFS["default"])
     private_bucket = s3.Bucket(S3_BUCKET_PDFS["private"])
 
-    not_found = []
-    error = []
+    not_found = set()
+    error = set()
+    success = set()
     for s2_id in s2_ids:
         try:
             default_bucket.download_file(
                 os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
                 os.path.join(target_dir, f"{s2_id}.pdf"),
             )
+            success.add(s2_id)
+
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "404":
                 try:
@@ -69,12 +71,14 @@ def bulk_fetch_pdfs_for_s2_ids(
                         os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
                         os.path.join(target_dir, f"{s2_id}.pdf"),
                     )
+                    success.add(s2_id)
+
                 except botocore.exceptions.ClientError as e:
                     if e.response["Error"]["Code"] == "404":
-                        not_found.append(s2_id)
+                        not_found.add(s2_id)
                     else:
-                        error.append(s2_id)
+                        error.add(s2_id)
             else:
-                error.append(s2_id)
+                error.add(s2_id)
 
-    return {"error": error, "not_found": not_found}
+    return {"error": error, "not_found": not_found, "success": success}
