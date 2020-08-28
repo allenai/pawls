@@ -36,9 +36,9 @@ export const PDFPage = () => {
     const [ progress, setProgress ] = useState(0);
     const theme = useContext(ThemeContext);
 
-    const pdfUrl = `/api/pdf/${sha}`;
     useEffect(() => {
         setDocument(undefined);
+        const pdfUrl = `/api/pdf/${sha}`;
         const loadingTask: PDFLoadingTask = pdfjs.getDocument(pdfUrl)
         loadingTask.onProgress = (p: pdfjs.PDFProgressData) => {
             setProgress(Math.round(p.loaded / p.total * 100));
@@ -59,7 +59,7 @@ export const PDFPage = () => {
                 setViewState(ViewState.ERROR);
             }
         );
-    }, [ pdfUrl ]);
+    }, [ sha ]);
 
     const query: { page?: string } = queryString.parse(location.search.replace(/^[?]/, ''));
     const currentPage = parseInt(query.page || "");

@@ -2,8 +2,6 @@ import React, { useRef, useEffect, useState }  from 'react';
 import { PDFPageProxy, PDFDocumentProxy } from 'pdfjs-dist';
 import { Result } from '@allenai/varnish';
 
-import { CenterOnPage } from '../components';
-
 enum ViewState {
     INITIALIZING, INITIALIZED, RENDERED, ERROR
 }
@@ -51,6 +49,7 @@ export const PDF = ({ doc, page }: { doc: PDFDocumentProxy, page?: number }) => 
                     canvasContext,
                     viewport: viewport
                 });
+
                 setViewState(ViewState.RENDERED);
             },
             reason => {
@@ -70,3 +69,4 @@ export const PDF = ({ doc, page }: { doc: PDFDocumentProxy, page?: number }) => 
         )
     );
 };
+
