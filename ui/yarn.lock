@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@allenai/varnish-react-router@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@allenai/varnish-react-router/-/varnish-react-router-1.0.4.tgz#38c76f6614186d3e0d9965c68ea20ea0b1ef7615"
+  integrity sha512-kujhabmmHReT2hORnQzpuF3Phpa9hcncdFHxVHLklZx0jd6/JguW0FN/vhdURbc5oh9fkKXAJXLMHUEU+TEacw==
+
 "@allenai/varnish@^0.9.8":
   version "0.9.8"
   resolved "https://registry.yarnpkg.com/@allenai/varnish/-/varnish-0.9.8.tgz#075104e48de1676577525425cc14a78fbb1a5562"

@@ -78,6 +78,7 @@
   ],
   "dependencies": {
     "@allenai/varnish": "^0.9.8",
+    "@allenai/varnish-react-router": "^1.0.4",
     "@ant-design/icons": "^4.2.1",
     "@types/pdfjs-dist": "^2.1.5",
     "axios": "^0.18.0",
