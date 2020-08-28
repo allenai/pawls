@@ -32,6 +32,17 @@ wget \
     https://pdfs.semanticscholar.org/6c8b/30f63f265c32e26d999aa1fef5286b8308ad.pdf
 ```
 
+### Python Development
+
+The Python service is formatted using `black` and `flake8`. Currently this is run in a local environment
+using the app's `requirements.txt`. To run the linters:
+
+```
+black api/
+flake8 api/
+```
+
+
 ## Prerequisites
 
 Make sure that you have the latest version of [Docker 🐳](https://www.docker.com/get-started)
