@@ -53,13 +53,15 @@ async def get_pdf(sha: str, download: bool = False):
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
 
-        result = bulk_fetch_pdfs_for_s2_ids([sha], Config.PDF_STORE_PATH)
+        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_structure.Config.PDF_STORE_PATH)
 
         if sha in result["not_found"]:
             raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
         if sha in result["error"]:
-            raise HTTPException(status_code=404, detail=f"An error occured whilst fetching {sha}.")
+            raise HTTPException(
+                status_code=404, detail=f"An error occured whilst fetching {sha}."
+            )
 
     elif not pdf_exists:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
@@ -71,7 +73,7 @@ async def get_pdf(sha: str, download: bool = False):
 def get_tokens(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None)
+    pages: Optional[List[str]] = Query(None),
 ):
     """
     sha: str
@@ -93,7 +95,7 @@ def get_tokens(
 def get_elements(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None)
+    pages: Optional[List[str]] = Query(None),
 ):
     """
     sha: str
@@ -115,7 +117,7 @@ def get_elements(
 def get_regions(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None)
+    pages: Optional[List[str]] = Query(None),
 ):
     """
     sha: str

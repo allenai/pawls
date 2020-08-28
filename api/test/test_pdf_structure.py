@@ -18,19 +18,23 @@ class TestPdfStructure(unittest.TestCase):
         with self.assertRaises(HTTPException):
             _ = pdf_structure.get_annotations("not a sha", token_sources=["all"])
 
-
     def test_filter_token_source_pages(self):
         annotations = pdf_structure.get_annotations(self.sha, token_sources=["all"])
-        filtered = pdf_structure.filter_token_source_for_pages(annotations, pages=[2, 3])
+        filtered = pdf_structure.filter_token_source_for_pages(
+            annotations, pages=[2, 3]
+        )
 
         assert len(filtered["tokens"]["sources"]["grobid"]["pages"]) == 2
         assert filtered["tokens"]["sources"]["grobid"]["pages"][0]["page"]["index"] == 2
         assert filtered["tokens"]["sources"]["grobid"]["pages"][1]["page"]["index"] == 3
 
-
     def test_filter_text_element_pages(self):
-        annotations = pdf_structure.get_annotations(self.sha, text_element_sources=["all"])
-        filtered = pdf_structure.filter_text_elements_for_pages(annotations, pages=[2, 3])
+        annotations = pdf_structure.get_annotations(
+            self.sha, text_element_sources=["all"]
+        )
+        filtered = pdf_structure.filter_text_elements_for_pages(
+            annotations, pages=[2, 3]
+        )
 
         pages = {2, 3}
         for source, data in filtered["text_elements"]["sources"].items():

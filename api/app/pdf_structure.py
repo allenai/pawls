@@ -90,13 +90,13 @@ def filter_text_elements_for_pages(text_element_response, pages: List[int]):
         for element_type, element_data in data["types"].items():
 
             new["types"][element_type] = [
-                item for item in element_data
-                if item["start"]["page"] in pages
-                ]
+                item for item in element_data if item["start"]["page"] in pages
+            ]
 
         response["text_elements"]["sources"][source] = new
 
     return response
+
 
 def filter_regions_for_pages(regions_response, pages: List[int]):
     """
@@ -118,9 +118,8 @@ def filter_regions_for_pages(regions_response, pages: List[int]):
         for element_type, element_data in data["types"].items():
 
             new["types"][element_type] = [
-                item for item in element_data
-                if item["page"]["index"] in pages
-                ]
+                item for item in element_data if item["page"]["index"] in pages
+            ]
 
         response["regions"]["sources"][source] = new
 
