@@ -1,3 +1,5 @@
+import os
+
 from unittest import TestCase
 from unittest import mock
 import tempfile
@@ -24,8 +26,14 @@ class TestApp(TestCase):
 
     def test_get_pdf_and_download(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            with mock.patch("app.pdf_structure.Config.PDF_STORE_PATH", temp_dir):
+            pdfs = os.path.join(temp_dir, "pdfs")
+            os.makedirs(pdfs)
+            metadata = os.path.join(temp_dir, "metadata")
+            os.makedirs(metadata)
+            with mock.patch("app.config.Config.PDF_STORE_PATH", pdfs), mock.patch("app.config.Config.PDF_METADATA_PATH", metadata):
                 sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
                 response = self.client.get(f"/api/pdf/{sha}?download=true")
 
                 assert response.status_code == 200
+                assert os.path.exists(os.path.join(pdfs, f"{sha}.pdf"))
+                assert os.path.exists(os.path.join(metadata, f"{sha}.json"))

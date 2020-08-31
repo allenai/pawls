@@ -1,11 +1,14 @@
 from typing import List, Optional
 import logging
 import os
+import json
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
 
 from app import pdf_structure
+from app.config import Config
+from app.metadata import get_paper_metadata, PaperMetadata
 from app.utils import StackdriverJsonFormatter, bulk_fetch_pdfs_for_s2_ids
 
 
@@ -49,12 +52,12 @@ async def get_pdf(sha: str, download: bool = False):
         Whether or not to download the pdf from S3 if it
         is not present locally.
     """
-    pdf = os.path.join(pdf_structure.Config.PDF_STORE_PATH, f"{sha}.pdf")
+    pdf = os.path.join(Config.PDF_STORE_PATH, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
 
-        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_structure.Config.PDF_STORE_PATH)
-
+        # Find the pdf for the paper sha.
+        result = bulk_fetch_pdfs_for_s2_ids([sha], Config.PDF_STORE_PATH)
         if sha in result["not_found"]:
             raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
@@ -63,10 +66,42 @@ async def get_pdf(sha: str, download: bool = False):
                 status_code=404, detail=f"An error occured whilst fetching {sha}."
             )
 
+        # Find the metadata for the pdf.
+        metadata = get_paper_metadata(sha)
+        if metadata is None:
+            metadata = get_paper_metadata(sha, use_prod=True)
+        if metadata is None:
+            raise HTTPException(status_code=404, detail=f"Metadata not found for {sha}")
+
+        json.dump(metadata.to_dict(), open(os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json"), "w+"))
+
     elif not pdf_exists:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
     return FileResponse(pdf, media_type="application/pdf")
+
+
+@app.get("/api/pdf/{sha}/metadata")
+def get_metadata(sha: str) -> PaperMetadata:
+
+    metadata = os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json")
+    exists = os.path.exists(metadata)
+
+    if exists:
+        return PaperMetadata(**json.load(metadata))
+    else:
+        raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
+
+@app.get("/api/pdfs")
+def list_downloaded_pdfs() -> List[str]:
+    """
+    List the currently downloaded pdfs.
+    """
+    return [
+        f.strip(".pdf") for f in os.listdir(Config.PDF_STORE_PATH)
+        if f.endswith(".pdf")
+    ]
+
 
 
 @app.get("/api/tokens/{sha}")
