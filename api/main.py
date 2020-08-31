@@ -40,7 +40,19 @@ def read_root():
     return {}
 
 
-@app.get("/api/pdf/{sha}")
+@app.get("/api/doc/{sha}")
+def get_metadata(sha: str) -> PaperMetadata:
+
+    metadata = os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json")
+    exists = os.path.exists(metadata)
+
+    if exists:
+        return PaperMetadata(**json.load(metadata))
+    else:
+        raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
+
+
+@app.get("/api/doc/{sha}/pdf")
 async def get_pdf(sha: str, download: bool = False):
     """
     Fetches a PDF. If the pdf doesn't exist in the PDF file store,
@@ -52,12 +64,17 @@ async def get_pdf(sha: str, download: bool = False):
         Whether or not to download the pdf from S3 if it
         is not present locally.
     """
-    pdf = os.path.join(Config.PDF_STORE_PATH, f"{sha}.pdf")
+    pdf = os.path.join(Config.PDF_STORE_PATH, sha, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
+        # TODO(Mark): We should push this pdf/metadata fetching off
+        # to the setup of a new annotation task, rather than do it on the fly here.
+
+        pdf_dir = os.path.join(Config.PDF_STORE_PATH, sha)
+        os.makedirs(pdf_dir, exist_ok=True)
 
         # Find the pdf for the paper sha.
-        result = bulk_fetch_pdfs_for_s2_ids([sha], Config.PDF_STORE_PATH)
+        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_dir)
         if sha in result["not_found"]:
             raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
@@ -73,7 +90,7 @@ async def get_pdf(sha: str, download: bool = False):
         if metadata is None:
             raise HTTPException(status_code=404, detail=f"Metadata not found for {sha}")
 
-        json.dump(metadata.to_dict(), open(os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json"), "w+"))
+        json.dump(metadata._asdict(), open(os.path.join(pdf_dir, "metadata.json"), "w+"))
 
     elif not pdf_exists:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
@@ -81,19 +98,7 @@ async def get_pdf(sha: str, download: bool = False):
     return FileResponse(pdf, media_type="application/pdf")
 
 
-@app.get("/api/pdf/{sha}/metadata")
-def get_metadata(sha: str) -> PaperMetadata:
-
-    metadata = os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json")
-    exists = os.path.exists(metadata)
-
-    if exists:
-        return PaperMetadata(**json.load(metadata))
-    else:
-        raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
-
-
-@app.get("/api/pdfs")
+@app.get("/api/docs")
 def list_downloaded_pdfs() -> List[str]:
     """
     List the currently downloaded pdfs.
@@ -104,7 +109,7 @@ def list_downloaded_pdfs() -> List[str]:
     ]
 
 
-@app.get("/api/tokens/{sha}")
+@app.get("/api/doc/{sha}/tokens")
 def get_tokens(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
@@ -126,7 +131,7 @@ def get_tokens(
     return response
 
 
-@app.get("/api/elements/{sha}")
+@app.get("/api/doc/{sha}/elements")
 def get_elements(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
@@ -148,7 +153,7 @@ def get_elements(
     return response
 
 
-@app.get("/api/regions/{sha}")
+@app.get("/api/doc/{sha}/regions")
 def get_regions(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
