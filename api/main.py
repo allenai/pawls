@@ -1,11 +1,15 @@
 from typing import List, Optional
 import logging
 import os
+import json
+import glob
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
 
 from app import pdf_structure
+from app.config import Config
+from app.metadata import get_paper_metadata, PaperMetadata
 from app.utils import StackdriverJsonFormatter, bulk_fetch_pdfs_for_s2_ids
 
 
@@ -37,7 +41,19 @@ def read_root():
     return {}
 
 
-@app.get("/api/pdf/{sha}")
+@app.get("/api/doc/{sha}")
+def get_metadata(sha: str) -> PaperMetadata:
+
+    metadata = os.path.join(Config.PDF_METADATA_PATH, sha, f"{sha}.json")
+    exists = os.path.exists(metadata)
+
+    if exists:
+        return PaperMetadata(**json.load(metadata))
+    else:
+        raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
+
+
+@app.get("/api/doc/{sha}/pdf")
 async def get_pdf(sha: str, download: bool = False):
     """
     Fetches a PDF. If the pdf doesn't exist in the PDF file store,
@@ -49,12 +65,17 @@ async def get_pdf(sha: str, download: bool = False):
         Whether or not to download the pdf from S3 if it
         is not present locally.
     """
-    pdf = os.path.join(pdf_structure.Config.PDF_STORE_PATH, f"{sha}.pdf")
+    pdf = os.path.join(Config.PDF_STORE_PATH, sha, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
 
-        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_structure.Config.PDF_STORE_PATH)
+        # TODO(Mark): We should push this pdf/metadata fetching off
+        # to the setup of a new annotation task, rather than do it on the fly here.
+        pdf_dir = os.path.join(Config.PDF_STORE_PATH, sha)
+        os.makedirs(pdf_dir, exist_ok=True)
 
+        # Find the pdf for the paper sha.
+        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_dir)
         if sha in result["not_found"]:
             raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
@@ -63,13 +84,34 @@ async def get_pdf(sha: str, download: bool = False):
                 status_code=404, detail=f"An error occured whilst fetching {sha}."
             )
 
+        # Find the metadata for the pdf.
+        metadata = get_paper_metadata(sha)
+        if metadata is None:
+            metadata = get_paper_metadata(sha, use_prod=True)
+        if metadata is None:
+            raise HTTPException(status_code=404, detail=f"Metadata not found for {sha}")
+
+        json.dump(metadata._asdict(), open(os.path.join(pdf_dir, "metadata.json"), "w+"))
+
     elif not pdf_exists:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
     return FileResponse(pdf, media_type="application/pdf")
 
 
-@app.get("/api/tokens/{sha}")
+@app.get("/api/docs")
+def list_downloaded_pdfs() -> List[str]:
+    """
+    List the currently downloaded pdfs.
+    """
+    # TODO(Mark): Guard against metadata not being present also.
+    pdfs = glob.glob(f"{Config.PDF_STORE_PATH}/*/*.pdf")
+    return [
+        p.split("/")[-2] for p in pdfs
+    ]
+
+
+@app.get("/api/doc/{sha}/tokens")
 def get_tokens(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
@@ -91,7 +133,7 @@ def get_tokens(
     return response
 
 
-@app.get("/api/elements/{sha}")
+@app.get("/api/doc/{sha}/elements")
 def get_elements(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),
@@ -113,7 +155,7 @@ def get_elements(
     return response
 
 
-@app.get("/api/regions/{sha}")
+@app.get("/api/doc/{sha}/regions")
 def get_regions(
     sha: str,
     sources: Optional[List[str]] = Query(["all"]),

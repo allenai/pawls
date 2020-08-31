@@ -34,7 +34,7 @@ export const PDFPage = () => {
 
     useEffect(() => {
         setDocument(undefined);
-        const pdfUrl = `/api/pdf/${sha}`;
+        const pdfUrl = `/api/doc/${sha}/pdf`;
         const loadingTask: PDFLoadingTask = pdfjs.getDocument(pdfUrl)
         loadingTask.onProgress = (p: pdfjs.PDFProgressData) => {
             setProgress(Math.round(p.loaded / p.total * 100));
