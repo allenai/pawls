@@ -1,11 +1,9 @@
 import React, { useContext, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
-import queryString from 'querystring';
+import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
 import { Result, Progress } from '@allenai/varnish';
-import { Link } from '@allenai/varnish-react-router';
-import { ArrowLeftOutlined, ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage } from '../components';
 
@@ -29,8 +27,6 @@ enum ViewState {
 
 export const PDFPage = () => {
     const { sha } = useParams<{ sha: string }>();
-    const history = useHistory();
-    const location = useLocation();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
@@ -60,15 +56,6 @@ export const PDFPage = () => {
         );
     }, [ sha ]);
 
-    const query: { page?: string } = queryString.parse(location.search.replace(/^[?]/, ''));
-    const currentPage = parseInt(query.page || "");
-    if (isNaN(currentPage) || currentPage < 1) {
-        history.replace(`/pdf/${sha}?page=1`);
-    }
-    if (doc && doc.numPages < currentPage) {
-        history.replace(`/pdf/${sha}?page=${doc.numPages}`);
-    }
-
     switch (viewState) {
         case ViewState.LOADING:
             return (
@@ -92,32 +79,10 @@ export const PDFPage = () => {
                 return (
                     <WithSidebar>
                         <Sidebar>
-                            <PageNav>
-                                {currentPage > 1 ? (
-                                    <PageLink to={`/pdf/${sha}?page=${currentPage - 1}`}>
-                                        <ArrowLeftOutlined />
-                                    </PageLink>
-                                ) : (
-                                    <DisabledPageLink>
-                                        <ArrowLeftOutlined />
-                                    </DisabledPageLink>
-                                )}
-                                <span>
-                                    Displaying {currentPage} of {doc.numPages}
-                                </span>
-                                {currentPage < doc.numPages ? (
-                                    <PageLink to={`/pdf/${sha}?page=${currentPage + 1}`}>
-                                        <ArrowRightOutlined />
-                                    </PageLink>
-                                ) : (
-                                    <DisabledPageLink>
-                                        <ArrowRightOutlined />
-                                    </DisabledPageLink>
-                                )}
-                            </PageNav>
+                            👋 Hi. There will be useful stuff here soon.
                         </Sidebar>
                         <PDFContainer>
-                            <PDF doc={doc} page={currentPage} />
+                            <PDF doc={doc} />
                         </PDFContainer>
                     </WithSidebar>
                 );
@@ -146,21 +111,8 @@ const Sidebar = styled.div(({ theme }) => `
     padding: ${theme.spacing.lg} ${theme.spacing.xl};
 `);
 
-const PageNav = styled.nav(({ theme }) => `
-    display: grid;
-    grid-template-columns: min-content auto min-content;
-    gap: ${theme.spacing.md};
-    text-align: center;
-`);
-
-const PageLink = styled(Link)`
-    color: #fff !important;
-`;
-
-const DisabledPageLink = styled.span`
-    color: rgba(255, 255, 255, 0.5);
-`;
-
-const PDFContainer = styled.div`
+const PDFContainer = styled.div(({ theme }) => `
     overflow: scroll;
-`
+    background: ${theme.color.N4};
+    padding: ${theme.spacing.sm};
+`);

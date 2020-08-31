@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState }  from 'react';
+import styled from 'styled-components';
 import { PDFPageProxy, PDFDocumentProxy, PDFRenderTask } from 'pdfjs-dist';
 import { Result } from '@allenai/varnish';
 
@@ -36,7 +37,12 @@ class PDFPageRenderer {
         const width = this.page.view[2] - this.page.view[1];
 
         // Scale it so the user doesn't have to scroll horizontally
-        const scale = Math.max(this.canvas.parentElement.clientWidth / width);
+        const parent = this.canvas.parentElement;
+        const parentStyles = getComputedStyle(parent);
+        const padding =
+            parseFloat(parentStyles.paddingLeft || "0") +
+            parseFloat(parentStyles.paddingRight || "0");
+        const scale = Math.max((this.canvas.parentElement.clientWidth - padding) / width);
 
         const viewport = this.page.getViewport({ scale });
         this.canvas.height = viewport.height;
@@ -79,15 +85,15 @@ const Page = ({ page, onError }: PageProps) => {
         }
     }, [ page, onError ]);
 
-    return <canvas ref={canvasRef} />;
+    return <PageCanvas ref={canvasRef} />;
 };
 
 interface PDFProps {
     doc: PDFDocumentProxy;
-    page?: number;
 }
 
 interface WithPageProps extends PDFProps, WithErrorCallback {
+    page: number;
     children: (page: PDFPageProxy) => React.ReactNode;
 }
 
@@ -117,16 +123,34 @@ export const PDF = (props: PDFProps) => {
     if (err) {
         console.error(`Error rendering PDF: `, err);
     }
+    const pageNos = [];
+    for (let i = 1; i <= props.doc.numPages; i++) {
+       pageNos.push(i);
+    }
     return (
         err ? (
             <Result
                 status="warning"
                 title="Unable to Render PDF" />
         ) : (
-            <WithPage {...{...props, onError: setError }}>
-                {p => <Page page={p} onError={setError} />}
-            </WithPage>
+            <>
+                {pageNos.map(pageNo => (
+                    <WithPage
+                        key={pageNo}
+                        doc={props.doc}
+                        page={pageNo}
+                        onError={setError}
+                    >
+                        { page => <Page page={page} onError={setError} /> }
+                    </WithPage>
+                ))}
+            </>
         )
     );
 };
+
+const PageCanvas = styled.canvas(({ theme }) => `
+    box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.2);
+    margin: 0 0 ${theme.spacing.xs};
+`);
 
