@@ -92,6 +92,7 @@ def get_metadata(sha: str) -> PaperMetadata:
     else:
         raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
 
+
 @app.get("/api/pdfs")
 def list_downloaded_pdfs() -> List[str]:
     """
@@ -101,7 +102,6 @@ def list_downloaded_pdfs() -> List[str]:
         f.strip(".pdf") for f in os.listdir(Config.PDF_STORE_PATH)
         if f.endswith(".pdf")
     ]
-
 
 
 @app.get("/api/tokens/{sha}")

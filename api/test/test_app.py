@@ -30,7 +30,9 @@ class TestApp(TestCase):
             os.makedirs(pdfs)
             metadata = os.path.join(temp_dir, "metadata")
             os.makedirs(metadata)
-            with mock.patch("app.config.Config.PDF_STORE_PATH", pdfs), mock.patch("app.config.Config.PDF_METADATA_PATH", metadata):
+            with mock.patch("app.config.Config.PDF_STORE_PATH", pdfs), mock.patch(
+                "app.config.Config.PDF_METADATA_PATH", metadata
+            ):
                 sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
                 response = self.client.get(f"/api/pdf/{sha}?download=true")
 

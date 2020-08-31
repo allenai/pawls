@@ -1,5 +1,3 @@
-
-
 class Config:
     """
     Configuration for anything related to pdfs. We wrap this up in a class
