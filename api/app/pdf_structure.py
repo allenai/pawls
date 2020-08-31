@@ -1,6 +1,5 @@
 from typing import List
 import os
-import six
 
 from fastapi import HTTPException
 
@@ -8,6 +7,8 @@ from pdfstructure.client.v1.api.default_api import DefaultApi
 from pdfstructure.client.v1.configuration import Configuration
 from pdfstructure.client.v1.api_client import ApiClient
 from pdfstructure.client.v1 import models as model
+
+from app.patch import to_dict_patch
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
@@ -17,50 +18,10 @@ IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 # This fixes it, so we are monkeypatching the one class we need.
 # See: https://github.com/allenai/s2-pdf-structure-service/issues/11
 
-
-def to_dict_patch(self):
-    """Returns the model properties as a dict"""
-
-    def handle_list(item):
-
-        ret = []
-        for i in item:
-            if hasattr(i, "to_dict"):
-                ret.append(i.to_dict())
-            else:
-                ret.append(i)
-        return ret
-
-    def handle_dict(item):
-        key, value = item
-
-        if hasattr(value, "to_dict"):
-            return (key, value.to_dict())
-        elif isinstance(value, list):
-            return (key, handle_list(value))
-        else:
-            return item
-
-    result = {}
-    for attr, _ in six.iteritems(self.openapi_types):
-        value = getattr(self, attr)
-        if isinstance(value, list):
-            result[attr] = list(
-                map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-            )
-        elif hasattr(value, "to_dict"):
-            result[attr] = value.to_dict()
-        elif isinstance(value, dict):
-            result[attr] = dict(map(handle_dict, value.items()))
-        else:
-            result[attr] = value
-
-    return result
-
-
 model.TextElementTypes.to_dict = to_dict_patch
+model.RegionTypes.to_dict = to_dict_patch
 
-pdf_structure_client = DefaultApi(
+PDF_STRUCTURE_CLIENT = DefaultApi(
     ApiClient(
         Configuration(
             host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com"
@@ -69,9 +30,100 @@ pdf_structure_client = DefaultApi(
 )
 
 
+class Config:
+    """
+    Configuration for anything related to pdfs. We wrap this up in a class
+    so that it's easier to test.
+
+    PDF_STORE_PATH: str
+        Where the raw pdfs are stored for annotation. In production, this uses
+        Skiff Files.
+    """
+
+    PDF_STORE_PATH: str = "/skiff_files/apps/pawls/pdfs/"
+
+
 # TODO(Mark): Wrap this in a LRU cache.
 def _get_annotations(sha: str) -> model.PdfAnnotations:
-    return pdf_structure_client.get_annotations(sha)
+    return PDF_STRUCTURE_CLIENT.get_annotations(sha)
+
+
+def filter_token_source_for_pages(token_source_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only token source information from the specified
+    pages.
+
+    token_source_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"tokens": {"sources": {}}}
+
+    for source, data in token_source_response["tokens"]["sources"].items():
+
+        new = data.copy()
+        new["pages"] = [data["pages"][page] for page in pages]
+        response["tokens"]["sources"][source] = new
+
+    return response
+
+
+def filter_text_elements_for_pages(text_element_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only text element information from the specified
+    pages.
+
+    text_element_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"text_elements": {"sources": {}}}
+
+    for source, data in text_element_response["text_elements"]["sources"].items():
+
+        new = data.copy()
+
+        for element_type, element_data in data["types"].items():
+
+            new["types"][element_type] = [
+                item for item in element_data if item["start"]["page"] in pages
+            ]
+
+        response["text_elements"]["sources"][source] = new
+
+    return response
+
+
+def filter_regions_for_pages(regions_response, pages: List[int]):
+    """
+    Given a JSON response from `get_annotations`, this function filters
+    the response to contain only region information from the specified
+    pages.
+
+    token_source_response:
+        The return value from `get_annotations()`
+    pages: List[int]
+        The pages to select.
+    """
+    response = {"regions": {"sources": {}}}
+
+    for source, data in regions_response["regions"]["sources"].items():
+
+        new = data.copy()
+
+        for element_type, element_data in data["types"].items():
+
+            new["types"][element_type] = [
+                item for item in element_data if item["page"]["index"] in pages
+            ]
+
+        response["regions"]["sources"][source] = new
+
+    return response
 
 
 def get_annotations(
@@ -93,7 +145,6 @@ def get_annotations(
         # Short circuit logic for all annotations.
         if "all" in token_sources:
             response["tokens"] = full_annotations.tokens.to_dict()
-
         else:
             response["tokens"] = {"sources": {}}
             for source in token_sources:
