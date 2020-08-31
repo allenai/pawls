@@ -2,6 +2,7 @@ from typing import List, Optional
 import logging
 import os
 import json
+import glob
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
@@ -43,7 +44,7 @@ def read_root():
 @app.get("/api/doc/{sha}")
 def get_metadata(sha: str) -> PaperMetadata:
 
-    metadata = os.path.join(Config.PDF_METADATA_PATH, f"{sha}.json")
+    metadata = os.path.join(Config.PDF_METADATA_PATH, sha, f"{sha}.json")
     exists = os.path.exists(metadata)
 
     if exists:
@@ -67,9 +68,9 @@ async def get_pdf(sha: str, download: bool = False):
     pdf = os.path.join(Config.PDF_STORE_PATH, sha, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
     if not pdf_exists and download:
+
         # TODO(Mark): We should push this pdf/metadata fetching off
         # to the setup of a new annotation task, rather than do it on the fly here.
-
         pdf_dir = os.path.join(Config.PDF_STORE_PATH, sha)
         os.makedirs(pdf_dir, exist_ok=True)
 
@@ -103,9 +104,10 @@ def list_downloaded_pdfs() -> List[str]:
     """
     List the currently downloaded pdfs.
     """
+    # TODO(Mark): Guard against metadata not being present also.
+    pdfs = glob.glob(f"{Config.PDF_STORE_PATH}/*/*.pdf")
     return [
-        f.strip(".pdf") for f in os.listdir(Config.PDF_STORE_PATH)
-        if f.endswith(".pdf")
+        p.split("/")[-2] for p in pdfs
     ]
 
 

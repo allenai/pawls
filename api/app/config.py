@@ -8,4 +8,4 @@ class Config:
         Skiff Files.
     """
 
-    PDF_STORE_PATH: str = "/skiff_files/apps/pawls/paper/"
+    PDF_STORE_PATH: str = "/skiff_files/apps/pawls/papers/"
