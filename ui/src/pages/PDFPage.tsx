@@ -50,8 +50,7 @@ export const PDFPage = () => {
             },
             (reason: any) => {
                 if (reason instanceof Error) {
-                    const err: Error = reason;
-                    if (err.name === 'MissingPDFException') {
+                    if (reason.name === 'MissingPDFException') {
                         setViewState(ViewState.NOT_FOUND);
                         return;
                     }
@@ -117,12 +116,13 @@ export const PDFPage = () => {
                                 )}
                             </PageNav>
                         </Sidebar>
-                        <CenterOnPage>
+                        <PDFContainer>
                             <PDF doc={doc} page={currentPage} />
-                        </CenterOnPage>
+                        </PDFContainer>
                     </WithSidebar>
                 );
             }
+        // eslint-disable-line: no-fallthrough
         case ViewState.ERROR:
             return (
                 <CenterOnPage>
@@ -161,3 +161,6 @@ const DisabledPageLink = styled.span`
     color: rgba(255, 255, 255, 0.5);
 `;
 
+const PDFContainer = styled.div`
+    overflow: scroll;
+`
