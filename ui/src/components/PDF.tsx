@@ -212,6 +212,7 @@ export const PDF = (props: PDFProps) => {
 
 const TokenSpan = styled.span(({ theme }) =>`
     position: absolute;
+    /* TODO (@codeviking): This is temporary. */
     border: 1px dotted ${theme.color.B4};
 `);
 
