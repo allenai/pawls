@@ -3,8 +3,11 @@ import styled from 'styled-components';
 import { PDFPageProxy, PDFDocumentProxy, PDFRenderTask } from 'pdfjs-dist';
 import { Result } from '@allenai/varnish';
 
+import { Token, TokensBySourceId, SourceId } from '../api';
+
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
+    public scale: number = 1;
     constructor(
         readonly page: PDFPageProxy,
         readonly canvas: HTMLCanvasElement | null,
@@ -42,9 +45,10 @@ class PDFPageRenderer {
         const padding =
             parseFloat(parentStyles.paddingLeft || "0") +
             parseFloat(parentStyles.paddingRight || "0");
-        const scale = Math.max((this.canvas.parentElement.clientWidth - padding) / width);
 
-        const viewport = this.page.getViewport({ scale });
+        this.scale = Math.max((this.canvas.parentElement.clientWidth - padding) / width);
+        const viewport = this.page.getViewport({ scale: this.scale });
+
         this.canvas.height = viewport.height;
         this.canvas.width = viewport.width;
 
@@ -67,32 +71,74 @@ interface WithErrorCallback {
 
 interface PageProps extends WithErrorCallback {
     page: PDFPageProxy;
+    tokens: Token[];
 }
 
-const Page = ({ page, onError }: PageProps) => {
+const Page = ({ page, tokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [ scale, setScale ] = useState<number>(1);
+    const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
     useEffect(() => {
         try {
+            const determinePageVisiblity = () => {
+                if (canvasRef.current !== null) {
+                    const windowTop = 0;
+                    const windowBottom = window.innerHeight;
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    setIsVisible(
+                        (rect.top > windowTop && rect.top < windowBottom) ||
+                        (rect.bottom > windowTop && rect.bottom < windowBottom) ||
+                        (rect.top < windowTop && rect.bottom > windowTop)
+                    );
+                }
+            };
+
             const renderer = new PDFPageRenderer(page, canvasRef.current);
             renderer.render();
+            setScale(renderer.scale);
+            determinePageVisiblity();
 
-            const rescalePdf = () => { renderer.rescaleAndRender(onError) };
-            window.addEventListener('resize', rescalePdf);
-            return () => { window.removeEventListener('resize', rescalePdf) };
+            const handleResize = () => {
+                renderer.rescaleAndRender(onError)
+                setScale(renderer.scale);
+                determinePageVisiblity();
+            };
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('scroll', determinePageVisiblity);
+            return () => {
+                window.removeEventListener('resize', handleResize)
+                window.removeEventListener('scroll', determinePageVisiblity);
+            };
         } catch (e) {
             onError(e);
         }
     }, [ page, onError ]);
 
-    return <PageCanvas ref={canvasRef} />;
+    return (
+        <PageAnnotationsContainer>
+            <PageCanvas ref={canvasRef} />
+            {// We only render the tokens if the page is visible, as rendering them all makes the
+             // page slow and/or crash.
+            isVisible && tokens.map((t, i) => (
+                <TokenSpan
+                    key={i}
+                    style={{
+                        left: t.x * scale,
+                        top: t.y * scale,
+                        width: t.width * scale,
+                        height: t.height * scale
+                    }} />
+            ))}
+        </PageAnnotationsContainer>
+    );
 };
 
-interface PDFProps {
+interface WithDoc {
     doc: PDFDocumentProxy;
 }
 
-interface WithPageProps extends PDFProps, WithErrorCallback {
+interface WithPageProps extends WithDoc, WithErrorCallback {
     page: number;
     children: (page: PDFPageProxy) => React.ReactNode;
 }
@@ -118,14 +164,24 @@ const WithPage = ({ doc, page, onError, children }: WithPageProps) => {
     return pdfPage ? <>{children(pdfPage)}</> : null;
 };
 
+interface PDFProps extends WithDoc {
+    tokens: TokensBySourceId;
+}
+
 export const PDF = (props: PDFProps) => {
     const [ err, setError ] = useState<Error>();
     if (err) {
         console.error(`Error rendering PDF: `, err);
     }
     const pageNos = [];
-    for (let i = 1; i <= props.doc.numPages; i++) {
-       pageNos.push(i);
+    const grobidTokensByPage: Token[][] = [];
+    for (let i = 0; i < props.doc.numPages; i++) {
+        pageNos.push(i + 1);
+        grobidTokensByPage.push(
+            i in props.tokens[SourceId.GROBID].pages
+                ? props.tokens[SourceId.GROBID].pages[i].tokens
+                : []
+        );
     }
     return (
         err ? (
@@ -141,7 +197,12 @@ export const PDF = (props: PDFProps) => {
                         page={pageNo}
                         onError={setError}
                     >
-                        { page => <Page page={page} onError={setError} /> }
+                        { page => (
+                            <Page
+                                page={page}
+                                tokens={grobidTokensByPage[pageNo - 1]}
+                                onError={setError} />
+                        )}
                     </WithPage>
                 ))}
             </>
@@ -149,8 +210,22 @@ export const PDF = (props: PDFProps) => {
     );
 };
 
-const PageCanvas = styled.canvas(({ theme }) => `
+const TokenSpan = styled.span(({ theme }) =>`
+    position: absolute;
+    border: 1px dotted ${theme.color.B4};
+`);
+
+const PageAnnotationsContainer = styled.div(({ theme }) =>`
+    position: relative;
     box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.2);
     margin: 0 0 ${theme.spacing.xs};
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 `);
+
+const PageCanvas = styled.canvas`
+    display: block;
+`;
 

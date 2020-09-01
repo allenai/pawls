@@ -6,6 +6,7 @@ import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage } from '../components';
+import { pdfURL, getTokens, TokensResponse, TokensBySourceId } from '../api';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -29,19 +30,27 @@ export const PDFPage = () => {
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
+    const [ tokens, setTokens ] = useState<TokensBySourceId>();
     const [ progress, setProgress ] = useState(0);
     const theme = useContext(ThemeContext);
 
     useEffect(() => {
         setDocument(undefined);
-        const pdfUrl = `/api/doc/${sha}/pdf`;
-        const loadingTask: PDFLoadingTask = pdfjs.getDocument(pdfUrl)
+        const loadingTask: PDFLoadingTask = pdfjs.getDocument(pdfURL(sha))
         loadingTask.onProgress = (p: pdfjs.PDFProgressData) => {
             setProgress(Math.round(p.loaded / p.total * 100));
         };
-        loadingTask.promise.then(
-            doc => {
+        Promise.all([
+            // PDF.js uses their own `Promise` type, which according to TypeScript doesn't overlap
+            // with the base `Promise` interface. To resolve this we (unsafely) cast the PDF.js
+            // specific `Promise` back to a generic one. This works, but might have unexpected
+            // side-effects, so we should remain wary of this code.
+            loadingTask.promise as unknown as Promise<pdfjs.PDFDocumentProxy>,
+            getTokens(sha)
+        ]).then(
+            ([ doc, resp ]: [ pdfjs.PDFDocumentProxy, TokensResponse ]) => {
                 setDocument(doc);
+                setTokens(resp.tokens.sources);
                 setViewState(ViewState.LOADED);
             },
             (reason: any) => {
@@ -75,14 +84,14 @@ export const PDFPage = () => {
                 </CenterOnPage>
             );
         case ViewState.LOADED:
-            if (doc) {
+            if (doc && tokens) {
                 return (
                     <WithSidebar>
                         <Sidebar>
                             👋 Hi. There will be useful stuff here soon.
                         </Sidebar>
                         <PDFContainer>
-                            <PDF doc={doc} />
+                            <PDF doc={doc} tokens={tokens} />
                         </PDFContainer>
                     </WithSidebar>
                 );
@@ -102,7 +111,9 @@ export const PDFPage = () => {
 const WithSidebar = styled.div`
     display: grid;
     flex-grow: 1;
-    grid-template-columns: 300px auto;
+    /* The minmax() here ensures that the PDF only fills the available width.
+       See: https://css-tricks.com/preventing-a-grid-blowout/ */
+    grid-template-columns: 300px minmax(0, 1fr);
 `;
 
 const Sidebar = styled.div(({ theme }) => `
@@ -112,7 +123,6 @@ const Sidebar = styled.div(({ theme }) => `
 `);
 
 const PDFContainer = styled.div(({ theme }) => `
-    overflow: scroll;
     background: ${theme.color.N4};
     padding: ${theme.spacing.sm};
 `);
