@@ -53,9 +53,11 @@ export const PDFPage = () => {
                 setTokens(resp.tokens.sources);
                 setViewState(ViewState.LOADED);
             },
-            (reason: any) => {
-                if (reason instanceof Error) {
-                    if (reason.name === 'MissingPDFException') {
+            (err: any) => {
+                if (err instanceof Error) {
+                    // We have to use the message because minification in production obfuscates
+                    // the error name.
+                    if (err.message === 'Request failed with status code 404') {
                         setViewState(ViewState.NOT_FOUND);
                         return;
                     }
@@ -85,16 +87,17 @@ export const PDFPage = () => {
             );
         case ViewState.LOADED:
             if (doc && tokens) {
+                const sidebarWidth = "300px";
                 return (
                     <>
-                    <Sidebar width={"300px"}>
-                        👋 Hi. There will be useful stuff here soon.
-                    </Sidebar>
-                    <WithSidebar>
-                        <PDFContainer>
-                            <PDF doc={doc} tokens={tokens} />
-                        </PDFContainer>
-                    </WithSidebar>
+                        <WithSidebar width={sidebarWidth}>
+                            <Sidebar width={sidebarWidth}>
+                                Hi. There will be useful stuff here soon.
+                            </Sidebar>
+                            <PDFContainer>
+                                <PDF doc={doc} tokens={tokens} />
+                            </PDFContainer>
+                        </WithSidebar>
                     </>
                 );
             }
@@ -110,19 +113,21 @@ export const PDFPage = () => {
     }
 };
 
-const WithSidebar = styled.div`
+interface HasWidth {
+    width: string;
+}
+
+const WithSidebar = styled.div<HasWidth>(({ width }) =>`
     display: grid;
     flex-grow: 1;
-    padding-left: 300px;
-`;
+    grid-template-columns: minmax(0, 1fr);
+    padding-left: ${width};
+`);
 
-interface SidebarProps {
-    width: string;
- }
-
-const Sidebar = styled.div<SidebarProps>(({ theme, width }) => `
+const Sidebar = styled.div<HasWidth>(({ theme, width }) => `
     width: ${width};
     position: fixed;
+    left: 0;
     overflow-y: scroll;
     background: ${theme.color.N10};
     color: ${theme.color.N1};
