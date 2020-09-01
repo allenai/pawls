@@ -5,7 +5,7 @@ import pdfjs from 'pdfjs-dist';
 import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage, Sidebar } from '../components';
+import { PDF, CenterOnPage } from '../components';
 import { pdfURL, getTokens, TokensResponse, TokensBySourceId } from '../api';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -86,12 +86,16 @@ export const PDFPage = () => {
         case ViewState.LOADED:
             if (doc && tokens) {
                 return (
+                    <>
+                    <Sidebar width={"300px"}>
+                        👋 Hi. There will be useful stuff here soon.
+                    </Sidebar>
                     <WithSidebar>
-                        <Sidebar/>
                         <PDFContainer>
                             <PDF doc={doc} tokens={tokens} />
                         </PDFContainer>
                     </WithSidebar>
+                    </>
                 );
             }
         // eslint-disable-line: no-fallthrough
@@ -109,10 +113,23 @@ export const PDFPage = () => {
 const WithSidebar = styled.div`
     display: grid;
     flex-grow: 1;
-    /* The minmax() here ensures that the PDF only fills the available width.
-       See: https://css-tricks.com/preventing-a-grid-blowout/ */
-    grid-template-columns: 300px minmax(0, 1fr);
+    padding-left: 300px;
 `;
+
+interface SidebarProps {
+    width: string;
+ }
+
+const Sidebar = styled.div<SidebarProps>(({ theme, width }) => `
+    width: ${width};
+    position: fixed;
+    overflow-y: scroll;
+    background: ${theme.color.N10};
+    color: ${theme.color.N1};
+    padding: ${theme.spacing.lg} ${theme.spacing.xl};
+    height: 100vh;
+`);
+
 
 const PDFContainer = styled.div(({ theme }) => `
     background: ${theme.color.N4};
