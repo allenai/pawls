@@ -5,7 +5,7 @@ import pdfjs from 'pdfjs-dist';
 import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage } from '../components';
+import { PDF, CenterOnPage, Sidebar } from '../components';
 import { pdfURL, getTokens, TokensResponse, TokensBySourceId } from '../api';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -87,9 +87,7 @@ export const PDFPage = () => {
             if (doc && tokens) {
                 return (
                     <WithSidebar>
-                        <Sidebar>
-                            👋 Hi. There will be useful stuff here soon.
-                        </Sidebar>
+                        <Sidebar/>
                         <PDFContainer>
                             <PDF doc={doc} tokens={tokens} />
                         </PDFContainer>
@@ -115,12 +113,6 @@ const WithSidebar = styled.div`
        See: https://css-tricks.com/preventing-a-grid-blowout/ */
     grid-template-columns: 300px minmax(0, 1fr);
 `;
-
-const Sidebar = styled.div(({ theme }) => `
-    background: ${theme.color.N10};
-    color: ${theme.color.N1};
-    padding: ${theme.spacing.lg} ${theme.spacing.xl};
-`);
 
 const PDFContainer = styled.div(({ theme }) => `
     background: ${theme.color.N4};
