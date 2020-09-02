@@ -20,7 +20,9 @@ class PDFPageRenderer {
             () => {},
             (err: any) => {
                 if (err instanceof Error) {
-                    if (err.name !== 'RenderingCancelledException') {
+                    // We have to use the message because minification in production obfuscates
+                    // the error name.
+                    if (err.message.indexOf('Rendering cancelled')) {
                         onError(err);
                     }
                 } else {
