@@ -4,16 +4,23 @@ import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Header
 from fastapi.responses import FileResponse
 
 from app import pdf_structure
-from app.config import Config
-from app.metadata import get_paper_metadata, PaperMetadata
-from app.utils import StackdriverJsonFormatter, bulk_fetch_pdfs_for_s2_ids
-
+from app.metadata import PaperMetadata
+from app.utils import StackdriverJsonFormatter
+from app import pre_serve
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
+
+CONFIGURATION_FILE = os.getenv(
+    "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
+)
+
+ANNOTATORS_FILE = os.getenv(
+    "PAWLS_ANNOTATORS_FILE", "/usr/local/src/skiff/app/api/config/annotators.json"
+)
 
 handlers = None
 
@@ -27,6 +34,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("uvicorn")
 
+# boto3 logging is _super_ verbose.
+logging.getLogger("boto3").setLevel(logging.CRITICAL)
+logging.getLogger("botocore").setLevel(logging.CRITICAL)
+logging.getLogger("nose").setLevel(logging.CRITICAL)
+logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
+
+# The annotation app requires a bit of set up.
+configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
+annotators = pre_serve.load_annotators(ANNOTATORS_FILE)
+pre_serve.maybe_download_pdfs(configuration)
 
 app = FastAPI()
 
@@ -44,7 +61,7 @@ def read_root():
 @app.get("/api/doc/{sha}")
 def get_metadata(sha: str) -> PaperMetadata:
 
-    metadata = os.path.join(Config.PDF_METADATA_PATH, sha, f"{sha}.json")
+    metadata = os.path.join(configuration.output_directory, sha, f"{sha}.json")
     exists = os.path.exists(metadata)
 
     if exists:
@@ -54,46 +71,16 @@ def get_metadata(sha: str) -> PaperMetadata:
 
 
 @app.get("/api/doc/{sha}/pdf")
-async def get_pdf(sha: str, download: bool = False):
+async def get_pdf(sha: str):
     """
-    Fetches a PDF. If the pdf doesn't exist in the PDF file store,
-    it is downloaded from S3 if the `download` query parameter is passed.
+    Fetches a PDF.
 
     sha: str
         The sha of the pdf to return.
-    download: bool (default = False)
-        Whether or not to download the pdf from S3 if it
-        is not present locally.
     """
-    pdf = os.path.join(Config.PDF_STORE_PATH, sha, f"{sha}.pdf")
+    pdf = os.path.join(configuration.output_directory, sha, f"{sha}.pdf")
     pdf_exists = os.path.exists(pdf)
-    if not pdf_exists and download:
-
-        # TODO(Mark): We should push this pdf/metadata fetching off
-        # to the setup of a new annotation task, rather than do it on the fly here.
-        pdf_dir = os.path.join(Config.PDF_STORE_PATH, sha)
-        os.makedirs(pdf_dir, exist_ok=True)
-
-        # Find the pdf for the paper sha.
-        result = bulk_fetch_pdfs_for_s2_ids([sha], pdf_dir)
-        if sha in result["not_found"]:
-            raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
-
-        if sha in result["error"]:
-            raise HTTPException(
-                status_code=404, detail=f"An error occured whilst fetching {sha}."
-            )
-
-        # Find the metadata for the pdf.
-        metadata = get_paper_metadata(sha)
-        if metadata is None:
-            metadata = get_paper_metadata(sha, use_prod=True)
-        if metadata is None:
-            raise HTTPException(status_code=404, detail=f"Metadata not found for {sha}")
-
-        json.dump(metadata._asdict(), open(os.path.join(pdf_dir, "metadata.json"), "w+"))
-
-    elif not pdf_exists:
+    if not pdf_exists:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
     return FileResponse(pdf, media_type="application/pdf")
@@ -105,10 +92,8 @@ def list_downloaded_pdfs() -> List[str]:
     List the currently downloaded pdfs.
     """
     # TODO(Mark): Guard against metadata not being present also.
-    pdfs = glob.glob(f"{Config.PDF_STORE_PATH}/*/*.pdf")
-    return [
-        p.split("/")[-2] for p in pdfs
-    ]
+    pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
+    return [p.split("/")[-2] for p in pdfs]
 
 
 @app.get("/api/doc/{sha}/tokens")
@@ -174,3 +159,29 @@ def get_regions(
     if pages is not None:
         response = pdf_structure.filter_regions_for_pages(response, pages)
     return response
+
+
+@app.get("/api/annotation/labels")
+def get_labels() -> List[str]:
+    """
+    Get the labels used for annotation for this app.
+    """
+    return configuration.labels
+
+
+@app.get("/api/annotation/allocation")
+def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
+    """
+    Get the allocated pdfs for this user. We use the X-Auth-Request-Email
+    header to identify the user, which needs to correlate with the users
+    present in the annotators.json config file.
+    """
+
+    if x_auth_request_email is None:
+        raise HTTPException(status_code=401, detail="Not authenticated for annotation.")
+
+    allocation = annotators.allocations.get(x_auth_request_email, None)
+    if allocation is None:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    return allocation

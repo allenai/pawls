@@ -11,9 +11,7 @@ ES_CLIENTS = {"dev": None, "prod": None}
 
 def _get_es_client(use_prod=False):
     host = ELASTIC_SEARCH_URL_PORT_PROD if use_prod else ELASTIC_SEARCH_URL_PORT_DEV
-    return elasticsearch.Elasticsearch(
-            hosts=[{"host": host, "port": 9200}], timeout=5
-        )
+    return elasticsearch.Elasticsearch(hosts=[{"host": host, "port": 9200}], timeout=5)
 
 
 class PaperMetadata(NamedTuple):
