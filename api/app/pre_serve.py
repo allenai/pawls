@@ -6,13 +6,14 @@ import os
 
 from app.metadata import get_paper_metadata
 from app.utils import bulk_fetch_pdfs_for_s2_ids
-
+from app.structure import process_grobid
 
 class Configuration(NamedTuple):
 
     output_directory: str
     labels: List[str]
     pdfs: List[str]
+    preprocessors: List[str] = None
 
 
 class Annotators(NamedTuple):
@@ -62,3 +63,10 @@ def maybe_download_pdfs(configuration: Configuration):
             metadata = get_paper_metadata(sha, use_prod=True)
 
         json.dump(metadata._asdict(), open(metadata_path, "w+"))
+
+
+def run_preprocessors(configuration: Configuration):
+
+    if "grobid" in configuration.preprocessors:
+
+        process_grobid()
