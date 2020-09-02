@@ -1,4 +1,4 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Callable
 import os
 
 import boto3
@@ -29,8 +29,14 @@ class StackdriverJsonFormatter(jsonlogger.JsonFormatter):
 S3_BUCKET_PDFS = {"default": "ai2-s2-pdfs", "private": "ai2-s2-pdfs-private"}
 
 
+def _default_pdf_path(target_dir: str, sha: str):
+    return os.path.join(target_dir, f"{sha}.pdf")
+
+
 def bulk_fetch_pdfs_for_s2_ids(
-    s2_ids: List[str], target_dir: str
+    s2_ids: List[str],
+    target_dir: str,
+    pdf_path_func: Callable[[str, str], str] = _default_pdf_path,
 ) -> Dict[str, Set[str]]:
     """
     s2_ids: List[str]
@@ -38,6 +44,9 @@ def bulk_fetch_pdfs_for_s2_ids(
 
     target_dir: str,
         The directory to download them to.
+    pdf_path_func: str, optional (default = None)
+        A callable function taking 2 parameters: target_dir and sha,
+        which returns a string used as the path to download an individual pdf.
 
     Note:
     User is responsible for figuring out whether the PDF already exists before
@@ -60,7 +69,7 @@ def bulk_fetch_pdfs_for_s2_ids(
         try:
             default_bucket.download_file(
                 os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
-                os.path.join(target_dir, f"{s2_id}.pdf"),
+                pdf_path_func(target_dir, s2_id),
             )
             success.add(s2_id)
 
@@ -69,7 +78,7 @@ def bulk_fetch_pdfs_for_s2_ids(
                 try:
                     private_bucket.download_file(
                         os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
-                        os.path.join(target_dir, f"{s2_id}.pdf"),
+                        pdf_path_func(target_dir, s2_id),
                     )
                     success.add(s2_id)
 

@@ -8,6 +8,7 @@ uvicorn
 
 # used for testing/formatting
 pytest
+pytest-env
 flake8
 black
 
