@@ -67,6 +67,33 @@ class PDFPageRenderer {
     }
 }
 
+function relativeTo(bounds: Bounds, container: HTMLElement): Bounds {
+    return {
+        left: bounds.left - container.offsetLeft,
+        top: bounds.top - container.offsetTop,
+        right: bounds.right - container.offsetLeft,
+        bottom: bounds.bottom - container.offsetTop
+    };
+}
+
+function scaled(bounds: Bounds, scale: number): Bounds {
+    return {
+        left: bounds.left * scale,
+        top: bounds.top * scale,
+        right: bounds.right * scale,
+        bottom: bounds.bottom * scale
+    };
+}
+
+function doOverlap(a: Bounds, b: Bounds): boolean {
+    if (a.left >= b.right || a.right <= b.left) {
+        return false;
+    } else if (a.bottom <= b.top || a.top >= b.bottom) {
+        return false;
+    }
+    return true;
+}
+
 interface WithErrorCallback {
     onError: (e: Error) => void;
 }
@@ -74,10 +101,12 @@ interface WithErrorCallback {
 interface PageProps extends WithErrorCallback {
     page: PDFPageProxy;
     tokens: Token[];
+    selection?: Bounds;
 }
 
-const Page = ({ page, tokens, onError }: PageProps) => {
+const Page = ({ page, tokens, selection, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [ scale, setScale ] = useState<number>(1);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -118,20 +147,39 @@ const Page = ({ page, tokens, onError }: PageProps) => {
     }, [ page, onError ]);
 
     return (
-        <PageAnnotationsContainer>
+        <PageAnnotationsContainer ref={containerRef}>
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-            isVisible && tokens.map((t, i) => (
-                <TokenSpan
-                    key={i}
-                    style={{
-                        left: t.x * scale,
-                        top: t.y * scale,
-                        width: t.width * scale,
-                        height: t.height * scale
-                    }} />
-            ))}
+                isVisible && tokens.map((t, i) => {
+                    // Calculate the bounds of the token. We have to scale the bounds so that
+                    // they're relative to the viewport, as the values are relative to the PDF
+                    // document.
+                    const tokenBounds = scaled({
+                        left: t.x,
+                        top: t.y,
+                        right: t.x + t.width,
+                        bottom: t.y + t.height
+                    }, scale);
+
+                    const isSelected = (selection && containerRef.current) ? (
+                        doOverlap(
+                            relativeTo(selection, containerRef.current),
+                            tokenBounds
+                        )
+                    ) : false;
+                    return (
+                        <TokenSpan
+                            key={i}
+                            isSelected={isSelected}
+                            style={{
+                                left: `${tokenBounds.left}px`,
+                                top: `${tokenBounds.top}px`,
+                                width: `${tokenBounds.right - tokenBounds.left}px`,
+                                height: `${tokenBounds.bottom - tokenBounds.top}px`
+                            }} />
+                        )
+                })}
         </PageAnnotationsContainer>
     );
 };
@@ -170,20 +218,32 @@ interface PDFProps extends WithDoc {
     tokens: TokensBySourceId;
 }
 
+interface Bounds {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
 export const PDF = (props: PDFProps) => {
     const [ err, setError ] = useState<Error>();
     if (err) {
         console.error(`Error rendering PDF: `, err);
     }
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [ selection, setSelection ] = useState<Bounds>();
+
     const pageNos = [];
     const grobidTokensByPage: Token[][] = [];
     for (let i = 0; i < props.doc.numPages; i++) {
         pageNos.push(i + 1);
-        grobidTokensByPage.push(
+        const pageTokens = (
             i in props.tokens[SourceId.GROBID].pages
                 ? props.tokens[SourceId.GROBID].pages[i].tokens
                 : []
         );
+        grobidTokensByPage.push(pageTokens);
     }
     return (
         err ? (
@@ -191,7 +251,42 @@ export const PDF = (props: PDFProps) => {
                 status="warning"
                 title="Unable to Render PDF" />
         ) : (
-            <>
+            <PDFAnnotationsContainer
+                ref={containerRef}
+                onMouseDown={(event) => {
+                    if (containerRef.current === null) {
+                        throw new Error('No Container');
+                    }
+                    if (!selection) {
+                        const left = event.pageX - containerRef.current.offsetLeft;
+                        const top = event.pageY - containerRef.current.offsetTop;
+                        setSelection({
+                            left,
+                            top,
+                            right: left + 10,
+                            bottom: top + 10
+                        });
+                    }
+                }}
+                onMouseMove={selection ? (
+                    (event) => {
+                        if (containerRef.current === null) {
+                            throw new Error('No Container');
+                        }
+                        setSelection({
+                            ...selection,
+                            right: event.pageX - containerRef.current.offsetLeft,
+                            bottom: event.pageY - containerRef.current.offsetTop
+                        });
+                    }
+                ) : undefined}
+                onMouseUp={selection ? (
+                    () => {
+                        // TODO (@codeviking): Capture the current selection and save it.
+                        setSelection(undefined);
+                    }
+                ) : undefined}
+            >
                 {pageNos.map(pageNo => (
                     <WithPage
                         key={pageNo}
@@ -203,19 +298,42 @@ export const PDF = (props: PDFProps) => {
                             <Page
                                 page={page}
                                 tokens={grobidTokensByPage[pageNo - 1]}
+                                selection={selection}
                                 onError={setError} />
                         )}
                     </WithPage>
                 ))}
-            </>
+                {selection ? (
+                    <Selection
+                        style={{
+                            left: `${selection.left}px`,
+                            top: `${selection.top}px`,
+                            width: `${selection.right - selection.left}px`,
+                            height: `${selection.bottom - selection.top}px`
+                        }} />
+                ) : null}
+            </PDFAnnotationsContainer>
         )
     );
 };
 
-const TokenSpan = styled.span(({ theme }) =>`
+const PDFAnnotationsContainer = styled.div`
+    position: relative;
+`;
+
+const Selection = styled.div(({ theme }) => `
     position: absolute;
-    /* TODO (@codeviking): This is temporary. */
-    border: 1px dotted ${theme.color.B4};
+    border: 1px dotted ${theme.color.G4};
+`);
+
+interface TokenSpanProps {
+    isSelected?: boolean;
+}
+
+const TokenSpan = styled.span<TokenSpanProps>(({ theme, isSelected }) =>`
+    position: absolute;
+    background: ${isSelected ? theme.color.B6 : 'none'};
+    opacity: 0.4;
 `);
 
 const PageAnnotationsContainer = styled.div(({ theme }) =>`
