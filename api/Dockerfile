@@ -16,8 +16,9 @@ RUN pip install -r requirements.txt
 
 # Copy over the source code
 COPY app app/
+COPY config config/
 COPY main.py main.py
 
 # Kick things off
 ENTRYPOINT [ "uvicorn" ]
-CMD ["main:app", "--host", "0.0.0.0"]
+CMD ["main:main()", "--host", "0.0.0.0"]
