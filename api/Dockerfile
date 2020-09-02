@@ -21,4 +21,4 @@ COPY main.py main.py
 
 # Kick things off
 ENTRYPOINT [ "uvicorn" ]
-CMD ["main:main()", "--host", "0.0.0.0"]
+CMD ["main:app", "--host", "0.0.0.0"]

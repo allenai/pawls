@@ -1,5 +1,5 @@
 {
     "output_directory": "/tmp/pawls/papers/",
-    "labels": [],
+    "labels": ["test", "label"],
     "pdfs": []
 }

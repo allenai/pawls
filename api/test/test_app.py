@@ -19,3 +19,27 @@ class TestApp(TestCase):
 
         response = self.client.get("/api/doc/not_a_pdf/pdf")
         assert response.status_code == 404
+
+    def test_get_labels(self):
+
+        response = self.client.get("/api/annotation/labels")
+        assert response.json() == ["test", "label"]
+
+    def test_get_allocations(self):
+
+        response = self.client.get(
+            "/api/annotation/allocation",
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+        assert response.json() == ["paper1", "paper2"]
+
+        # No header
+        response = self.client.get("/api/annotation/allocation")
+        assert response.status_code == 401
+
+        # Header, no annotations
+        response = self.client.get(
+            "/api/annotation/allocation",
+            headers={"X-Auth-Request-Email": "nonexistent@gmail.com"},
+        )
+        assert response.status_code == 404

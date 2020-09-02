@@ -1,4 +1,9 @@
 {
-    "annotators": [],
-    "allocations": {}
+    "annotators": ["example@gmail.com"],
+    "allocations": {
+        "example@gmail.com": [
+            "paper1",
+            "paper2"
+        ]
+    }
 }
