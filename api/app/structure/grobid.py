@@ -1,4 +1,3 @@
-import os
 import json
 import requests
 
@@ -162,9 +161,6 @@ def parse_annotations(grobid_structure, source="grobid_test") -> models.PdfAnnot
     return annotations
 
 
-IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
-
-
 def process_grobid(
     sha: str,
     pdf_file: str,
@@ -193,7 +189,7 @@ def process_grobid(
     client = DefaultApi(
         ApiClient(
             Configuration(
-                host=f"http://pdf-structure-{IN_PRODUCTION}.us-west-2.elasticbeanstalk.com"
+                host=f"http://pdf-structure-{env}.us-west-2.elasticbeanstalk.com"
             )
         )
     )

@@ -4,10 +4,12 @@ import json
 import glob
 import os
 
-import boto3
-
 from app.metadata import get_paper_metadata
 from app.utils import bulk_fetch_pdfs_for_s2_ids
+
+from app.structure.grobid import process_grobid
+
+IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
 
 class Configuration(NamedTuple):
@@ -16,7 +18,6 @@ class Configuration(NamedTuple):
     labels: List[str]
     pdfs: List[str]
     preprocessors: List[str] = None
-    preprocessor_sqs_queue: str
 
 
 class Annotators(NamedTuple):
@@ -67,16 +68,6 @@ def maybe_download_pdfs(configuration: Configuration):
 
         json.dump(metadata._asdict(), open(metadata_path, "w+"))
 
-        # Queue up processing for the new sha.
-        enqueue_structure(sha, configuration)
-
-
-def enqueue_structure(sha: str, configuration: Configuration):
-
-    client = boto3.client('sqs')
-    for processor in configuration.preprocessors:
-        msg = {'source': processor, 'sha': sha.strip()}
-        client.send_message(
-            QueueUrl=configuration.preprocessor_sqs_queue,
-            MessageBody=json.dumps(msg)
-        )
+        if "grobid" in configuration.preprocessors:
+            pdf_path = _per_dir_pdf_download(configuration.output_directory, sha)
+            process_grobid(sha, pdf_path, env=IN_PRODUCTION)
