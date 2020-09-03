@@ -86,9 +86,9 @@ def parse_annotations(grobid_structure, source="grobid_test") -> models.PdfAnnot
         for p in pages:
             token_count = len(p.tokens)
             if left >= 0 and left < token_count:
-                text += [t.text for t in p.tokens[left: min(right, token_count)]]
+                text += [t.text for t in p.tokens[left : min(right, token_count)]]
             elif right >= 0 and right < token_count:
-                text += [t.text for t in p.tokens[max(left, 0): right]]
+                text += [t.text for t in p.tokens[max(left, 0) : right]]
             left -= token_count
             right -= token_count
             if left < 0 and right < 0:
@@ -146,7 +146,11 @@ def parse_annotations(grobid_structure, source="grobid_test") -> models.PdfAnnot
                                 ),
                             )
                         )
-                        append_span(models.Span(start=models.Offset(page=end.page, token=0), end=end))
+                        append_span(
+                            models.Span(
+                                start=models.Offset(page=end.page, token=0), end=end
+                            )
+                        )
                 el = models.TextElement(
                     start=offset_of_token(first_span["left"]), spans=spans, tags=tags
                 )
@@ -166,7 +170,7 @@ def process_grobid(
     pdf_file: str,
     grobid_host: str = "http://s2-grobid-tokens.us-west-2.elasticbeanstalk.com",
     source: str = "grobid",
-    env: str = "dev"
+    env: str = "dev",
 ):
     """
     Integration for importing annotations from grobid.
@@ -200,10 +204,7 @@ def process_grobid(
         sha, text_element_data="none", token_data="none"
     )
 
-    if (
-        existing_annotations.tokens and
-        source in existing_annotations.tokens.sources
-    ):
+    if existing_annotations.tokens and source in existing_annotations.tokens.sources:
         return
 
     client.add_annotations(sha, annotations)

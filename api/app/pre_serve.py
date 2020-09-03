@@ -30,6 +30,7 @@ class Configuration(NamedTuple):
         Optional pre-processing steps to apply to pdfs. Currently,
         the only supported option is "grobid".
     """
+
     output_directory: str
     labels: List[str]
     pdfs: List[str]
@@ -47,6 +48,7 @@ class Annotators(NamedTuple):
         A mapping from annotator emails to lists of pdf shas
         to which they are assigned.
     """
+
     annotators: List[str]
     allocations: Dict[str, List[str]]
 
