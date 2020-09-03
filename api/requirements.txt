@@ -2,6 +2,9 @@
 # Skiff logging
 python-json-logger==0.1.10
 
+# Grobid integration fetches things
+requests
+
 # Server
 fastapi
 uvicorn
