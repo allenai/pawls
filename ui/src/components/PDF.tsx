@@ -67,6 +67,17 @@ class PDFPageRenderer {
     }
 }
 
+interface Bounds {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+/**
+ * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
+ * element.
+ */
 function relativeTo(bounds: Bounds, container: HTMLElement): Bounds {
     return {
         left: bounds.left - container.offsetLeft,
@@ -76,6 +87,9 @@ function relativeTo(bounds: Bounds, container: HTMLElement): Bounds {
     };
 }
 
+/**
+ * Returns the provided bounds scaled by the provided factor.
+ */
 function scaled(bounds: Bounds, scale: number): Bounds {
     return {
         left: bounds.left * scale,
@@ -85,6 +99,36 @@ function scaled(bounds: Bounds, scale: number): Bounds {
     };
 }
 
+/**
+ * Returns the provided bounds in their normalized form. Normalized means that the left
+ * coordinate is always less than the right coordinate, and that the top coordinate is always
+ * left than the bottom coordinate.
+ *
+ * This is required because objects in the DOM are positioned and sized by setting their top-left
+ * corner, width and height. This means that when a user composes a selection and moves to the left,
+ * or up, from where they started might result in a negative width and/or height. We don't normalize
+ * these values as we're tracking the mouse as it'd result in the wrong visual effect. Instead we
+ * rotate the bounds we render on the appropriate axis. This means we need to account for this
+ * later when calculating what tokens the bounds intersect with.
+ */
+function normalizeBounds(b: Bounds): Bounds {
+    const normalized = Object.assign({}, b);
+    if (b.right < b.left) {
+        const l = b.left;
+        normalized.left = b.right;
+        normalized.right = l;
+    }
+    if (b.bottom < b.top) {
+        const t = b.top;
+        normalized.top = b.bottom;
+        normalized.bottom = t;
+    }
+    return normalized;
+}
+
+/**
+ * Returns true if the provided bounds overlap.
+ */
 function doOverlap(a: Bounds, b: Bounds): boolean {
     if (a.left >= b.right || a.right <= b.left) {
         return false;
@@ -164,7 +208,7 @@ const Page = ({ page, tokens, selection, onError }: PageProps) => {
 
                     const isSelected = (selection && containerRef.current) ? (
                         doOverlap(
-                            relativeTo(selection, containerRef.current),
+                            normalizeBounds(relativeTo(selection, containerRef.current)),
                             tokenBounds
                         )
                     ) : false;
@@ -214,15 +258,30 @@ const WithPage = ({ doc, page, onError, children }: WithPageProps) => {
     return pdfPage ? <>{children(pdfPage)}</> : null;
 };
 
-interface PDFProps extends WithDoc {
-    tokens: TokensBySourceId;
+interface SelectionProps {
+   bounds: Bounds;
 }
 
-interface Bounds {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
+const Selection = ({ bounds }: SelectionProps) => {
+    const width = bounds.right - bounds.left;
+    const height = bounds.bottom - bounds.top;
+    const rotateY = width < 0 ? -180 : 0;
+    const rotateX = height < 0 ? -180 : 0;
+    return (
+        <SelectionBounds
+            style={{
+                left: `${bounds.left}px`,
+                top: `${bounds.top}px`,
+                width: `${Math.abs(width)}px`,
+                height: `${Math.abs(height)}px`,
+                transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
+                transformOrigin: 'top left'
+            }} />
+    );
+}
+
+interface PDFProps extends WithDoc {
+    tokens: TokensBySourceId;
 }
 
 export const PDF = (props: PDFProps) => {
@@ -245,6 +304,7 @@ export const PDF = (props: PDFProps) => {
         );
         grobidTokensByPage.push(pageTokens);
     }
+
     return (
         err ? (
             <Result
@@ -303,25 +363,19 @@ export const PDF = (props: PDFProps) => {
                         )}
                     </WithPage>
                 ))}
-                {selection ? (
-                    <Selection
-                        style={{
-                            left: `${selection.left}px`,
-                            top: `${selection.top}px`,
-                            width: `${selection.right - selection.left}px`,
-                            height: `${selection.bottom - selection.top}px`
-                        }} />
-                ) : null}
+                {selection ? <Selection bounds={selection} /> : null}
             </PDFAnnotationsContainer>
         )
     );
 };
 
+
+
 const PDFAnnotationsContainer = styled.div`
     position: relative;
 `;
 
-const Selection = styled.div(({ theme }) => `
+const SelectionBounds = styled.div(({ theme }) => `
     position: absolute;
     border: 1px dotted ${theme.color.G4};
 `);
