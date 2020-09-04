@@ -257,11 +257,15 @@ export const PDF = () => {
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
                         const annotation: TokenSpanAnnotation = [];
+
+                        // Loop over all pages to find tokens that intersect with the current
+                        // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             const tokens = p.getIntersectingTokenIds(normalizeBounds(selection))
                             annotation.push(...tokens);
                         }
+
                         if (annotation.length > 0) {
                             const withNewAnnotation =
                                 annotationStore.tokenSpanAnnotations.concat([ annotation ])
