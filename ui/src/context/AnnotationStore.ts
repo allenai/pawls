@@ -1,10 +1,11 @@
 import { createContext } from 'react';
 
-import { Token } from '../api';
-
-export interface TokenSpanAnnotation {
-    tokens: Token[];
+interface TokenId {
+    pageIndex: number;
+    tokenIndex: number;
 }
+
+export type TokenSpanAnnotation = TokenId[];
 
 interface _AnnotationStore {
     tokenSpanAnnotations: TokenSpanAnnotation[];

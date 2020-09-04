@@ -40,8 +40,18 @@ export class PDFPageInfo {
         public scale: number = 1,
         public readonly tokens: Token[] = []
     ) {}
+    getIntersectingTokenIndices(selection: Bounds): number[] {
+        const indices = [];
+        for(let i = 0; i < this.tokens.length; i++) {
+            if (doOverlap(this.getScaledTokenBounds(this.tokens[i]), selection)) {
+                indices.push(i);
+            }
+        }
+        return indices;
+    }
     getIntersectingTokens(selection: Bounds): Token[] {
-        return this.tokens.filter(t => doOverlap(this.getScaledTokenBounds(t), selection));
+        const indices = this.getIntersectingTokenIndices(selection);
+        return indices.map(i => this.tokens[i]);
     }
     getScaledTokenBounds(t: Token): Bounds {
         const b = {

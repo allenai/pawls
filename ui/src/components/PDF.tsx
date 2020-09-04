@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
+import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -255,24 +255,24 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
-                        const selectedTokens = [];
+                        const annotation: TokenSpanAnnotation = [];
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             if (pageRefs.current[i] !== null) {
-                                selectedTokens.push(
-                                    ...p.getIntersectingTokens(normalizeBounds(relativeTo(
+                                const intersectingTokenIndices =
+                                    p.getIntersectingTokenIndices(normalizeBounds(relativeTo(
                                         selection,
                                         pageRefs.current[i]
-                                    )))
-                                );
+                                    )));
+                                for(const tokenIndex of intersectingTokenIndices) {
+                                    annotation.push({ pageIndex: i, tokenIndex });
+                                }
                             }
-                            if (selectedTokens.length > 0) {
-                                annotationStore.setTokenSpanAnnotations(
-                                    annotationStore.tokenSpanAnnotations.concat([{
-                                        tokens: selectedTokens
-                                    }])
-                                );
-                            }
+                        }
+                        if (annotation.length > 0) {
+                            const withNewAnnotation =
+                                annotationStore.tokenSpanAnnotations.concat([ annotation ])
+                            annotationStore.setTokenSpanAnnotations(withNewAnnotation);
                         }
                     }
                     setSelection(undefined);
@@ -280,33 +280,44 @@ export const PDF = () => {
                 }
             ) : undefined}
         >
-            {pdfStore.pages.map(p => (
-                <Page
-                    key={p.page.pageNumber}
-                    ref={e => {
-                        if (e !== null) {
-                            const idx = p.page.pageNumber - 1;
-                            pageRefs.current = [
-                                ...pageRefs.current.slice(0, idx),
-                                e,
-                                ...pageRefs.current.slice(idx + 1)
-                            ];
+            {pdfStore.pages.map((p, pageIndex) => {
+                let selectedTokens: Token[] = [];
+                // If the user is selecting something, display that. Otherwise display the
+                // currently selection annotation.
+                // TODO (@codeviking): We probably eventually want to display both.
+                if (selection && pageRefs.current[pageIndex] !== null) {
+                    selectedTokens = p.getIntersectingTokens(normalizeBounds(relativeTo(
+                        selection,
+                        pageRefs.current[pageIndex]
+                    )));
+                } else if (annotationStore.selectedTokenSpanAnnotation) {
+                    // This is an o(n) scan for every page. If this gets too expensive we could
+                    // use a dictionary to make the lookup faster. That said I bet it's fine for
+                    // the scale we're talking about.
+                    for (const tokenId of annotationStore.selectedTokenSpanAnnotation) {
+                        if (tokenId.pageIndex === pageIndex) {
+                            selectedTokens.push(p.tokens[tokenId.tokenIndex]);
                         }
-                    }}
-                    pageInfo={p}
-                    selectedTokens={
-                        selection && pageRefs.current[p.page.pageNumber - 1] !== null ? (
-                            p.getIntersectingTokens(normalizeBounds(relativeTo(
-                                selection,
-                                pageRefs.current[p.page.pageNumber - 1]
-                            )))
-                        ) : (
-                            annotationStore.selectedTokenSpanAnnotation &&
-                            annotationStore.selectedTokenSpanAnnotation.tokens
-                        )
                     }
-                    setError={pdfStore.setError} />
-            ))}
+                }
+
+                return (
+                    <Page
+                        key={p.page.pageNumber}
+                        ref={e => {
+                            if (e !== null) {
+                                pageRefs.current = [
+                                    ...pageRefs.current.slice(0, pageIndex),
+                                    e,
+                                    ...pageRefs.current.slice(pageIndex + 1)
+                                ];
+                            }
+                        }}
+                        pageInfo={p}
+                        selectedTokens={selectedTokens}
+                        setError={pdfStore.setError} />
+                );
+            })}
             {selection ? <Selection bounds={selection} /> : null}
         </PDFAnnotationsContainer>
     );
