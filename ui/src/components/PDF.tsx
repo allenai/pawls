@@ -158,7 +158,7 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
         } catch (e) {
             setError(e);
         }
-    }, []);
+    }, [ pageInfo, setError ]);
 
     return (
         <PageAnnotationsContainer ref={ref}>
