@@ -2,6 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token } from '../api';
+import { TokenId } from './AnnotationStore';
 
 export interface Bounds {
     left: number;
@@ -40,18 +41,18 @@ export class PDFPageInfo {
         public scale: number = 1,
         public readonly tokens: Token[] = []
     ) {}
-    getIntersectingTokenIndices(selection: Bounds): number[] {
-        const indices = [];
+    getIntersectingTokenIds(selection: Bounds): TokenId[] {
+        const ids: TokenId[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
             if (doOverlap(this.getScaledTokenBounds(this.tokens[i]), selection)) {
-                indices.push(i);
+                ids.push({ pageIndex: this.page.pageNumber - 1, tokenIndex: i });
             }
         }
-        return indices;
+        return ids;
     }
     getIntersectingTokens(selection: Bounds): Token[] {
-        const indices = this.getIntersectingTokenIndices(selection);
-        return indices.map(i => this.tokens[i]);
+        const ids = this.getIntersectingTokenIds(selection);
+        return ids.map(id => this.tokens[id.tokenIndex]);
     }
     getScaledTokenBounds(t: Token): Bounds {
         const b = {

@@ -259,14 +259,12 @@ export const PDF = () => {
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             if (pageRefs.current[i] !== null) {
-                                const intersectingTokenIndices =
-                                    p.getIntersectingTokenIndices(normalizeBounds(relativeTo(
+                                annotation.push(
+                                    ...p.getIntersectingTokenIds(normalizeBounds(relativeTo(
                                         selection,
                                         pageRefs.current[i]
-                                    )));
-                                for(const tokenIndex of intersectingTokenIndices) {
-                                    annotation.push({ pageIndex: i, tokenIndex });
-                                }
+                                    )))
+                                );
                             }
                         }
                         if (annotation.length > 0) {

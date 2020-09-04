@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-interface TokenId {
+export interface TokenId {
     pageIndex: number;
     tokenIndex: number;
 }
