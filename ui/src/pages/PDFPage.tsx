@@ -6,7 +6,8 @@ import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Labels } from '../components';
-import { pdfURL, getTokens, TokensResponse, TokensBySourceId } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse } from '../api';
+import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -29,9 +30,14 @@ enum ViewState {
 export const PDFPage = () => {
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
+
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
-    const [ tokens, setTokens ] = useState<TokensBySourceId>();
     const [ progress, setProgress ] = useState(0);
+    const [ pages, setPages ] = useState<PDFPageInfo[]>();
+    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
+    const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
+        useState<TokenSpanAnnotation>();
+
     const theme = useContext(ThemeContext);
 
     useEffect(() => {
@@ -47,24 +53,46 @@ export const PDFPage = () => {
             // side-effects, so we should remain wary of this code.
             loadingTask.promise as unknown as Promise<pdfjs.PDFDocumentProxy>,
             getTokens(sha)
-        ]).then(
-            ([ doc, resp ]: [ pdfjs.PDFDocumentProxy, TokensResponse ]) => {
-                setDocument(doc);
-                setTokens(resp.tokens.sources);
-                setViewState(ViewState.LOADED);
-            },
-            (err: any) => {
-                if (err instanceof Error) {
-                    // We have to use the message because minification in production obfuscates
-                    // the error name.
-                    if (err.message === 'Request failed with status code 404') {
-                        setViewState(ViewState.NOT_FOUND);
-                        return;
-                    }
-                }
-                setViewState(ViewState.ERROR);
+        ]).then(([ doc, resp ]: [ pdfjs.PDFDocumentProxy, TokensResponse ]) => {
+            setDocument(doc);
+
+            // Load all the pages too. In theory this makes things a little slower to startup,
+            // as fetching and rendering them asynchronously would make it faster to render the
+            // first, visible page. That said it makes the code simpler, so we're ok with it for
+            // now.
+            const loadPages: Promise<PDFPageInfo>[] = [];
+            for (let i = 1; i <= doc.numPages; i++) {
+                // See line 50 for an explanation of the cast here.
+                loadPages.push(
+                    doc.getPage(i).then(p => {
+                        let pageTokens: Token[] = [];
+                        if (resp.tokens) {
+                            const grobidTokensByPage = resp.tokens.sources[SourceId.GROBID].pages;
+                            const pageIndex = p.pageNumber - 1;
+                            if (pageIndex in grobidTokensByPage) {
+                                pageTokens = grobidTokensByPage[pageIndex].tokens;
+                            }
+                        }
+                        return new PDFPageInfo(p, pageTokens);
+                    }) as unknown as Promise<PDFPageInfo>
+                );
             }
-        );
+            return Promise.all(loadPages);
+        }).then(pages => {
+            setPages(pages);
+            setViewState(ViewState.LOADED);
+        }).catch((err: any) => {
+            if (err instanceof Error) {
+                // We have to use the message because minification in production obfuscates
+                // the error name.
+                if (err.message === 'Request failed with status code 404') {
+                    setViewState(ViewState.NOT_FOUND);
+                    return;
+                }
+            }
+            console.error(`Error Loading PDF: `, err);
+            setViewState(ViewState.ERROR);
+        });
     }, [ sha ]);
 
     switch (viewState) {
@@ -86,34 +114,65 @@ export const PDFPage = () => {
                 </CenterOnPage>
             );
         case ViewState.LOADED:
-            if (doc && tokens) {
+            if (doc) {
                 const sidebarWidth = "300px";
                 return (
-                    <>
-                        <WithSidebar width={sidebarWidth}>
-                            <Sidebar width={sidebarWidth}>
-                                <div>
-                                    <h2>Pawls</h2>
-                                    Here is some content.
-                                </div>
-                                <div>
-                                    <h4> Current Selection</h4>
-                                    Here is some content.
-                                </div>
-                                <div>
-                                    <h4>Labels</h4>
-                                    <Labels/>
-                                </div>
-                                <div>
-                                    <h4> Annotations</h4>
-                                    Here is some content.
-                                </div>
-                            </Sidebar>
-                            <PDFContainer>
-                                <PDF doc={doc} tokens={tokens} />
-                            </PDFContainer>
-                        </WithSidebar>
-                    </>
+
+                    <PDFStore.Provider value={{
+                        doc,
+                        pages,
+                        setError: (err) => {
+                            console.error('Unexpected Error rendering PDF', err);
+                            setViewState(ViewState.ERROR);
+                        }
+                    }}>
+                        <AnnotationStore.Provider
+                            value={{
+                                tokenSpanAnnotations,
+                                setTokenSpanAnnotations,
+                                selectedTokenSpanAnnotation,
+                                setSelectedTokenSpanAnnotation
+                            }}
+                        >
+                            <WithSidebar width={sidebarWidth}>
+                                <Sidebar width={sidebarWidth}>
+                                    <div>
+                                        <h2>Pawls</h2>
+                                        Here is some content.
+                                    </div>
+                                    <div>
+                                        <h4>Annotations</h4>
+                                        {tokenSpanAnnotations.length === 0 ? (
+                                            <>None</>
+                                        ) : (
+                                            <ul>
+                                                {tokenSpanAnnotations.map((t, i) => (
+                                                    <li
+                                                        key={i}
+                                                        onMouseEnter={(_) => {
+                                                            setSelectedTokenSpanAnnotation(t)
+                                                        }}
+                                                        onMouseLeave={() => {
+                                                            setSelectedTokenSpanAnnotation(undefined)
+                                                        }}
+                                                    >
+                                                        Annotation #{i + 1}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4>Labels</h4>
+                                        <Labels/>
+                                    </div>
+                                </Sidebar>
+                                <PDFContainer>
+                                    <PDF />
+                                </PDFContainer>
+                            </WithSidebar>
+                        </AnnotationStore.Provider>
+                    </PDFStore.Provider>
                 );
             }
         // eslint-disable-line: no-fallthrough
