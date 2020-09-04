@@ -5,7 +5,7 @@ import pdfjs from 'pdfjs-dist';
 import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage } from '../components';
+import { PDF, CenterOnPage, Labels } from '../components';
 import { SourceId, pdfURL, getTokens, Token, TokensResponse } from '../api';
 import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
 
@@ -117,6 +117,7 @@ export const PDFPage = () => {
             if (doc) {
                 const sidebarWidth = "300px";
                 return (
+
                     <PDFStore.Provider value={{
                         doc,
                         pages,
@@ -135,27 +136,36 @@ export const PDFPage = () => {
                         >
                             <WithSidebar width={sidebarWidth}>
                                 <Sidebar width={sidebarWidth}>
-                                    <h4>Annotations</h4>
-                                    <h5>Tokens</h5>
-                                    {tokenSpanAnnotations.length === 0 ? (
-                                        <>None</>
-                                    ) : (
-                                        <ul>
-                                            {tokenSpanAnnotations.map((t, i) => (
-                                                <li
-                                                    key={i}
-                                                    onMouseEnter={(_) => {
-                                                        setSelectedTokenSpanAnnotation(t)
-                                                    }}
-                                                    onMouseLeave={() => {
-                                                        setSelectedTokenSpanAnnotation(undefined)
-                                                    }}
-                                                 >
-                                                    Annotation #{i + 1}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                    <div>
+                                        <h2>Pawls</h2>
+                                        Here is some content.
+                                    </div>
+                                    <div>
+                                        <h4>Annotations</h4>
+                                        {tokenSpanAnnotations.length === 0 ? (
+                                            <>None</>
+                                        ) : (
+                                            <ul>
+                                                {tokenSpanAnnotations.map((t, i) => (
+                                                    <li
+                                                        key={i}
+                                                        onMouseEnter={(_) => {
+                                                            setSelectedTokenSpanAnnotation(t)
+                                                        }}
+                                                        onMouseLeave={() => {
+                                                            setSelectedTokenSpanAnnotation(undefined)
+                                                        }}
+                                                    >
+                                                        Annotation #{i + 1}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4>Labels</h4>
+                                        <Labels/>
+                                    </div>
                                 </Sidebar>
                                 <PDFContainer>
                                     <PDF />
@@ -189,14 +199,20 @@ const WithSidebar = styled.div<HasWidth>(({ width }) =>`
 `);
 
 const Sidebar = styled.div<HasWidth>(({ theme, width }) => `
+    display: grid;
+    flex-direction: column;
+    flex-grow: 1;
     width: ${width};
     position: fixed;
     left: 0;
     overflow-y: scroll;
     background: ${theme.color.N10};
-    color: ${theme.color.N1};
-    padding: ${theme.spacing.lg} ${theme.spacing.xl};
+    color: ${theme.color.N2};
+    padding: ${theme.spacing.md} ${theme.spacing.md};
     height: 100vh;
+    * {
+        color: ${theme.color.N2};
+    }
 `);
 
 

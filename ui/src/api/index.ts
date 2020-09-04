@@ -61,3 +61,8 @@ export async function getTokens(sha: string): Promise<TokensResponse> {
     return axios.get(`${docURL(sha)}/tokens`)
                 .then(r => r.data);
 }
+
+export async function getLabels(): Promise<string[]> {
+    return axios.get("/api/annotation/labels")
+                .then(r => r.data)
+}
