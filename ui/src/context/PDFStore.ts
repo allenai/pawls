@@ -52,7 +52,6 @@ export class PDFPageInfo {
     constructor(
         public readonly page: pdfjs.PDFPageProxy,
         public readonly tokens: Token[] = [],
-        public scale: number = 1,
         public bounds?: Bounds
     ) {}
     getIntersectingTokenIds(selection: Bounds): TokenId[] {
@@ -82,6 +81,14 @@ export class PDFPageInfo {
             bottom: t.y + t.height
         };
         return scaled(b, this.scale);
+    }
+    get scale(): number {
+        if (this.bounds === undefined) {
+            throw new Error('Unknown Page Bounds');
+        }
+        const pdfPageWidth = this.page.view[2] - this.page.view[1];
+        const domPageWidth = this.bounds.right - this.bounds.left;
+        return domPageWidth / pdfPageWidth;
     }
 }
 

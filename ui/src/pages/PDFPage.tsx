@@ -73,7 +73,7 @@ export const PDFPage = () => {
                                 pageTokens = grobidTokensByPage[pageIndex].tokens;
                             }
                         }
-                        return new PDFPageInfo(p, pageTokens, 1);
+                        return new PDFPageInfo(p, pageTokens);
                     }) as unknown as Promise<PDFPageInfo>
                 );
             }

@@ -7,12 +7,12 @@ import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } f
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
-    public scale: number = 1;
     constructor(
         readonly page: PDFPageProxy,
-        readonly canvas: HTMLCanvasElement | null,
+        readonly canvas: HTMLCanvasElement,
+        readonly onError: (e: Error) => void
     ) {}
-    cancelCurrentRender(onError: (e: Error) => void) {
+    cancelCurrentRender() {
         if (this.currentRenderTask === undefined) {
             return;
         }
@@ -23,33 +23,17 @@ class PDFPageRenderer {
                     // We have to use the message because minification in production obfuscates
                     // the error name.
                     if (err.message.indexOf('Rendering cancelled')) {
-                        onError(err);
+                        this.onError(err);
                     }
                 } else {
-                    onError(new Error(err));
+                    this.onError(new Error(err));
                 }
             }
         );
         this.currentRenderTask.cancel();
     }
-    render() {
-        if (this.canvas === null) {
-            throw new Error('No canvas');
-        }
-        if (this.canvas.parentElement === null) {
-            throw new Error('The canvas element has no parent');
-        }
-        const width = this.page.view[2] - this.page.view[1];
-
-        // Scale it so the user doesn't have to scroll horizontally
-        const parent = this.canvas.parentElement;
-        const parentStyles = getComputedStyle(parent);
-        const padding =
-            parseFloat(parentStyles.paddingLeft || "0") +
-            parseFloat(parentStyles.paddingRight || "0");
-
-        this.scale = Math.max((this.canvas.parentElement.clientWidth - padding) / width);
-        const viewport = this.page.getViewport({ scale: this.scale });
+    render(scale: number) {
+        const viewport = this.page.getViewport({ scale });
 
         this.canvas.height = viewport.height;
         this.canvas.width = viewport.width;
@@ -61,9 +45,9 @@ class PDFPageRenderer {
         this.currentRenderTask = this.page.render({ canvasContext, viewport });
         return this.currentRenderTask;
     }
-    rescaleAndRender(onError: (e: Error) => void) {
-        this.cancelCurrentRender(onError);
-        return this.render();
+    rescaleAndRender(scale: number) {
+        this.cancelCurrentRender();
+        return this.render(scale);
     }
 }
 
@@ -150,10 +134,9 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
                 return;
             }
 
-            const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current);
-            renderer.render();
-            pageInfo.scale = renderer.scale;
             pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current);
+            const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current, setError);
+            renderer.render(pageInfo.scale);
 
             determinePageVisiblity();
 
@@ -162,8 +145,8 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
                     setError(new Error('No canvas element'));
                     return;
                 }
-                renderer.rescaleAndRender(setError)
-                pageInfo.scale = renderer.scale;
+                pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current)
+                renderer.rescaleAndRender(pageInfo.scale);
                 determinePageVisiblity();
             };
             window.addEventListener('resize', handleResize);
