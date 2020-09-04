@@ -285,7 +285,7 @@ export const PDF = () => {
                 if (selection) {
                     selectedTokens = p.getIntersectingTokens(normalizeBounds(selection));
                 } else if (annotationStore.selectedTokenSpanAnnotation) {
-                    // This is an o(n) scan for every page. If this gets too expensive we could
+                    // This is an o(n) scan over the already selected tokens for every page. If this gets too expensive we could
                     // use a dictionary to make the lookup faster. That said I bet it's fine for
                     // the scale we're talking about.
                     for (const tokenId of annotationStore.selectedTokenSpanAnnotation) {
@@ -342,4 +342,3 @@ const PageAnnotationsContainer = styled.div(({ theme }) =>`
 const PageCanvas = styled.canvas`
     display: block;
 `;
-
