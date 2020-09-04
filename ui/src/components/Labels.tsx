@@ -16,7 +16,7 @@ export const Labels = () => {
     return (
         <>
             {labels.map(label => (
-                <Tag id={label} color="orange">
+                <Tag key={label} color="orange">
                     {label}
                 </Tag>           
             ))}
