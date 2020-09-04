@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useState }  from 'react';
+import React, { forwardRef, useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
-import { PDFPageProxy, PDFDocumentProxy, PDFRenderTask } from 'pdfjs-dist';
-import { Result } from '@allenai/varnish';
+import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Token, TokensBySourceId, SourceId } from '../api';
+import { Token } from '../api';
+import { PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -67,13 +67,6 @@ class PDFPageRenderer {
     }
 }
 
-interface Bounds {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
-}
-
 /**
  * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
  * element.
@@ -84,18 +77,6 @@ function relativeTo(bounds: Bounds, container: HTMLElement): Bounds {
         top: bounds.top - container.offsetTop,
         right: bounds.right - container.offsetLeft,
         bottom: bounds.bottom - container.offsetTop
-    };
-}
-
-/**
- * Returns the provided bounds scaled by the provided factor.
- */
-function scaled(bounds: Bounds, scale: number): Bounds {
-    return {
-        left: bounds.left * scale,
-        top: bounds.top * scale,
-        right: bounds.right * scale,
-        bottom: bounds.bottom * scale
     };
 }
 
@@ -126,33 +107,19 @@ function normalizeBounds(b: Bounds): Bounds {
     return normalized;
 }
 
-/**
- * Returns true if the provided bounds overlap.
- */
-function doOverlap(a: Bounds, b: Bounds): boolean {
-    if (a.left >= b.right || a.right <= b.left) {
-        return false;
-    } else if (a.bottom <= b.top || a.top >= b.bottom) {
-        return false;
-    }
-    return true;
-}
-
-interface WithErrorCallback {
-    onError: (e: Error) => void;
-}
-
-interface PageProps extends WithErrorCallback {
-    page: PDFPageProxy;
-    tokens: Token[];
+interface PageProps {
+    pageInfo: PDFPageInfo;
     selection?: Bounds;
+    selectedTokens?: Token[];
+    setError: (e: Error) => void;
 }
 
-const Page = ({ page, tokens, selection, onError }: PageProps) => {
+const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, setError }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [ scale, setScale ] = useState<number>(1);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
+
+    const pdfStore = useContext(PDFStore);
+    const setPageScale = pdfStore.setPageScale;
 
     useEffect(() => {
         try {
@@ -169,14 +136,14 @@ const Page = ({ page, tokens, selection, onError }: PageProps) => {
                 }
             };
 
-            const renderer = new PDFPageRenderer(page, canvasRef.current);
+            const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current);
             renderer.render();
-            setScale(renderer.scale);
+            setPageScale(pageInfo.page.pageNumber - 1, renderer.scale);
             determinePageVisiblity();
 
             const handleResize = () => {
-                renderer.rescaleAndRender(onError)
-                setScale(renderer.scale);
+                renderer.rescaleAndRender(setError)
+                setPageScale(pageInfo.page.pageNumber - 1, renderer.scale);
                 determinePageVisiblity();
             };
             window.addEventListener('resize', handleResize);
@@ -186,77 +153,32 @@ const Page = ({ page, tokens, selection, onError }: PageProps) => {
                 window.removeEventListener('scroll', determinePageVisiblity);
             };
         } catch (e) {
-            onError(e);
+            setError(e);
         }
-    }, [ page, onError ]);
+    }, [ pageInfo.page ]); // TODO (@codeviking): Passing `setPageScale` here caused an error.
 
     return (
-        <PageAnnotationsContainer ref={containerRef}>
+        <PageAnnotationsContainer ref={ref}>
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-                isVisible && tokens.map((t, i) => {
-                    // Calculate the bounds of the token. We have to scale the bounds so that
-                    // they're relative to the viewport, as the values are relative to the PDF
-                    // document.
-                    const tokenBounds = scaled({
-                        left: t.x,
-                        top: t.y,
-                        right: t.x + t.width,
-                        bottom: t.y + t.height
-                    }, scale);
-
-                    const isSelected = (selection && containerRef.current) ? (
-                        doOverlap(
-                            normalizeBounds(relativeTo(selection, containerRef.current)),
-                            tokenBounds
-                        )
-                    ) : false;
+                isVisible && selectedTokens && selectedTokens.map((t, i) => {
+                    const b = pageInfo.getScaledTokenBounds(t);
                     return (
                         <TokenSpan
                             key={i}
-                            isSelected={isSelected}
+                            isSelected={true}
                             style={{
-                                left: `${tokenBounds.left}px`,
-                                top: `${tokenBounds.top}px`,
-                                width: `${tokenBounds.right - tokenBounds.left}px`,
-                                height: `${tokenBounds.bottom - tokenBounds.top}px`
+                                left: `${b.left}px`,
+                                top: `${b.top}px`,
+                                width: `${b.right - b.left}px`,
+                                height: `${b.bottom - b.top}px`
                             }} />
                         )
                 })}
         </PageAnnotationsContainer>
     );
-};
-
-interface WithDoc {
-    doc: PDFDocumentProxy;
-}
-
-interface WithPageProps extends WithDoc, WithErrorCallback {
-    page: number;
-    children: (page: PDFPageProxy) => React.ReactNode;
-}
-
-const WithPage = ({ doc, page, onError, children }: WithPageProps) => {
-    const [ pdfPage, setPdfPage ] = useState<PDFPageProxy>();
-    const pageNo = page || 1;
-
-    useEffect(() => {
-        doc.getPage(pageNo).then(
-            (page: PDFPageProxy) => {
-                setPdfPage(page);
-            },
-            reason => {
-                onError(new Error(reason));
-            }
-        );
-    }, [ doc, pageNo, onError ]);
-
-    // TODO (@codeviking): The `getPage()` call above returns fast enough that we don't have
-    // any type of interstitial display here. We probably should put one in place for slower
-    // clients.
-    return pdfPage ? <>{children(pdfPage)}</> : null;
-};
+});
 
 interface SelectionProps {
    bounds: Bounds;
@@ -280,92 +202,113 @@ const Selection = ({ bounds }: SelectionProps) => {
     );
 }
 
-interface PDFProps extends WithDoc {
-    tokens: TokensBySourceId;
-}
-
-export const PDF = (props: PDFProps) => {
-    const [ err, setError ] = useState<Error>();
-    if (err) {
-        console.error(`Error rendering PDF: `, err);
-    }
-
+export const PDF = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [ selection, setSelection ] = useState<Bounds>();
 
-    const pageNos = [];
-    const grobidTokensByPage: Token[][] = [];
-    for (let i = 0; i < props.doc.numPages; i++) {
-        pageNos.push(i + 1);
-        const pageTokens = (
-            i in props.tokens[SourceId.GROBID].pages
-                ? props.tokens[SourceId.GROBID].pages[i].tokens
-                : []
-        );
-        grobidTokensByPage.push(pageTokens);
+    const pdfStore = useContext(PDFStore);
+    const pageRefs = useRef<HTMLDivElement[]>([]);
+
+    const annotationStore = useContext(AnnotationStore);
+
+    // TODO (@codeviking): Use error boundaries to capture these.
+    if (!pdfStore.doc) {
+        throw new Error('No Document');
+    }
+    if (!pdfStore.pages) {
+        throw new Error('Document without Pages');
     }
 
     return (
-        err ? (
-            <Result
-                status="warning"
-                title="Unable to Render PDF" />
-        ) : (
-            <PDFAnnotationsContainer
-                ref={containerRef}
-                onMouseDown={(event) => {
+        <PDFAnnotationsContainer
+            ref={containerRef}
+            onMouseDown={(event) => {
+                if (containerRef.current === null) {
+                    throw new Error('No Container');
+                }
+                // Clear the selected annotation, if there is one.
+                // TODO (@codeviking): This might change.
+                annotationStore.setSelectedTokenSpanAnnotation(undefined);
+                if (!selection) {
+                    const left = event.pageX - containerRef.current.offsetLeft;
+                    const top = event.pageY - containerRef.current.offsetTop;
+                    setSelection({
+                        left,
+                        top,
+                        right: left,
+                        bottom: top
+                    });
+                }
+            }}
+            onMouseMove={selection ? (
+                (event) => {
                     if (containerRef.current === null) {
                         throw new Error('No Container');
                     }
-                    if (!selection) {
-                        const left = event.pageX - containerRef.current.offsetLeft;
-                        const top = event.pageY - containerRef.current.offsetTop;
-                        setSelection({
-                            left,
-                            top,
-                            right: left + 10,
-                            bottom: top + 10
-                        });
-                    }
-                }}
-                onMouseMove={selection ? (
-                    (event) => {
-                        if (containerRef.current === null) {
-                            throw new Error('No Container');
+                    setSelection({
+                        ...selection,
+                        right: event.pageX - containerRef.current.offsetLeft,
+                        bottom: event.pageY - containerRef.current.offsetTop
+                    });
+                }
+            ) : undefined}
+            onMouseUp={selection ? (
+                () => {
+                    if (pdfStore.doc && pdfStore.pages) {
+                        const selectedTokens = [];
+                        for (let i = 0; i < pdfStore.doc.numPages; i++) {
+                            const p = pdfStore.pages[i];
+                            if (pageRefs.current[i] !== null) {
+                                selectedTokens.push(
+                                    ...p.getIntersectingTokens(normalizeBounds(relativeTo(
+                                        selection,
+                                        pageRefs.current[i]
+                                    )))
+                                );
+                            }
+                            if (selectedTokens.length > 0) {
+                                annotationStore.setTokenSpanAnnotations(
+                                    annotationStore.tokenSpanAnnotations.concat([{
+                                        tokens: selectedTokens
+                                    }])
+                                );
+                            }
                         }
-                        setSelection({
-                            ...selection,
-                            right: event.pageX - containerRef.current.offsetLeft,
-                            bottom: event.pageY - containerRef.current.offsetTop
-                        });
                     }
-                ) : undefined}
-                onMouseUp={selection ? (
-                    () => {
-                        // TODO (@codeviking): Capture the current selection and save it.
-                        setSelection(undefined);
+                    setSelection(undefined);
+
+                }
+            ) : undefined}
+        >
+            {pdfStore.pages.map(p => (
+                <Page
+                    key={p.page.pageNumber}
+                    ref={e => {
+                        if (e !== null) {
+                            const idx = p.page.pageNumber - 1;
+                            pageRefs.current = [
+                                ...pageRefs.current.slice(0, idx),
+                                e,
+                                ...pageRefs.current.slice(idx + 1)
+                            ];
+                        }
+                    }}
+                    pageInfo={p}
+                    selectedTokens={
+                        selection && pageRefs.current[p.page.pageNumber - 1] !== null ? (
+                            p.getIntersectingTokens(normalizeBounds(relativeTo(
+                                selection,
+                                pageRefs.current[p.page.pageNumber - 1]
+                            )))
+                        ) : (
+                            annotationStore.selectedTokenSpanAnnotation &&
+                            annotationStore.selectedTokenSpanAnnotation.tokens
+                        )
                     }
-                ) : undefined}
-            >
-                {pageNos.map(pageNo => (
-                    <WithPage
-                        key={pageNo}
-                        doc={props.doc}
-                        page={pageNo}
-                        onError={setError}
-                    >
-                        { page => (
-                            <Page
-                                page={page}
-                                tokens={grobidTokensByPage[pageNo - 1]}
-                                selection={selection}
-                                onError={setError} />
-                        )}
-                    </WithPage>
-                ))}
-                {selection ? <Selection bounds={selection} /> : null}
-            </PDFAnnotationsContainer>
-        )
+                    setError={pdfStore.setError} />
+            ))}
+            {selection ? <Selection bounds={selection} /> : null}
+        </PDFAnnotationsContainer>
     );
 };
 
