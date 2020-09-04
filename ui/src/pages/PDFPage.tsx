@@ -73,7 +73,7 @@ export const PDFPage = () => {
                                 pageTokens = grobidTokensByPage[pageIndex].tokens;
                             }
                         }
-                        return new PDFPageInfo(p, 1, pageTokens);
+                        return new PDFPageInfo(p, pageTokens, 1);
                     }) as unknown as Promise<PDFPageInfo>
                 );
             }
@@ -123,18 +123,6 @@ export const PDFPage = () => {
                         setError: (err) => {
                             console.error('Unexpected Error rendering PDF', err);
                             setViewState(ViewState.ERROR);
-                        },
-                        setPageScale: (pageIndex: number, scale:number) => {
-                            if (!pages || !pages[pageIndex]) {
-                                throw new Error(`Invalid page index: ${pageIndex}`);
-                            }
-                            const p = pages[pageIndex];
-                            p.scale = scale;
-                            setPages([
-                                ...pages.slice(0, pageIndex),
-                                p,
-                                ...pages.slice(pageIndex + 1)
-                            ]);
                         }
                     }}>
                         <AnnotationStore.Provider

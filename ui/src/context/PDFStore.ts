@@ -24,6 +24,19 @@ function scaled(bounds: Bounds, scale: number): Bounds {
 }
 
 /**
+ * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
+ * bounds.
+ */
+function relativeTo(a: Bounds, b: Bounds): Bounds {
+    return {
+        left: a.left - b.left,
+        top: a.top - b.top,
+        right: a.right - b.left,
+        bottom: a.bottom - b.top
+    };
+}
+
+/**
  * Returns true if the provided bounds overlap.
  */
 function doOverlap(a: Bounds, b: Bounds): boolean {
@@ -38,13 +51,20 @@ function doOverlap(a: Bounds, b: Bounds): boolean {
 export class PDFPageInfo {
     constructor(
         public readonly page: pdfjs.PDFPageProxy,
+        public readonly tokens: Token[] = [],
         public scale: number = 1,
-        public readonly tokens: Token[] = []
+        public bounds?: Bounds
     ) {}
     getIntersectingTokenIds(selection: Bounds): TokenId[] {
+        if (this.bounds === undefined) {
+            throw new Error('Unknown Page Bounds');
+        }
         const ids: TokenId[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
-            if (doOverlap(this.getScaledTokenBounds(this.tokens[i]), selection)) {
+            if (doOverlap(
+                this.getScaledTokenBounds(this.tokens[i]),
+                relativeTo(selection, this.bounds))
+            ) {
                 ids.push({ pageIndex: this.page.pageNumber - 1, tokenIndex: i });
             }
         }
@@ -69,14 +89,9 @@ interface _PDFStore {
     pages?: PDFPageInfo[];
     doc?: pdfjs.PDFDocumentProxy;
     setError: (err: Error) => void;
-    setPageScale: (pageIndex: number, scale: number) => void;
 }
 
 export const PDFStore = createContext<_PDFStore>({
-    // @ts-ignore: Ignore unread arguments.
-    setPageScale: (i: number, s:number) => {
-        throw new Error('Unimplemented');
-    },
     setError: (_: Error) => {
         throw new Error('Unimplemented');
     }

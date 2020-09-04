@@ -68,19 +68,6 @@ class PDFPageRenderer {
 }
 
 /**
- * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
- * element.
- */
-function relativeTo(bounds: Bounds, container: HTMLElement): Bounds {
-    return {
-        left: bounds.left - container.offsetLeft,
-        top: bounds.top - container.offsetTop,
-        right: bounds.right - container.offsetLeft,
-        bottom: bounds.bottom - container.offsetTop
-    };
-}
-
-/**
  * Returns the provided bounds in their normalized form. Normalized means that the left
  * coordinate is always less than the right coordinate, and that the top coordinate is always
  * left than the bottom coordinate.
@@ -107,6 +94,31 @@ function normalizeBounds(b: Bounds): Bounds {
     return normalized;
 }
 
+function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
+    if (canvas.parentElement === null) {
+        throw new Error('No canvas parent');
+    }
+    const parent = canvas.parentElement;
+    const parentStyles = getComputedStyle(canvas.parentElement);
+
+    const leftPadding = parseFloat(parentStyles.paddingLeft || "0");
+    const left = parent.offsetLeft + leftPadding;
+
+    const topPadding = parseFloat(parentStyles.paddingTop || "0");
+    const top = parent.offsetTop + topPadding;
+
+    const parentWidth =
+        parent.clientWidth - leftPadding - parseFloat(parentStyles.paddingRight || "0");
+    const parentHeight =
+        parent.clientHeight - topPadding - parseFloat(parentStyles.paddingBottom || "0");
+    return {
+        left,
+        top,
+        right: left + parentWidth,
+        bottom: top + parentHeight
+    };
+}
+
 interface PageProps {
     pageInfo: PDFPageInfo;
     selection?: Bounds;
@@ -117,9 +129,6 @@ interface PageProps {
 const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, setError }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
-
-    const pdfStore = useContext(PDFStore);
-    const setPageScale = pdfStore.setPageScale;
 
     useEffect(() => {
         try {
@@ -136,14 +145,25 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
                 }
             };
 
+            if (canvasRef.current === null) {
+                setError(new Error('No canvas element'));
+                return;
+            }
+
             const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current);
             renderer.render();
-            setPageScale(pageInfo.page.pageNumber - 1, renderer.scale);
+            pageInfo.scale = renderer.scale;
+            pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current);
+
             determinePageVisiblity();
 
             const handleResize = () => {
+                if (canvasRef.current === null) {
+                    setError(new Error('No canvas element'));
+                    return;
+                }
                 renderer.rescaleAndRender(setError)
-                setPageScale(pageInfo.page.pageNumber - 1, renderer.scale);
+                pageInfo.scale = renderer.scale;
                 determinePageVisiblity();
             };
             window.addEventListener('resize', handleResize);
@@ -155,7 +175,7 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
         } catch (e) {
             setError(e);
         }
-    }, [ pageInfo.page ]); // TODO (@codeviking): Passing `setPageScale` here caused an error.
+    }, []);
 
     return (
         <PageAnnotationsContainer ref={ref}>
@@ -207,8 +227,6 @@ export const PDF = () => {
     const [ selection, setSelection ] = useState<Bounds>();
 
     const pdfStore = useContext(PDFStore);
-    const pageRefs = useRef<HTMLDivElement[]>([]);
-
     const annotationStore = useContext(AnnotationStore);
 
     // TODO (@codeviking): Use error boundaries to capture these.
@@ -258,14 +276,8 @@ export const PDF = () => {
                         const annotation: TokenSpanAnnotation = [];
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
-                            if (pageRefs.current[i] !== null) {
-                                annotation.push(
-                                    ...p.getIntersectingTokenIds(normalizeBounds(relativeTo(
-                                        selection,
-                                        pageRefs.current[i]
-                                    )))
-                                );
-                            }
+                            const tokens = p.getIntersectingTokenIds(normalizeBounds(selection))
+                            annotation.push(...tokens);
                         }
                         if (annotation.length > 0) {
                             const withNewAnnotation =
@@ -283,11 +295,8 @@ export const PDF = () => {
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
                 // TODO (@codeviking): We probably eventually want to display both.
-                if (selection && pageRefs.current[pageIndex] !== null) {
-                    selectedTokens = p.getIntersectingTokens(normalizeBounds(relativeTo(
-                        selection,
-                        pageRefs.current[pageIndex]
-                    )));
+                if (selection) {
+                    selectedTokens = p.getIntersectingTokens(normalizeBounds(selection));
                 } else if (annotationStore.selectedTokenSpanAnnotation) {
                     // This is an o(n) scan for every page. If this gets too expensive we could
                     // use a dictionary to make the lookup faster. That said I bet it's fine for
@@ -302,15 +311,6 @@ export const PDF = () => {
                 return (
                     <Page
                         key={p.page.pageNumber}
-                        ref={e => {
-                            if (e !== null) {
-                                pageRefs.current = [
-                                    ...pageRefs.current.slice(0, pageIndex),
-                                    e,
-                                    ...pageRefs.current.slice(pageIndex + 1)
-                                ];
-                            }
-                        }}
                         pageInfo={p}
                         selectedTokens={selectedTokens}
                         setError={pdfStore.setError} />
