@@ -34,6 +34,7 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
+    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
     const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
         useState<TokenSpanAnnotation>();
 
@@ -48,8 +49,6 @@ export const PDFPage = () => {
         console.error('Unexpected Error rendering PDF', err);
         setViewState(ViewState.ERROR);
     }, [ setViewState ]);
-
-    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
 
     const theme = useContext(ThemeContext);
 
