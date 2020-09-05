@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
@@ -34,9 +34,22 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
     const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
         useState<TokenSpanAnnotation>();
+
+    // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
+    // a background task (a web worker). We instead setup a top level error handler that's
+    // passed around as needed so we can display a nice error to the user when something
+    // goes wrong.
+    //
+    // We have to use the `useCallback` hook here so that equality checks in child components
+    // don't trigger unintentional rerenders.
+    const onError = useCallback((err: Error) => {
+        console.error('Unexpected Error rendering PDF', err);
+        setViewState(ViewState.ERROR);
+    }, [ setViewState ]);
+
+    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
 
     const theme = useContext(ThemeContext);
 
@@ -117,14 +130,10 @@ export const PDFPage = () => {
             if (doc) {
                 const sidebarWidth = "300px";
                 return (
-
                     <PDFStore.Provider value={{
                         doc,
                         pages,
-                        setError: (err) => {
-                            console.error('Unexpected Error rendering PDF', err);
-                            setViewState(ViewState.ERROR);
-                        }
+                        onError
                     }}>
                         <AnnotationStore.Provider
                             value={{

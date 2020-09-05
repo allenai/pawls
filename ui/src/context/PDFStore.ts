@@ -95,11 +95,11 @@ export class PDFPageInfo {
 interface _PDFStore {
     pages?: PDFPageInfo[];
     doc?: pdfjs.PDFDocumentProxy;
-    setError: (err: Error) => void;
+    onError: (err: Error) => void;
 }
 
 export const PDFStore = createContext<_PDFStore>({
-    setError: (_: Error) => {
+    onError: (_: Error) => {
         throw new Error('Unimplemented');
     }
 });
