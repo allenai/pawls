@@ -26,7 +26,8 @@ class PDFPageRenderer {
                     // Swallow the error that's thrown when the render is canceled.
                     return;
                 }
-                this.onError(new Error(err));
+                const e = err instanceof Error ? err : new Error(err);
+                this.onError(e);
             }
         );
         this.currentRenderTask.cancel();
