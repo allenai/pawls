@@ -1,4 +1,4 @@
-import React, { forwardRef, useContext, useRef, useEffect, useState }  from 'react';
+import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
@@ -19,15 +19,15 @@ class PDFPageRenderer {
         this.currentRenderTask.promise.then(
             () => {},
             (err: any) => {
-                if (err instanceof Error) {
-                    // We have to use the message because minification in production obfuscates
-                    // the error name.
-                    if (err.message.indexOf('Rendering cancelled')) {
-                        this.onError(err);
-                    }
-                } else {
-                    this.onError(new Error(err));
+                if (
+                    err instanceof Error
+                    && err.message.indexOf('Rendering cancelled') !== -1
+                ) {
+                    // Swallow the error that's thrown when the render is canceled.
+                    return;
                 }
+                const e = err instanceof Error ? err : new Error(err);
+                this.onError(e);
             }
         );
         this.currentRenderTask.cancel();
@@ -107,10 +107,10 @@ interface PageProps {
     pageInfo: PDFPageInfo;
     selection?: Bounds;
     selectedTokens?: Token[];
-    setError: (e: Error) => void;
+    onError: (e: Error) => void;
 }
 
-const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, setError }, ref) => {
+const Page = ({ pageInfo, selectedTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -130,19 +130,19 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
             };
 
             if (canvasRef.current === null) {
-                setError(new Error('No canvas element'));
+                onError(new Error('No canvas element'));
                 return;
             }
 
             pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current);
-            const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current, setError);
+            const renderer = new PDFPageRenderer(pageInfo.page, canvasRef.current, onError);
             renderer.render(pageInfo.scale);
 
             determinePageVisiblity();
 
             const handleResize = () => {
                 if (canvasRef.current === null) {
-                    setError(new Error('No canvas element'));
+                    onError(new Error('No canvas element'));
                     return;
                 }
                 pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current)
@@ -156,12 +156,12 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
                 window.removeEventListener('scroll', determinePageVisiblity);
             };
         } catch (e) {
-            setError(e);
+            onError(e);
         }
-    }, [ pageInfo, setError ]);
+    }, [ pageInfo, onError ]); // We deliberately only run this once.
 
     return (
-        <PageAnnotationsContainer ref={ref}>
+        <PageAnnotationsContainer>
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
@@ -181,7 +181,7 @@ const Page = forwardRef<HTMLDivElement, PageProps>(({ pageInfo, selectedTokens, 
                 })}
         </PageAnnotationsContainer>
     );
-});
+};
 
 interface SelectionProps {
    bounds: Bounds;
@@ -300,7 +300,7 @@ export const PDF = () => {
                         key={p.page.pageNumber}
                         pageInfo={p}
                         selectedTokens={selectedTokens}
-                        setError={pdfStore.setError} />
+                        onError={pdfStore.onError} />
                 );
             })}
             {selection ? <Selection bounds={selection} /> : null}
