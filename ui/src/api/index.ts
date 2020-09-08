@@ -66,3 +66,19 @@ export async function getLabels(): Promise<string[]> {
     return axios.get("/api/annotation/labels")
                 .then(r => r.data)
 }
+
+
+export interface PaperMetadata {
+
+    sha: string,
+    title: string,
+    venue: string,
+    year: number,
+    cited_by: number,
+    authors: string[]
+}
+
+export async function getAnnotatorPdfMetadata(): Promise<PaperMetadata[]> {
+    return axios.get("/api/annotation/allocation/metadata")
+                .then(r => r.data)
+}
