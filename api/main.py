@@ -61,11 +61,11 @@ def read_root():
 @app.get("/api/doc/{sha}")
 def get_metadata(sha: str) -> PaperMetadata:
 
-    metadata = os.path.join(configuration.output_directory, sha, f"{sha}.json")
+    metadata = os.path.join(configuration.output_directory, sha, "metadata.json")
     exists = os.path.exists(metadata)
 
     if exists:
-        return PaperMetadata(**json.load(metadata))
+        return json.load(open(metadata))
     else:
         raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
 
@@ -177,11 +177,27 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     present in the annotators.json config file.
     """
 
-    if x_auth_request_email is None:
-        raise HTTPException(status_code=401, detail="Not authenticated for annotation.")
+    # if x_auth_request_email is None:
+    #    raise HTTPException(status_code=401, detail="Not authenticated for annotation.")
 
     allocation = annotators.allocations.get(x_auth_request_email, None)
-    if allocation is None:
+
+    # If there are no annotators configured, assume that all pdfs
+    # are allocated to everyone.
+    if not annotators.annotators and allocation is None:
+        return configuration.pdfs
+
+    elif allocation is None:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
     return allocation
+
+
+@app.get("/api/annotation/allocation/metadata")
+def get_allocation_metadata(x_auth_request_email: str = Header(None)) -> List[PaperMetadata]:
+    """
+    Get the allocated pdfs for this user. We use the X-Auth-Request-Email
+    header to identify the user, which needs to correlate with the users
+    present in the annotators.json config file.
+    """
+    return [get_metadata(x) for x in get_allocation(x_auth_request_email)]
