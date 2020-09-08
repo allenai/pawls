@@ -1,5 +1,6 @@
 {
     "output_directory": "/tmp/pawls/papers/",
     "labels": ["test", "label"],
-    "pdfs": []
+    "pdfs": [],
+    "preprocessors": ["grobid"]
 }
