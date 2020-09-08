@@ -2,15 +2,13 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, Link , Typography} from '@allenai/varnish';
+import { Result, Progress, Link } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Labels } from '../components';
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAnnotatorPdfMetadata } from '../api';
 import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
-
-const { Paragraph } = Typography;
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -198,13 +196,15 @@ export const PDFPage = () => {
                                             Papers
                                         </SidebarItemTitle>
                                         {pdfAllocation.length !== 0 ? (
-                                            <Contrast>
+                                            <>
                                                 {pdfAllocation.map((metadata) => (
-                                                    <a href={`/pdf/${metadata.sha}`}>
-                                                            {metadata.title}
-                                                    </a>
+                                                    <Contrast>
+                                                        <a href={`/pdf/${metadata.sha}`}>
+                                                                {metadata.title}
+                                                        </a>
+                                                    </Contrast>
                                                 ))}
-                                            </Contrast>
+                                            </>
                                         ) : (
                                             <>No Pdfs Allocated!</>
                                         )}

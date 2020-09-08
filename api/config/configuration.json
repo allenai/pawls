@@ -2,7 +2,9 @@
     "output_directory": "/skiff_files/apps/pawls/papers/",
     "labels": ["Label1", "Label2"],
     "pdfs": [
-        "34f25a8704614163c4095b3ee2fc969b60de4698"
+        "34f25a8704614163c4095b3ee2fc969b60de4698",
+        "3febb2bed8865945e7fddc99efd791887bb7e14f",
+        "553c58a05e25f794d24e8db8c2b8fdb9603e6a29"
     ],
     "preprocessors": ["grobid"]
 }
