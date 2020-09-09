@@ -66,7 +66,7 @@ def load_annotators(filepath) -> Annotators:
 
 
 def _per_dir_pdf_download(target_dir: str, sha: str):
-    os.makedirs(os.path.join(target_dir, sha))
+    os.makedirs(os.path.join(target_dir, sha), exist_ok=True)
     return os.path.join(target_dir, sha, f"{sha}.pdf")
 
 

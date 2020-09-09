@@ -33,9 +33,9 @@ class TestApp(TestCase):
         )
         assert response.json() == ["paper1", "paper2"]
 
-        # No header
+        # No header, should return all pdfs.
         response = self.client.get("/api/annotation/allocation")
-        assert response.status_code == 401
+        assert response.json() == []
 
         # Header, no annotations
         response = self.client.get(
