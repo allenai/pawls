@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenId } from './AnnotationStore';
+import { TokenWithId, TokenSpanAnnotation } from './AnnotationStore';
 
 export interface Bounds {
     left: number;
@@ -36,6 +36,33 @@ function relativeTo(a: Bounds, b: Bounds): Bounds {
     };
 }
 
+function spanningBound(bounds: Bounds[]): Bounds{
+
+    const maxBound: Bounds = {
+        left: 50000,
+        top: 50000,
+        right: 0,
+        bottom: 0
+    }
+
+    bounds.forEach(bound => {
+        if (bound.bottom > maxBound.bottom) {
+            maxBound.bottom = bound.bottom
+        }
+        if (bound.top < maxBound.top) {
+            maxBound.top = bound.top
+        }
+        if (bound.left < maxBound.left) {
+            maxBound.left = bound.left
+        }
+        if (bound.right > maxBound.right) {
+            maxBound.right = bound.right
+        }
+    })
+    return maxBound
+}
+
+
 /**
  * Returns true if the provided bounds overlap.
  */
@@ -54,24 +81,33 @@ export class PDFPageInfo {
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getIntersectingTokenIds(selection: Bounds): TokenId[] {
+    getIntersectingTokenIds(selection: Bounds): TokenSpanAnnotation {
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
-        const ids: TokenId[] = [];
+        const ids: TokenWithId[] = [];
+        const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
-            if (doOverlap(
-                this.getScaledTokenBounds(this.tokens[i]),
-                relativeTo(selection, this.bounds))
-            ) {
-                ids.push({ pageIndex: this.page.pageNumber - 1, tokenIndex: i });
+            const tokenBound = this.getScaledTokenBounds(this.tokens[i])
+            if (doOverlap(tokenBound, relativeTo(selection, this.bounds))) {
+                ids.push({
+                    pageIndex: this.page.pageNumber - 1,
+                    tokenIndex: i,
+                    ...this.tokens[i]
+                });
+                tokenBounds.push(tokenBound);
             }
         }
-        return ids;
+        const bounds = spanningBound(tokenBounds);
+        return {
+            tokens: ids,
+            bounds: bounds
+        }
     }
+
     getIntersectingTokens(selection: Bounds): Token[] {
         const ids = this.getIntersectingTokenIds(selection);
-        return ids.map(id => this.tokens[id.tokenIndex]);
+        return ids.tokens.map(id => this.tokens[id.tokenIndex]);
     }
     getScaledTokenBounds(t: Token): Bounds {
         const b = {

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenId, TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
+import { merge, TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -256,23 +256,24 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
-                        const annotatedTokens: TokenId[] = []
+                        const annotations: TokenSpanAnnotation[] = []
 
                         // Loop over all pages to find tokens that intersect with the current
                         // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
-                            const tokens = p.getIntersectingTokenIds(normalizeBounds(selection))
-                            annotatedTokens.push(...tokens);
+                            const annotation = p.getIntersectingTokenIds(normalizeBounds(selection))
+                            annotations.push(annotation);
                         }
 
-                        if (annotatedTokens.length > 0) {
-                            const annotation: TokenSpanAnnotation = {
-                                tokens: annotatedTokens,
-                                bounds: selection
-                            }
+                        if (annotations.length > 0) {
+
+
+                            const combined = annotations.reduce((prev, current, i, arr) => {
+                                return merge(prev, current)
+                            })
                             const withNewAnnotation =
-                                annotationStore.tokenSpanAnnotations.concat([ annotation ])
+                                annotationStore.tokenSpanAnnotations.concat([ combined ])
                             annotationStore.setTokenSpanAnnotations(withNewAnnotation);
                         }
                     }
@@ -308,6 +309,7 @@ export const PDF = () => {
                 );
             })}
             {selection ? <Selection bounds={selection} /> : null}
+            {annotationStore.selectedTokenSpanAnnotation ? <Selection bounds={annotationStore.selectedTokenSpanAnnotation.bounds} /> : null}
         </PDFAnnotationsContainer>
     );
 };
@@ -320,7 +322,7 @@ const PDFAnnotationsContainer = styled.div`
 
 const SelectionBounds = styled.div(({ theme }) => `
     position: absolute;
-    border: 1px dotted ${theme.color.G4};
+    border: 2px dotted ${theme.color.G4};
 `);
 
 interface TokenSpanProps {
