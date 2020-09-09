@@ -177,8 +177,12 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     present in the annotators.json config file.
     """
 
-    # if x_auth_request_email is None:
-    #    raise HTTPException(status_code=401, detail="Not authenticated for annotation.")
+    # In development, the app isn't passed the x_auth_request_email header,
+    # meaning this would always fail. Instead, to smooth local development,
+    # we always return all pdfs, essentially short-circuiting the allocation
+    # mechanism.
+    if x_auth_request_email is None:
+        return configuration.pdfs
 
     allocation = annotators.allocations.get(x_auth_request_email, None)
 
