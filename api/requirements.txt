@@ -27,5 +27,3 @@ boto3
 # Allows us to use FastAPI's FileResponse for serving pdfs.
 aiofiles
 
-# interacting with S2 elasticsearch cluster.
-elasticsearch
