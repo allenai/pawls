@@ -7,7 +7,7 @@ import { Result, Progress, Link } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Labels } from '../components';
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAnnotatorPdfMetadata } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers } from '../api';
 import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -39,7 +39,7 @@ export const PDFPage = () => {
     const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
         useState<TokenSpanAnnotation>();
 
-    const [ pdfAllocation, setPdfAllocation] = useState<PaperMetadata[]>([])
+    const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's
@@ -56,10 +56,8 @@ export const PDFPage = () => {
     const theme = useContext(ThemeContext);
 
     useEffect( () => {
-        getAnnotatorPdfMetadata()
-        .then((pdfMetadata) => {
-            console.log(pdfMetadata)
-            setPdfAllocation(pdfMetadata)
+        getAssignedPapers().then((paperMetadata) => {
+            setAssignedPapers(paperMetadata)
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
             console.log(err)
@@ -195,9 +193,9 @@ export const PDFPage = () => {
                                         <SidebarItemTitle>
                                             Papers
                                         </SidebarItemTitle>
-                                        {pdfAllocation.length !== 0 ? (
+                                        {assignedPapers.length !== 0 ? (
                                             <>
-                                                {pdfAllocation.map((metadata) => (
+                                                {assignedPapers.map((metadata) => (
                                                     <Contrast>
                                                         <a href={`/pdf/${metadata.sha}`}>
                                                                 {metadata.title}

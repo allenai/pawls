@@ -78,7 +78,7 @@ export interface PaperMetadata {
     authors: string[]
 }
 
-export async function getAnnotatorPdfMetadata(): Promise<PaperMetadata[]> {
+export async function getAssignedPapers(): Promise<PaperMetadata[]> {
     return axios.get("/api/annotation/allocation/metadata")
                 .then(r => r.data)
 }
