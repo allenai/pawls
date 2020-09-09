@@ -193,7 +193,7 @@ function(
                         },
                     },
                     volumes: [
-                        { 
+                        {
                             name: 'skiff-files',
                             persistentVolumeClaim: {
                                 claimName: 'skiff-files-server-pawls'
@@ -205,6 +205,7 @@ function(
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
                             env: [ { name: "IN_PRODUCTION", value: "prod" }],
+                            envFrom: [ { secretRef: { name: "aws-pdf-iam" } } ],
                             volumeMounts: [
                                 {
                                     mountPath: '/skiff_files/apps/pawls',
