@@ -148,3 +148,5 @@ artifacts:
   objects:
     location: 'gs://skiff-archive/$REPO_NAME/$_ENV/$BUILD_ID/$COMMIT_SHA'
     paths: ['.skiff/webapp.yaml']
+
+timeout: 900s
