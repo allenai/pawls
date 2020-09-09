@@ -81,14 +81,41 @@ export class PDFPageInfo {
         public bounds?: Bounds
     ) {}
     getTokenSpanAnnotationForBounds(selection: Bounds): TokenSpanAnnotation {
+
+        /* This function is quite complicated. Our objective here is to
+           compute overlaps between a bounding box provided by a user and
+           grobid token spans associated with a pdf. The complexity here is
+           that grobid spans are relative to an absolute scale of the pdf,
+           but our user's bounding box is relative to the pdf rendered in their
+           client. 
+
+           The critical key here is that anything we *store* must be relative
+           to the underlying pdf. So for example, inside the for loop, we are
+           computing: 
+           
+           whether a grobid token (tokenBound), scaled to the current scale of the
+           pdf in the client (scaled(tokenBound, this.scale)), is overlapping with
+           the bounding box drawn by the user (selection) relative to the edge of 
+           the pdf in the client (relativeTo(selection, this.bounds)).
+
+           But! Once we have computed this, we store the grobid tokens and the bound
+           that contains all of them relative to the *original grobid tokens*.
+
+           This means that the stored data is not tied to a particular scale, and we
+           can re-scale it when we need to (mainly when the user resizes the browser window).
+         */
+
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
         const ids: TokenWithId[] = [];
         const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
-            const tokenBound = this.getScaledTokenBounds(this.tokens[i])
-            if (doOverlap(tokenBound, relativeTo(selection, this.bounds))) {
+            const tokenBound = this.getTokenBounds(this.tokens[i])
+            if (doOverlap(
+                scaled(tokenBound, this.scale), 
+                relativeTo(selection, this.bounds))
+                ) {
                 ids.push({
                     pageIndex: this.page.pageNumber - 1,
                     tokenIndex: i,
@@ -97,7 +124,7 @@ export class PDFPageInfo {
                 tokenBounds.push(tokenBound);
             }
         }
-        const bounds = spanningBound(tokenBounds);
+        const bounds = spanningBound(tokenBounds)
         return {
             tokens: ids,
             bounds: bounds
@@ -108,20 +135,22 @@ export class PDFPageInfo {
         const annotation = this.getTokenSpanAnnotationForBounds(selection);
         return annotation.tokens.map(id => this.tokens[id.tokenIndex]);
     }
+
     getScaledTokenBounds(t: Token): Bounds {
+        return this.getScaledBounds(this.getTokenBounds(t));
+    }
+
+    getTokenBounds(t: Token): Bounds {
         const b = {
             left: t.x,
             top: t.y,
             right: t.x + t.width,
             bottom: t.y + t.height
         };
-        return scaled(b, this.scale);
+        return b;
     }
 
     getScaledBounds(b: Bounds): Bounds {
-        if (this.bounds === undefined) {
-            throw new Error("Unknown Page Bounds")
-        }
         return scaled(b, this.scale)
     }
 
