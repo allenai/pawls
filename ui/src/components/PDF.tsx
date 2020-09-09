@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
+import { TokenId, TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -256,17 +256,21 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
-                        const annotation: TokenSpanAnnotation = [];
+                        const annotatedTokens: TokenId[] = []
 
                         // Loop over all pages to find tokens that intersect with the current
                         // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             const tokens = p.getIntersectingTokenIds(normalizeBounds(selection))
-                            annotation.push(...tokens);
+                            annotatedTokens.push(...tokens);
                         }
 
-                        if (annotation.length > 0) {
+                        if (annotatedTokens.length > 0) {
+                            const annotation: TokenSpanAnnotation = {
+                                tokens: annotatedTokens,
+                                bounds: selection
+                            }
                             const withNewAnnotation =
                                 annotationStore.tokenSpanAnnotations.concat([ annotation ])
                             annotationStore.setTokenSpanAnnotations(withNewAnnotation);
@@ -288,7 +292,7 @@ export const PDF = () => {
                     // This is an o(n) scan over the already selected tokens for every page. If this gets too expensive we could
                     // use a dictionary to make the lookup faster. That said I bet it's fine for
                     // the scale we're talking about.
-                    for (const tokenId of annotationStore.selectedTokenSpanAnnotation) {
+                    for (const tokenId of annotationStore.selectedTokenSpanAnnotation.tokens) {
                         if (tokenId.pageIndex === pageIndex) {
                             selectedTokens.push(p.tokens[tokenId.tokenIndex]);
                         }
