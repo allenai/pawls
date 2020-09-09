@@ -90,9 +90,6 @@ def maybe_download_pdfs(configuration: Configuration):
             configuration.output_directory, sha, "metadata.json"
         )
         metadata = get_paper_metadata(sha)
-        if metadata is None:
-            metadata = get_paper_metadata(sha, use_prod=True)
-
         json.dump(metadata._asdict(), open(metadata_path, "w+"))
 
         # Populate the pdf-structure-service with grobid
