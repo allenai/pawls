@@ -119,6 +119,9 @@ export class PDFPageInfo {
     }
 
     getScaledBounds(b: Bounds): Bounds {
+        if (this.bounds === undefined) {
+            throw new Error("Unknown Page Bounds")
+        }
         return scaled(b, this.scale)
     }
 

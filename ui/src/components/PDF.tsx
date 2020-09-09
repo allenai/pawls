@@ -106,11 +106,12 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 interface PageProps {
     pageInfo: PDFPageInfo;
     selection?: Bounds;
+    activeSelection?: Bounds;
     selectedTokens?: Token[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, selectedTokens, onError }: PageProps) => {
+const Page = ({ pageInfo, selection, activeSelection, selectedTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -179,6 +180,8 @@ const Page = ({ pageInfo, selectedTokens, onError }: PageProps) => {
                             }} />
                         )
                 })}
+            {selection ? <Selection bounds={selection} /> : null}
+            {activeSelection ? <Selection bounds={pageInfo.getScaledBounds(activeSelection)} /> : null}
         </PageAnnotationsContainer>
     );
 };
@@ -304,12 +307,12 @@ export const PDF = () => {
                     <Page
                         key={p.page.pageNumber}
                         pageInfo={p}
+                        selection={selection}
+                        activeSelection={annotationStore.selectedTokenSpanAnnotation ? annotationStore.selectedTokenSpanAnnotation.bounds: undefined}
                         selectedTokens={selectedTokens}
                         onError={pdfStore.onError} />
                 );
             })}
-            {selection ? <Selection bounds={selection} /> : null}
-            {annotationStore.selectedTokenSpanAnnotation ? <Selection bounds={annotationStore.selectedTokenSpanAnnotation.bounds} /> : null}
         </PDFAnnotationsContainer>
     );
 };
