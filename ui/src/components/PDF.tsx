@@ -262,7 +262,7 @@ export const PDF = () => {
                         // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
-                            const annotation = p.getIntersectingTokenIds(normalizeBounds(selection))
+                            const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection))
                             annotations.push(annotation);
                         }
 

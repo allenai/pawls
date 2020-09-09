@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenWithId, TokenSpanAnnotation } from './AnnotationStore';
+import { TokenWithId, TokenSpanAnnotation, largest, smallest } from './AnnotationStore';
 
 export interface Bounds {
     left: number;
@@ -36,7 +36,7 @@ function relativeTo(a: Bounds, b: Bounds): Bounds {
     };
 }
 
-function spanningBound(bounds: Bounds[]): Bounds{
+function spanningBound(bounds: Bounds[], padding: number = 10): Bounds{
 
     const maxBound: Bounds = {
         left: 50000,
@@ -46,20 +46,19 @@ function spanningBound(bounds: Bounds[]): Bounds{
     }
 
     bounds.forEach(bound => {
-        if (bound.bottom > maxBound.bottom) {
-            maxBound.bottom = bound.bottom
-        }
-        if (bound.top < maxBound.top) {
-            maxBound.top = bound.top
-        }
-        if (bound.left < maxBound.left) {
-            maxBound.left = bound.left
-        }
-        if (bound.right > maxBound.right) {
-            maxBound.right = bound.right
-        }
+        maxBound.bottom = largest(bound.bottom, maxBound.bottom)
+        maxBound.top = smallest(bound.top, maxBound.top)
+        maxBound.left = smallest(bound.left, maxBound.left)
+        maxBound.right = largest(bound.right, maxBound.right)
     })
+
+    maxBound.top = maxBound.top - padding
+    maxBound.left = maxBound.left - padding
+    maxBound.right = maxBound.right + padding
+    maxBound.bottom = maxBound.bottom + padding
+
     return maxBound
+
 }
 
 
@@ -81,7 +80,7 @@ export class PDFPageInfo {
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getIntersectingTokenIds(selection: Bounds): TokenSpanAnnotation {
+    getTokenSpanAnnotationForBounds(selection: Bounds): TokenSpanAnnotation {
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
@@ -106,8 +105,8 @@ export class PDFPageInfo {
     }
 
     getIntersectingTokens(selection: Bounds): Token[] {
-        const ids = this.getIntersectingTokenIds(selection);
-        return ids.tokens.map(id => this.tokens[id.tokenIndex]);
+        const annotation = this.getTokenSpanAnnotationForBounds(selection);
+        return annotation.tokens.map(id => this.tokens[id.tokenIndex]);
     }
     getScaledTokenBounds(t: Token): Bounds {
         const b = {
@@ -118,6 +117,11 @@ export class PDFPageInfo {
         };
         return scaled(b, this.scale);
     }
+
+    getScaledBounds(b: Bounds): Bounds {
+        return scaled(b, this.scale)
+    }
+
     get scale(): number {
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
