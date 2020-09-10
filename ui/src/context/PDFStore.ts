@@ -39,7 +39,7 @@ function relativeTo(a: Bounds, b: Bounds): Bounds {
 /**
  * Computes a bound which contains all of the bounds passed as arguments.
  */
-function spanningBound(bounds: Bounds[], padding: number = 10): Bounds{
+function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
 
     // Start with a bounding box for which any bound would be
     // contained within, meaning we immediately update maxBound.
@@ -130,11 +130,7 @@ export class PDFPageInfo {
             }
         }
         const bounds = spanningBound(tokenBounds)
-        return {
-            tokens: ids,
-            bounds: [bounds],
-            pages: [this.page.pageNumber - 1]
-        }
+        return new TokenSpanAnnotation(ids, [bounds], [this.page.pageNumber - 1])
     }
 
     getIntersectingTokens(selection: Bounds): Token[] {

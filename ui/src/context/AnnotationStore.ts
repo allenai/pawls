@@ -6,22 +6,22 @@ export interface TokenId {
     tokenIndex: number;
 }
 
-export interface TokenSpanAnnotation {
-    tokens: TokenId[]
-    bounds: Bounds[]
-    pages: number[]
-};
+export class TokenSpanAnnotation {
+    constructor(
+        public readonly tokens: TokenId[],
+        public readonly bounds: Bounds[],
+        public readonly pages: number[]
+    ) {}
 
-
-export function merge(a: TokenSpanAnnotation, b: TokenSpanAnnotation): TokenSpanAnnotation {
-
-    const newTokens = a.tokens.concat(b.tokens)
-    return {
-        tokens: newTokens,
-        bounds: a.bounds.concat(b.bounds),
-        pages: a.pages.concat(b.pages)
+    mergeWith(a: TokenSpanAnnotation): TokenSpanAnnotation {
+        return new TokenSpanAnnotation(
+            this.tokens.concat(a.tokens),
+            this.bounds.concat(a.bounds),
+            this.pages.concat(a.pages)
+        )
     }
-}
+
+};
 
 
 interface _AnnotationStore {
