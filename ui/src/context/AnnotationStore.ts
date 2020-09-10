@@ -9,7 +9,8 @@ export interface TokenWithId extends Token {
 
 export interface TokenSpanAnnotation {
     tokens: TokenWithId[]
-    bounds: Bounds
+    bounds: Bounds[]
+    pages: number[]
 };
 
 
@@ -24,16 +25,10 @@ export function smallest(a: number, b: number): number {
 export function merge(a: TokenSpanAnnotation, b: TokenSpanAnnotation): TokenSpanAnnotation {
 
     const newTokens = a.tokens.concat(b.tokens)
-    const newBounds: Bounds = {
-        top: smallest(a.bounds.top, b.bounds.top),
-        bottom: largest(a.bounds.bottom, b.bounds.bottom),
-        left: smallest(a.bounds.left, b.bounds.left), 
-        right: largest(a.bounds.right, b.bounds.right)
-    }
-
     return {
         tokens: newTokens,
-        bounds: newBounds
+        bounds: a.bounds.concat(b.bounds),
+        pages: a.pages.concat(b.pages)
     }
 }
 

@@ -106,12 +106,12 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 interface PageProps {
     pageInfo: PDFPageInfo;
     selection?: Bounds;
-    activeSelection?: Bounds;
+    activeSelection?: Bounds[];
     selectedTokens?: Token[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, selection, activeSelection, selectedTokens, onError }: PageProps) => {
+const Page = ({ pageInfo, activeSelection, selectedTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -180,8 +180,9 @@ const Page = ({ pageInfo, selection, activeSelection, selectedTokens, onError }:
                             }} />
                         )
                 })}
-            {selection ? <Selection bounds={selection} /> : null}
-            {activeSelection ? <Selection bounds={pageInfo.getScaledBounds(activeSelection)} /> : null}
+                {activeSelection ? activeSelection.map((bound, i) => (
+                    <Selection key={i} bounds={pageInfo.getScaledBounds(bound)} />)
+                    ):  null }
         </PageAnnotationsContainer>
     );
 };
@@ -266,9 +267,10 @@ export const PDF = () => {
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection))
-                            annotations.push(annotation);
+                            if (annotation.tokens.length > 0) {
+                                annotations.push(annotation);
+                            }
                         }
-
                         if (annotations.length > 0) {
 
 
@@ -287,32 +289,39 @@ export const PDF = () => {
         >
             {pdfStore.pages.map((p, pageIndex) => {
                 let selectedTokens: Token[] = [];
+                let selectedTokenBounds: Bounds[] = [];
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
                 // TODO (@codeviking): We probably eventually want to display both.
                 if (selection) {
                     selectedTokens = p.getIntersectingTokens(normalizeBounds(selection));
                 } else if (annotationStore.selectedTokenSpanAnnotation) {
+                    const annotation = annotationStore.selectedTokenSpanAnnotation 
                     // This is an o(n) scan over the already selected tokens for every page. If this gets too expensive we could
                     // use a dictionary to make the lookup faster. That said I bet it's fine for
                     // the scale we're talking about.
-                    for (const tokenId of annotationStore.selectedTokenSpanAnnotation.tokens) {
+                    for (const tokenId of annotation.tokens) {
                         if (tokenId.pageIndex === pageIndex) {
                             selectedTokens.push(p.tokens[tokenId.tokenIndex]);
                         }
                     }
+                    annotation.pages.forEach((page, index) => {
+                        if (page === pageIndex) {
+                            selectedTokenBounds.push(annotation.bounds[index])
+                        }
+                    })
                 }
 
                 return (
                     <Page
                         key={p.page.pageNumber}
                         pageInfo={p}
-                        selection={selection}
-                        activeSelection={annotationStore.selectedTokenSpanAnnotation ? annotationStore.selectedTokenSpanAnnotation.bounds: undefined}
                         selectedTokens={selectedTokens}
+                        activeSelection={selectedTokenBounds}
                         onError={pdfStore.onError} />
                 );
             })}
+            {selection ? <Selection bounds={selection} /> : null}
         </PDFAnnotationsContainer>
     );
 };

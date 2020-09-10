@@ -127,7 +127,8 @@ export class PDFPageInfo {
         const bounds = spanningBound(tokenBounds)
         return {
             tokens: ids,
-            bounds: bounds
+            bounds: [bounds],
+            pages: [this.page.pageNumber - 1]
         }
     }
 
