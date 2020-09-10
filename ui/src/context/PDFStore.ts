@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenWithId, TokenSpanAnnotation, largest, smallest } from './AnnotationStore';
+import { TokenId, TokenSpanAnnotation } from './AnnotationStore';
 
 export interface Bounds {
     left: number;
@@ -36,20 +36,25 @@ function relativeTo(a: Bounds, b: Bounds): Bounds {
     };
 }
 
+/**
+ * Computes a bound which contains all of the bounds passed as arguments.
+ */
 function spanningBound(bounds: Bounds[], padding: number = 10): Bounds{
 
+    // Start with a bounding box for which any bound would be
+    // contained within, meaning we immediately update maxBound.
     const maxBound: Bounds = {
-        left: 50000,
-        top: 50000,
+        left: Number.MAX_VALUE,
+        top: Number.MAX_VALUE,
         right: 0,
         bottom: 0
     }
 
     bounds.forEach(bound => {
-        maxBound.bottom = largest(bound.bottom, maxBound.bottom)
-        maxBound.top = smallest(bound.top, maxBound.top)
-        maxBound.left = smallest(bound.left, maxBound.left)
-        maxBound.right = largest(bound.right, maxBound.right)
+        maxBound.bottom = Math.max(bound.bottom, maxBound.bottom)
+        maxBound.top = Math.min(bound.top, maxBound.top)
+        maxBound.left = Math.min(bound.left, maxBound.left)
+        maxBound.right = Math.max(bound.right, maxBound.right)
     })
 
     maxBound.top = maxBound.top - padding
@@ -108,7 +113,7 @@ export class PDFPageInfo {
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
-        const ids: TokenWithId[] = [];
+        const ids: TokenId[] = [];
         const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
             const tokenBound = this.getTokenBounds(this.tokens[i])

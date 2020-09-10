@@ -204,7 +204,7 @@ const Selection = ({ bounds }: SelectionProps) => {
                 width: `${Math.abs(width)}px`,
                 height: `${Math.abs(height)}px`,
                 transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
-                transformOrigin: 'top left'
+                transformOrigin: 'top left',
             }} />
     );
 }
@@ -272,8 +272,6 @@ export const PDF = () => {
                             }
                         }
                         if (annotations.length > 0) {
-
-
                             const combined = annotations.reduce((prev, current, i, arr) => {
                                 return merge(prev, current)
                             })

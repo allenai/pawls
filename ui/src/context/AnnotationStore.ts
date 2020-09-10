@@ -1,26 +1,17 @@
 import { createContext } from 'react';
 import { Bounds } from "./PDFStore";
-import { Token } from "../api";
 
-export interface TokenWithId extends Token {
+export interface TokenId {
     pageIndex: number;
     tokenIndex: number;
 }
 
 export interface TokenSpanAnnotation {
-    tokens: TokenWithId[]
+    tokens: TokenId[]
     bounds: Bounds[]
     pages: number[]
 };
 
-
-export function largest(a: number, b: number): number {
-    return a >= b ? a : b
-}
-
-export function smallest(a: number, b: number): number {
-    return a <= b ? a : b
-}
 
 export function merge(a: TokenSpanAnnotation, b: TokenSpanAnnotation): TokenSpanAnnotation {
 
