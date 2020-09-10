@@ -1,11 +1,28 @@
 import { createContext } from 'react';
+import { Bounds } from "./PDFStore";
 
 export interface TokenId {
     pageIndex: number;
     tokenIndex: number;
 }
 
-export type TokenSpanAnnotation = TokenId[];
+export class TokenSpanAnnotation {
+    constructor(
+        public readonly tokens: TokenId[],
+        public readonly bounds: Bounds[],
+        public readonly pages: number[]
+    ) {}
+
+    mergeWith(a: TokenSpanAnnotation): TokenSpanAnnotation {
+        return new TokenSpanAnnotation(
+            this.tokens.concat(a.tokens),
+            this.bounds.concat(a.bounds),
+            this.pages.concat(a.pages)
+        )
+    }
+
+};
+
 
 interface _AnnotationStore {
     tokenSpanAnnotations: TokenSpanAnnotation[];

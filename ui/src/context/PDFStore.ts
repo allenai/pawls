@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token } from '../api';
-import { TokenId } from './AnnotationStore';
+import { TokenId, TokenSpanAnnotation } from './AnnotationStore';
 
 export interface Bounds {
     left: number;
@@ -37,6 +37,37 @@ function relativeTo(a: Bounds, b: Bounds): Bounds {
 }
 
 /**
+ * Computes a bound which contains all of the bounds passed as arguments.
+ */
+function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
+
+    // Start with a bounding box for which any bound would be
+    // contained within, meaning we immediately update maxBound.
+    const maxBound: Bounds = {
+        left: Number.MAX_VALUE,
+        top: Number.MAX_VALUE,
+        right: 0,
+        bottom: 0
+    }
+
+    bounds.forEach(bound => {
+        maxBound.bottom = Math.max(bound.bottom, maxBound.bottom)
+        maxBound.top = Math.min(bound.top, maxBound.top)
+        maxBound.left = Math.min(bound.left, maxBound.left)
+        maxBound.right = Math.max(bound.right, maxBound.right)
+    })
+
+    maxBound.top = maxBound.top - padding
+    maxBound.left = maxBound.left - padding
+    maxBound.right = maxBound.right + padding
+    maxBound.bottom = maxBound.bottom + padding
+
+    return maxBound
+
+}
+
+
+/**
  * Returns true if the provided bounds overlap.
  */
 function doOverlap(a: Bounds, b: Bounds): boolean {
@@ -54,34 +85,77 @@ export class PDFPageInfo {
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getIntersectingTokenIds(selection: Bounds): TokenId[] {
+    getTokenSpanAnnotationForBounds(selection: Bounds): TokenSpanAnnotation {
+
+        /* This function is quite complicated. Our objective here is to
+           compute overlaps between a bounding box provided by a user and
+           grobid token spans associated with a pdf. The complexity here is
+           that grobid spans are relative to an absolute scale of the pdf,
+           but our user's bounding box is relative to the pdf rendered in their
+           client. 
+
+           The critical key here is that anything we *store* must be relative
+           to the underlying pdf. So for example, inside the for loop, we are
+           computing: 
+           
+           whether a grobid token (tokenBound), scaled to the current scale of the
+           pdf in the client (scaled(tokenBound, this.scale)), is overlapping with
+           the bounding box drawn by the user (selection) relative to the edge of 
+           the pdf in the client (relativeTo(selection, this.bounds)).
+
+           But! Once we have computed this, we store the grobid tokens and the bound
+           that contains all of them relative to the *original grobid tokens*.
+
+           This means that the stored data is not tied to a particular scale, and we
+           can re-scale it when we need to (mainly when the user resizes the browser window).
+         */
+
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
         const ids: TokenId[] = [];
+        const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
+            const tokenBound = this.getTokenBounds(this.tokens[i])
             if (doOverlap(
-                this.getScaledTokenBounds(this.tokens[i]),
+                scaled(tokenBound, this.scale), 
                 relativeTo(selection, this.bounds))
-            ) {
-                ids.push({ pageIndex: this.page.pageNumber - 1, tokenIndex: i });
+                ) {
+                ids.push({
+                    pageIndex: this.page.pageNumber - 1,
+                    tokenIndex: i,
+                    ...this.tokens[i]
+                });
+                tokenBounds.push(tokenBound);
             }
         }
-        return ids;
+        const bounds = spanningBound(tokenBounds)
+        return new TokenSpanAnnotation(ids, [bounds], [this.page.pageNumber - 1])
     }
+
     getIntersectingTokens(selection: Bounds): Token[] {
-        const ids = this.getIntersectingTokenIds(selection);
-        return ids.map(id => this.tokens[id.tokenIndex]);
+        const annotation = this.getTokenSpanAnnotationForBounds(selection);
+        return annotation.tokens.map(id => this.tokens[id.tokenIndex]);
     }
+
     getScaledTokenBounds(t: Token): Bounds {
+        return this.getScaledBounds(this.getTokenBounds(t));
+    }
+
+    getTokenBounds(t: Token): Bounds {
         const b = {
             left: t.x,
             top: t.y,
             right: t.x + t.width,
             bottom: t.y + t.height
         };
-        return scaled(b, this.scale);
+        return b;
     }
+
+    getScaledBounds(b: Bounds): Bounds {
+        return scaled(b, this.scale)
+    }
+
     get scale(): number {
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');

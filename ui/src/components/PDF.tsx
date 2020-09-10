@@ -106,11 +106,12 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 interface PageProps {
     pageInfo: PDFPageInfo;
     selection?: Bounds;
+    activeSelection?: Bounds[];
     selectedTokens?: Token[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, selectedTokens, onError }: PageProps) => {
+const Page = ({ pageInfo, activeSelection, selectedTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -179,6 +180,9 @@ const Page = ({ pageInfo, selectedTokens, onError }: PageProps) => {
                             }} />
                         )
                 })}
+                {activeSelection ? activeSelection.map((bound, i) => (
+                    <Selection key={i} bounds={pageInfo.getScaledBounds(bound)} />)
+                    ):  null }
         </PageAnnotationsContainer>
     );
 };
@@ -200,7 +204,7 @@ const Selection = ({ bounds }: SelectionProps) => {
                 width: `${Math.abs(width)}px`,
                 height: `${Math.abs(height)}px`,
                 transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
-                transformOrigin: 'top left'
+                transformOrigin: 'top left',
             }} />
     );
 }
@@ -256,17 +260,18 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
-                        const annotation: TokenSpanAnnotation = [];
+                        let annotation = new TokenSpanAnnotation([], [], [])
 
                         // Loop over all pages to find tokens that intersect with the current
                         // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
-                            const tokens = p.getIntersectingTokenIds(normalizeBounds(selection))
-                            annotation.push(...tokens);
+                            const next = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection))
+                            if (next.tokens.length > 0) {
+                                annotation = annotation.mergeWith(next)
+                            }
                         }
-
-                        if (annotation.length > 0) {
+                        if (annotation.tokens.length > 0) {
                             const withNewAnnotation =
                                 annotationStore.tokenSpanAnnotations.concat([ annotation ])
                             annotationStore.setTokenSpanAnnotations(withNewAnnotation);
@@ -279,20 +284,27 @@ export const PDF = () => {
         >
             {pdfStore.pages.map((p, pageIndex) => {
                 let selectedTokens: Token[] = [];
+                let selectedTokenBounds: Bounds[] = [];
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
                 // TODO (@codeviking): We probably eventually want to display both.
                 if (selection) {
                     selectedTokens = p.getIntersectingTokens(normalizeBounds(selection));
                 } else if (annotationStore.selectedTokenSpanAnnotation) {
+                    const annotation = annotationStore.selectedTokenSpanAnnotation 
                     // This is an o(n) scan over the already selected tokens for every page. If this gets too expensive we could
                     // use a dictionary to make the lookup faster. That said I bet it's fine for
                     // the scale we're talking about.
-                    for (const tokenId of annotationStore.selectedTokenSpanAnnotation) {
+                    for (const tokenId of annotation.tokens) {
                         if (tokenId.pageIndex === pageIndex) {
                             selectedTokens.push(p.tokens[tokenId.tokenIndex]);
                         }
                     }
+                    annotation.pages.forEach((page, index) => {
+                        if (page === pageIndex) {
+                            selectedTokenBounds.push(annotation.bounds[index])
+                        }
+                    })
                 }
 
                 return (
@@ -300,6 +312,7 @@ export const PDF = () => {
                         key={p.page.pageNumber}
                         pageInfo={p}
                         selectedTokens={selectedTokens}
+                        activeSelection={selectedTokenBounds}
                         onError={pdfStore.onError} />
                 );
             })}
@@ -316,7 +329,7 @@ const PDFAnnotationsContainer = styled.div`
 
 const SelectionBounds = styled.div(({ theme }) => `
     position: absolute;
-    border: 1px dotted ${theme.color.G4};
+    border: 2px dotted ${theme.color.G4};
 `);
 
 interface TokenSpanProps {
