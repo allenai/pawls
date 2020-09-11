@@ -108,10 +108,11 @@ interface PageProps {
     selection?: Bounds;
     activeSelection?: Bounds[];
     selectedTokens?: Token[];
+    annotation: TokenSpanAnnotation;
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, activeSelection, selectedTokens, onError }: PageProps) => {
+const Page = ({ pageInfo, annotation, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -166,8 +167,8 @@ const Page = ({ pageInfo, activeSelection, selectedTokens, onError }: PageProps)
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-                isVisible && selectedTokens && selectedTokens.map((t, i) => {
-                    const b = pageInfo.getScaledTokenBounds(t);
+                isVisible && annotation.tokens.map((t, i) => {
+                    const b = pageInfo.getScaledTokenBounds(pageInfo.tokens[t.tokenIndex]);
                     return (
                         <TokenSpan
                             key={i}
@@ -180,18 +181,19 @@ const Page = ({ pageInfo, activeSelection, selectedTokens, onError }: PageProps)
                             }} />
                         )
                 })}
-                {activeSelection ? activeSelection.map((bound, i) => (
-                    <Selection key={i} bounds={pageInfo.getScaledBounds(bound)} />)
-                    ):  null }
+                {annotation.bounds.map((bound, i) => (
+                    <Selection key={i} label={annotation.label} bounds={pageInfo.getScaledBounds(bound)} />)
+                    )}
         </PageAnnotationsContainer>
     );
 };
 
 interface SelectionProps {
    bounds: Bounds;
+   label?: string;
 }
 
-const Selection = ({ bounds }: SelectionProps) => {
+const Selection = ({ bounds, label}: SelectionProps) => {
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
@@ -205,7 +207,9 @@ const Selection = ({ bounds }: SelectionProps) => {
                 height: `${Math.abs(height)}px`,
                 transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
                 transformOrigin: 'top left',
-            }} />
+            }} >
+                {label? label : null}
+            </SelectionBounds>
     );
 }
 
@@ -260,13 +264,13 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages) {
-                        let annotation = new TokenSpanAnnotation([], [], [])
+                        let annotation = new TokenSpanAnnotation([], [], [], annotationStore.activeLabel)
 
                         // Loop over all pages to find tokens that intersect with the current
                         // selection, since we allow selections to cross page boundaries.
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
-                            const next = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection))
+                            const next = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
                             if (next.tokens.length > 0) {
                                 annotation = annotation.mergeWith(next)
                             }
@@ -283,36 +287,28 @@ export const PDF = () => {
             ) : undefined}
         >
             {pdfStore.pages.map((p, pageIndex) => {
-                let selectedTokens: Token[] = [];
-                let selectedTokenBounds: Bounds[] = [];
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
                 // TODO (@codeviking): We probably eventually want to display both.
+                let annotation = new TokenSpanAnnotation([], [], [], annotationStore.activeLabel)
                 if (selection) {
-                    selectedTokens = p.getIntersectingTokens(normalizeBounds(selection));
+                    annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
+                    // When the user is actively making a selection, we render the
+                    // bounds below rather than in the page, for 2 reasons:
+                    // 1) The bounds might go across pages
+                    // 2) The computed bounds for the annotation encapsulate it,
+                    //    but this is a weird experience when you are trying to accurately
+                    //    select tokens.
+                    annotation.bounds = []
                 } else if (annotationStore.selectedTokenSpanAnnotation) {
-                    const annotation = annotationStore.selectedTokenSpanAnnotation 
-                    // This is an o(n) scan over the already selected tokens for every page. If this gets too expensive we could
-                    // use a dictionary to make the lookup faster. That said I bet it's fine for
-                    // the scale we're talking about.
-                    for (const tokenId of annotation.tokens) {
-                        if (tokenId.pageIndex === pageIndex) {
-                            selectedTokens.push(p.tokens[tokenId.tokenIndex]);
-                        }
-                    }
-                    annotation.pages.forEach((page, index) => {
-                        if (page === pageIndex) {
-                            selectedTokenBounds.push(annotation.bounds[index])
-                        }
-                    })
+                    annotation = annotationStore.selectedTokenSpanAnnotation.annotationsForPage(pageIndex)
                 }
 
                 return (
                     <Page
                         key={p.page.pageNumber}
                         pageInfo={p}
-                        selectedTokens={selectedTokens}
-                        activeSelection={selectedTokenBounds}
+                        annotation={annotation}
                         onError={pdfStore.onError} />
                 );
             })}
@@ -329,7 +325,7 @@ const PDFAnnotationsContainer = styled.div`
 
 const SelectionBounds = styled.div(({ theme }) => `
     position: absolute;
-    border: 2px dotted ${theme.color.G4};
+    border: 3px dotted ${theme.color.G4};
 `);
 
 interface TokenSpanProps {
