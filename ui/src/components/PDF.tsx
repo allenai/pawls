@@ -4,6 +4,7 @@ import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
 import { Token } from '../api';
 import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
+import { Selection } from '../components'
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -108,11 +109,11 @@ interface PageProps {
     selection?: Bounds;
     activeSelection?: Bounds[];
     selectedTokens?: Token[];
-    annotation: TokenSpanAnnotation;
+    annotations: TokenSpanAnnotation[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, annotation, onError }: PageProps) => {
+const Page = ({ pageInfo, annotations, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -167,51 +168,38 @@ const Page = ({ pageInfo, annotation, onError }: PageProps) => {
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-                isVisible && annotation.tokens.map((t, i) => {
-                    const b = pageInfo.getScaledTokenBounds(pageInfo.tokens[t.tokenIndex]);
-                    return (
-                        <TokenSpan
-                            key={i}
-                            isSelected={true}
-                            style={{
-                                left: `${b.left}px`,
-                                top: `${b.top}px`,
-                                width: `${b.right - b.left}px`,
-                                height: `${b.bottom - b.top}px`
-                            }} />
+
+                isVisible && annotations.map((annotation) => {
+                    const tokens = annotation.tokens.map((t, i) => {
+                        const b = pageInfo.getScaledTokenBounds(pageInfo.tokens[t.tokenIndex]);
+                        return (
+                            <TokenSpan
+                                key={i}
+                                isSelected={true}
+                                style={{
+                                    left: `${b.left}px`,
+                                    top: `${b.top}px`,
+                                    width: `${b.right - b.left}px`,
+                                    height: `${b.bottom - b.top}px`
+                                }} />
+                            )
+                        })
+                    const selections = annotation.bounds.map((bound, i) => (
+                        <Selection key={i} label={annotation.label} bounds={pageInfo.getScaledBounds(bound)} />)
                         )
-                })}
-                {annotation.bounds.map((bound, i) => (
-                    <Selection key={i} label={annotation.label} bounds={pageInfo.getScaledBounds(bound)} />)
-                    )}
+                    return (
+                        <>
+                        {tokens}
+                        {selections}
+                        </>
+                        )
+                    }
+                )
+            }
         </PageAnnotationsContainer>
     );
 };
 
-interface SelectionProps {
-   bounds: Bounds;
-   label?: string;
-}
-
-const Selection = ({ bounds, label}: SelectionProps) => {
-    const width = bounds.right - bounds.left;
-    const height = bounds.bottom - bounds.top;
-    const rotateY = width < 0 ? -180 : 0;
-    const rotateX = height < 0 ? -180 : 0;
-    return (
-        <SelectionBounds
-            style={{
-                left: `${bounds.left}px`,
-                top: `${bounds.top}px`,
-                width: `${Math.abs(width)}px`,
-                height: `${Math.abs(height)}px`,
-                transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
-                transformOrigin: 'top left',
-            }} >
-                {label? label : null}
-            </SelectionBounds>
-    );
-}
 
 export const PDF = () => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -289,10 +277,9 @@ export const PDF = () => {
             {pdfStore.pages.map((p, pageIndex) => {
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
-                // TODO (@codeviking): We probably eventually want to display both.
-                let annotation = new TokenSpanAnnotation([], [], [], annotationStore.activeLabel)
+                const existingAnnotations = annotationStore.tokenSpanAnnotations.map(a => a.annotationsForPage(pageIndex))
                 if (selection) {
-                    annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
+                    const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
                     // When the user is actively making a selection, we render the
                     // bounds below rather than in the page, for 2 reasons:
                     // 1) The bounds might go across pages
@@ -300,15 +287,14 @@ export const PDF = () => {
                     //    but this is a weird experience when you are trying to accurately
                     //    select tokens.
                     annotation.bounds = []
-                } else if (annotationStore.selectedTokenSpanAnnotation) {
-                    annotation = annotationStore.selectedTokenSpanAnnotation.annotationsForPage(pageIndex)
+                    existingAnnotations.push(annotation)
                 }
 
                 return (
                     <Page
                         key={p.page.pageNumber}
                         pageInfo={p}
-                        annotation={annotation}
+                        annotations={existingAnnotations}
                         onError={pdfStore.onError} />
                 );
             })}
@@ -323,11 +309,6 @@ const PDFAnnotationsContainer = styled.div`
     position: relative;
 `;
 
-const SelectionBounds = styled.div(({ theme }) => `
-    position: absolute;
-    border: 3px dotted ${theme.color.G4};
-`);
-
 interface TokenSpanProps {
     isSelected?: boolean;
 }
@@ -335,7 +316,8 @@ interface TokenSpanProps {
 const TokenSpan = styled.span<TokenSpanProps>(({ theme, isSelected }) =>`
     position: absolute;
     background: ${isSelected ? theme.color.B6 : 'none'};
-    opacity: 0.4;
+    opacity: 0.2;
+    border-radius: 3px;
 `);
 
 const PageAnnotationsContainer = styled.div(({ theme }) =>`

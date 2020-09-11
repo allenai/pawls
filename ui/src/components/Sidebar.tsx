@@ -35,15 +35,7 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
                 ) : (
                     <ul>
                         {annotationStore.tokenSpanAnnotations.map((annotation, i) => (
-                            <li
-                                key={annotation.toString()}
-                                onMouseEnter={(_) => {
-                                    annotationStore.setSelectedTokenSpanAnnotation(annotation)
-                                }}
-                                onMouseLeave={() => {
-                                    annotationStore.setSelectedTokenSpanAnnotation(undefined)
-                                }}
-                            >
+                            <li key={annotation.toString()} >
                                 Annotation #{i + 1}
                             </li>
                         ))}
@@ -70,10 +62,7 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
                 )}
             </SidebarItem>
         </SidebarContainer>
-
     )
-
-
 }
 
 interface HasWidth {
