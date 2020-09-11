@@ -2,12 +2,12 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, Link } from '@allenai/varnish';
+import { Result, Progress } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage, Labels } from '../components';
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers } from '../api';
+import { PDF, CenterOnPage, Sidebar } from '../components';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels } from '../api';
 import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -40,6 +40,8 @@ export const PDFPage = () => {
         useState<TokenSpanAnnotation>();
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
+    const [ activeLabel, setActiveLabel] = useState<string>("");
+    const [ labels, setLabels] = useState<string[]>([]);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's
@@ -54,6 +56,14 @@ export const PDFPage = () => {
     }, [ setViewState ]);
 
     const theme = useContext(ThemeContext);
+
+
+    useEffect(() => {
+        getLabels().then(labels => {
+            setLabels(labels)
+            setActiveLabel(labels[0])
+        })
+    }, []) 
 
     useEffect( () => {
         getAssignedPapers().then((paperMetadata) => {
@@ -148,6 +158,9 @@ export const PDFPage = () => {
                     }}>
                         <AnnotationStore.Provider
                             value={{
+                                labels,
+                                activeLabel,
+                                setActiveLabel,
                                 tokenSpanAnnotations,
                                 setTokenSpanAnnotations,
                                 selectedTokenSpanAnnotation,
@@ -155,59 +168,7 @@ export const PDFPage = () => {
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>
-                                <Sidebar width={sidebarWidth}>
-                                    <h2>Pawls</h2>
-                                    <SidebarItem>
-                                        <SidebarItemTitle>
-                                            Labels
-                                        </SidebarItemTitle>
-                                        <Labels/>
-                                    </SidebarItem>
-
-                                    <SidebarItem>
-                                        <SidebarItemTitle>
-                                            Annotations
-                                        </SidebarItemTitle>
-                                        {tokenSpanAnnotations.length === 0 ? (
-                                            <>None</>
-                                        ) : (
-                                            <ul>
-                                                {tokenSpanAnnotations.map((t, i) => (
-                                                    <li
-                                                        key={i}
-                                                        onMouseEnter={(_) => {
-                                                            setSelectedTokenSpanAnnotation(t)
-                                                        }}
-                                                        onMouseLeave={() => {
-                                                            setSelectedTokenSpanAnnotation(undefined)
-                                                        }}
-                                                    >
-                                                        Annotation #{i + 1}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </SidebarItem>
-
-                                    <SidebarItem>
-                                        <SidebarItemTitle>
-                                            Papers
-                                        </SidebarItemTitle>
-                                        {assignedPapers.length !== 0 ? (
-                                            <>
-                                                {assignedPapers.map((metadata) => (
-                                                    <Contrast>
-                                                        <a href={`/pdf/${metadata.sha}`}>
-                                                                {metadata.title}
-                                                        </a>
-                                                    </Contrast>
-                                                ))}
-                                            </>
-                                        ) : (
-                                            <>No Pdfs Allocated!</>
-                                        )}
-                                    </SidebarItem>
-                                </Sidebar>
+                                <Sidebar assignedPapers={assignedPapers} sidebarWidth={sidebarWidth}/>
                                 <PDFContainer>
                                     <PDF />
                                 </PDFContainer>
@@ -239,50 +200,8 @@ const WithSidebar = styled.div<HasWidth>(({ width }) =>`
     padding-left: ${width};
 `);
 
-const Sidebar = styled.div<HasWidth>(({ theme, width }) => `
-    width: ${width};
-    position: fixed;
-    left: 0;
-    overflow-y: scroll;
-    background: ${theme.color.N10};
-    color: ${theme.color.N2};
-    padding: ${theme.spacing.md} ${theme.spacing.md};
-    height: 100vh;
-    * {
-        color: ${theme.color.N2};
-    }
-`);
-
-
-const SidebarItem = styled.div(({ theme }) => `
-    min-height: 200px;
-    max-height: 400px;
-    overflow-y: scroll;
-    background: ${theme.color.N9};
-    margin-bottom: ${theme.spacing.md};
-    padding: ${theme.spacing.xxs} ${theme.spacing.sm};
-    border-radius: 5px;
-
-`);
-
-// text-transform is necessary because h5 is all caps in antd/varnish.
-const SidebarItemTitle = styled.h5(({ theme }) => `
-    margin: ${theme.spacing.xs} 0;
-    text-transform: capitalize;
-`);
-
 
 const PDFContainer = styled.div(({ theme }) => `
     background: ${theme.color.N4};
     padding: ${theme.spacing.sm};
 `);
-
-
-const Contrast = styled.div`
-  a[href] {
-    ${Link.contrastLinkColorStyles()};
-  }
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-`;

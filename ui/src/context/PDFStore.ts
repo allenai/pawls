@@ -85,7 +85,7 @@ export class PDFPageInfo {
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getTokenSpanAnnotationForBounds(selection: Bounds): TokenSpanAnnotation {
+    getTokenSpanAnnotationForBounds(selection: Bounds, label: string): TokenSpanAnnotation {
 
         /* This function is quite complicated. Our objective here is to
            compute overlaps between a bounding box provided by a user and
@@ -124,19 +124,14 @@ export class PDFPageInfo {
                 ids.push({
                     pageIndex: this.page.pageNumber - 1,
                     tokenIndex: i,
-                    ...this.tokens[i]
                 });
                 tokenBounds.push(tokenBound);
             }
         }
         const bounds = spanningBound(tokenBounds)
-        return new TokenSpanAnnotation(ids, [bounds], [this.page.pageNumber - 1])
+        return new TokenSpanAnnotation(ids, [bounds], [this.page.pageNumber - 1], label)
     }
 
-    getIntersectingTokens(selection: Bounds): Token[] {
-        const annotation = this.getTokenSpanAnnotationForBounds(selection);
-        return annotation.tokens.map(id => this.tokens[id.tokenIndex]);
-    }
 
     getScaledTokenBounds(t: Token): Bounds {
         return this.getScaledBounds(this.getTokenBounds(t));
