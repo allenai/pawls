@@ -31,6 +31,8 @@ export class TokenSpanAnnotation {
         )
     }
 
+    // TODO(Mark): Change the caching in this function
+    // when we allow users to modify annotations.
     annotationsForPage(page: number): TokenSpanAnnotation {
         // An annotation might cross a page boundary.
         // In that case, we will render it as two separate
