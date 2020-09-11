@@ -3,9 +3,7 @@ import { Tag } from "@allenai/varnish";
 
 import { AnnotationStore } from "../context";
 
-
 const { CheckableTag } = Tag;
-
 
 export const Labels = () => {
 
@@ -21,30 +19,25 @@ export const Labels = () => {
                 if (index < annotationStore.labels.length) {
                     annotationStore.setActiveLabel(annotationStore.labels[index])
                 }
-
             }
             // Tab key
             if (e.keyCode === 9) {
                 const currentIndex = annotationStore.labels.indexOf(annotationStore.activeLabel)
-                
                 let next = currentIndex === annotationStore.labels.length - 1 ? 0 : currentIndex + 1
                 // Shift + Tab is the other way.
                 if (e.shiftKey) {
                     next = currentIndex === 0 ? annotationStore.labels.length - 1 : currentIndex - 1
                 }
                 annotationStore.setActiveLabel(annotationStore.labels[next])
-
             }
-            // TODO(Mark): Shift + tab should go backward in the label list.
         }
         window.addEventListener("keydown", onKeyPress)
-
         return (() => {
             window.removeEventListener("keydown", onKeyPress)
         })
-
     }, [annotationStore])
     
+    // TODO(Mark): Style the tags so it's clear you can select them with the numeric keys.
     return (
         <>
             {annotationStore.labels.map(label => (

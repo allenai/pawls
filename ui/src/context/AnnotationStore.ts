@@ -37,9 +37,7 @@ export class TokenSpanAnnotation {
             this.pages.filter(p => p === page),
             this.label
         )
-
     }
-
 };
 
 

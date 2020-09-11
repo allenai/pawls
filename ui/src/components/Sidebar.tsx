@@ -18,58 +18,58 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
 
     return(
         <SidebarContainer width={sidebarWidth}>
-        <h2>Pawls</h2>
-        <SidebarItem>
-            <SidebarItemTitle>
-                Labels
-            </SidebarItemTitle>
-            <Labels/>
-        </SidebarItem>
+            <h2>Pawls</h2>
+            <SidebarItem>
+                <SidebarItemTitle>
+                    Labels
+                </SidebarItemTitle>
+                <Labels/>
+            </SidebarItem>
 
-        <SidebarItem>
-            <SidebarItemTitle>
-                Annotations
-            </SidebarItemTitle>
-            {annotationStore.tokenSpanAnnotations.length === 0 ? (
-                <>None</>
-            ) : (
-                <ul>
-                    {annotationStore.tokenSpanAnnotations.map((t, i) => (
-                        <li
-                            key={i}
-                            onMouseEnter={(_) => {
-                                annotationStore.setSelectedTokenSpanAnnotation(t)
-                            }}
-                            onMouseLeave={() => {
-                                annotationStore.setSelectedTokenSpanAnnotation(undefined)
-                            }}
-                        >
-                            Annotation #{i + 1}
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </SidebarItem>
+            <SidebarItem>
+                <SidebarItemTitle>
+                    Annotations
+                </SidebarItemTitle>
+                {annotationStore.tokenSpanAnnotations.length === 0 ? (
+                    <>None</>
+                ) : (
+                    <ul>
+                        {annotationStore.tokenSpanAnnotations.map((t, i) => (
+                            <li
+                                key={i}
+                                onMouseEnter={(_) => {
+                                    annotationStore.setSelectedTokenSpanAnnotation(t)
+                                }}
+                                onMouseLeave={() => {
+                                    annotationStore.setSelectedTokenSpanAnnotation(undefined)
+                                }}
+                            >
+                                Annotation #{i + 1}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </SidebarItem>
 
-        <SidebarItem>
-            <SidebarItemTitle>
-                Papers
-            </SidebarItemTitle>
-            {assignedPapers.length !== 0 ? (
-                <>
-                    {assignedPapers.map((metadata) => (
-                        <Contrast key={metadata.sha}>
-                            <a href={`/pdf/${metadata.sha}`}>
-                                    {metadata.title}
-                            </a>
-                        </Contrast>
-                    ))}
-                </>
-            ) : (
-                <>No Pdfs Allocated!</>
-            )}
-        </SidebarItem>
-    </SidebarContainer>
+            <SidebarItem>
+                <SidebarItemTitle>
+                    Papers
+                </SidebarItemTitle>
+                {assignedPapers.length !== 0 ? (
+                    <>
+                        {assignedPapers.map((metadata) => (
+                            <Contrast key={metadata.sha}>
+                                <a href={`/pdf/${metadata.sha}`}>
+                                        {metadata.title}
+                                </a>
+                            </Contrast>
+                        ))}
+                    </>
+                ) : (
+                    <>No Pdfs Allocated!</>
+                )}
+            </SidebarItem>
+        </SidebarContainer>
 
     )
 
