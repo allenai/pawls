@@ -23,11 +23,15 @@ export const Labels = () => {
                 }
 
             }
-
             // Tab key
             if (e.keyCode === 9) {
                 const currentIndex = annotationStore.labels.indexOf(annotationStore.activeLabel)
-                const next = currentIndex === annotationStore.labels.length - 1 ? 0 : currentIndex + 1
+                
+                let next = currentIndex === annotationStore.labels.length - 1 ? 0 : currentIndex + 1
+                // Shift + Tab is the other way.
+                if (e.shiftKey) {
+                    next = currentIndex === 0 ? annotationStore.labels.length - 1 : currentIndex - 1
+                }
                 annotationStore.setActiveLabel(annotationStore.labels[next])
 
             }
