@@ -34,11 +34,11 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
                     <>None</>
                 ) : (
                     <ul>
-                        {annotationStore.tokenSpanAnnotations.map((t, i) => (
+                        {annotationStore.tokenSpanAnnotations.map((annotation, i) => (
                             <li
-                                key={i}
+                                key={annotation.toString()}
                                 onMouseEnter={(_) => {
-                                    annotationStore.setSelectedTokenSpanAnnotation(t)
+                                    annotationStore.setSelectedTokenSpanAnnotation(annotation)
                                 }}
                                 onMouseLeave={() => {
                                     annotationStore.setSelectedTokenSpanAnnotation(undefined)

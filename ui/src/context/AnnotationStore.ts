@@ -1,10 +1,14 @@
 import { createContext } from 'react';
 import { Bounds } from "./PDFStore";
 
-export interface TokenId {
-    pageIndex: number;
-    tokenIndex: number;
-}
+export class TokenId {
+    constructor(
+        public readonly pageIndex: number,
+        public readonly tokenIndex: number ) {}
+    toString() {
+        return [this.pageIndex, this.tokenIndex].join('-'); }
+ }
+
 
 export class TokenSpanAnnotation {
     constructor(
@@ -37,6 +41,9 @@ export class TokenSpanAnnotation {
             this.pages.filter(p => p === page),
             this.label
         )
+    }
+    toString() {
+        return this.tokens.map(t => t.toString()).join('-');
     }
 };
 
