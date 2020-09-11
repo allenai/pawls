@@ -15,7 +15,8 @@ export class TokenSpanAnnotation {
         public readonly tokens: TokenId[],
         public bounds: Bounds[],
         public readonly pages: number[],
-        public readonly label: string
+        public readonly label: string,
+        private readonly perPage: {[page: number]: TokenSpanAnnotation} = {}
     ) {}
 
     mergeWith(a: TokenSpanAnnotation): TokenSpanAnnotation {
@@ -29,18 +30,30 @@ export class TokenSpanAnnotation {
             this.label
         )
     }
+
     annotationsForPage(page: number): TokenSpanAnnotation {
         // An annotation might cross a page boundary.
         // In that case, we will render it as two separate
         // annotations, one on each page, with bounding boxes
         // for each. This function allows us to filter
         // tokens and bounds to those on a single page.
-        return new TokenSpanAnnotation(
-            this.tokens.filter(t => t.pageIndex === page),
-            this.bounds.filter((b, i) => this.pages[i] === page),
-            this.pages.filter(p => p === page),
-            this.label
-        )
+
+        if (page in this.perPage) {
+            return this.perPage[page]
+        }
+        else {
+            const pageSpecific =  new TokenSpanAnnotation(
+                this.tokens.filter(t => t.pageIndex === page),
+                this.bounds.filter((b, i) => this.pages[i] === page),
+                this.pages.filter(p => p === page),
+                this.label
+            )
+            // Computing the annotations split out per page is moderately expensive,
+            // so we want to do it once when it's first called, and then cache the
+            // result in the perPage attribute.
+            this.perPage[page] = pageSpecific
+            return pageSpecific
+        }
     }
     toString() {
         return this.tokens.map(t => t.toString()).join('-');

@@ -174,7 +174,7 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
                         const b = pageInfo.getScaledTokenBounds(pageInfo.tokens[t.tokenIndex]);
                         return (
                             <TokenSpan
-                                key={i}
+                                key={[annotation.toString(), t.toString(), i].join("-")}
                                 isSelected={true}
                                 style={{
                                     left: `${b.left}px`,
