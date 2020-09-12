@@ -62,7 +62,12 @@ export async function getTokens(sha: string): Promise<TokensResponse> {
                 .then(r => r.data);
 }
 
-export async function getLabels(): Promise<string[]> {
+export interface Label {
+    text: string,
+    color: string
+}
+
+export async function getLabels(): Promise<Label[]> {
     return axios.get("/api/annotation/labels")
                 .then(r => r.data)
 }

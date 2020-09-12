@@ -1,12 +1,13 @@
 import { createContext } from 'react';
 import { Bounds } from "./PDFStore";
+import { Label } from "../api";
 
 export class TokenId {
     constructor(
         public readonly pageIndex: number,
         public readonly tokenIndex: number ) {}
     toString() {
-        return [this.pageIndex, this.tokenIndex].join('-'); }
+        return [this.pageIndex.toString(), this.tokenIndex.toString()].join('-'); }
  }
 
 
@@ -15,7 +16,7 @@ export class TokenSpanAnnotation {
         public readonly tokens: TokenId[],
         public bounds: Bounds[],
         public readonly pages: number[],
-        public readonly label: string,
+        public readonly label: Label,
         private readonly perPage: {[page: number]: TokenSpanAnnotation} = {}
     ) {}
 
@@ -64,9 +65,9 @@ export class TokenSpanAnnotation {
 
 
 interface _AnnotationStore {
-    labels: string[]
-    activeLabel: string
-    setActiveLabel: (label: string) => void;
+    labels: Label[]
+    activeLabel?: Label
+    setActiveLabel: (label: Label) => void;
     tokenSpanAnnotations: TokenSpanAnnotation[];
     selectedTokenSpanAnnotation?: TokenSpanAnnotation;
     setSelectedTokenSpanAnnotation: (t?: TokenSpanAnnotation) => void;
@@ -76,8 +77,8 @@ interface _AnnotationStore {
 export const AnnotationStore = createContext<_AnnotationStore>({
     tokenSpanAnnotations: [],
     labels: [],
-    activeLabel: "",
-    setActiveLabel:(_?: string) => {
+    activeLabel: undefined,
+    setActiveLabel:(_?: Label) => {
         throw new Error("Unimplemented")
     },
     setSelectedTokenSpanAnnotation: (_?: TokenSpanAnnotation) => {

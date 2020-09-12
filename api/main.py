@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 import logging
 import os
 import json
@@ -162,7 +162,7 @@ def get_regions(
 
 
 @app.get("/api/annotation/labels")
-def get_labels() -> List[str]:
+def get_labels() -> List[Dict[str, str]]:
     """
     Get the labels used for annotation for this app.
     """

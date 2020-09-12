@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
-import { Token } from '../api';
+import { Token, Label } from '../api';
 import { TokenId, TokenSpanAnnotation } from './AnnotationStore';
 
 export interface Bounds {
@@ -85,7 +85,7 @@ export class PDFPageInfo {
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getTokenSpanAnnotationForBounds(selection: Bounds, label: string): TokenSpanAnnotation {
+    getTokenSpanAnnotationForBounds(selection: Bounds, label: Label): TokenSpanAnnotation {
 
         /* This function is quite complicated. Our objective here is to
            compute overlaps between a bounding box provided by a user and
@@ -121,10 +121,7 @@ export class PDFPageInfo {
                 scaled(tokenBound, this.scale), 
                 relativeTo(selection, this.bounds))
                 ) {
-                ids.push({
-                    pageIndex: this.page.pageNumber - 1,
-                    tokenIndex: i,
-                });
+                ids.push(new TokenId(this.page.pageNumber - 1, i));
                 tokenBounds.push(tokenBound);
             }
         }
