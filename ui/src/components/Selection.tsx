@@ -56,7 +56,6 @@ export const Selection = ({ bounds, label, isActiveSelection, onClickDelete }: S
                 transformOrigin: 'top left',
                 border: `${border}px solid ${color}`,
                 background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.1)`,
-                zIndex:10
             }}
             >
              {label && !isActiveSelection ? (
