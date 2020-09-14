@@ -58,11 +58,11 @@ export const Selection = ({ bounds, label, isActiveSelection, onClickDelete }: S
                 background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.1)`,
             }}
             >
-             {label && !isActiveSelection ? (
+              {label && !isActiveSelection ? (
                  <SelectionInfo border={border} color={color}>
-                     <span>
-                   {label.text}
-                    </span>
+                    <span>
+                     {label.text}
+                   </span>
                    <CloseCircleFilled
                       onClick={(e) => {
                           e.stopPropagation();
@@ -77,7 +77,7 @@ export const Selection = ({ bounds, label, isActiveSelection, onClickDelete }: S
                       onMouseUp={(e) => {e.stopPropagation()}}
                    />
                  </SelectionInfo>
-             ): null}
+                ): null}
          </span>
      );
  }
