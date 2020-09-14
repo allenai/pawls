@@ -1,4 +1,5 @@
 import React, { useContext, useEffect }  from 'react';
+import styled from "styled-components";
 import { Tag } from "@allenai/varnish";
 
 import { AnnotationStore } from "../context";
@@ -56,3 +57,4 @@ export const Labels = () => {
         </>
     )
 }
+
