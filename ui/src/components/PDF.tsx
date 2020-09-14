@@ -113,6 +113,17 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
+    const annotationStore = useContext(AnnotationStore);
+
+    const removeAnnotationCallback = (annotation: TokenSpanAnnotation): (() => void) => {
+        return () => {
+            // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
+            const annotationId = annotation.toString()
+            const dropped = annotationStore.tokenSpanAnnotations.filter(a => a.toString()!== annotationId)
+            annotationStore.setTokenSpanAnnotations(dropped)
+        }
+    }
+
     useEffect(() => {
         try {
             const determinePageVisiblity = () => {
@@ -186,14 +197,15 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
                                label={annotation.label}
                                bounds={pageInfo.getScaledBounds(bound)}
                                isActiveSelection={false}
+                               onClickDelete={removeAnnotationCallback(annotation)}
                             />
                           )
                         )
                     return (
-                        <>
-                        {tokens}
-                        {selections}
-                        </>
+                        <div key={annotation.toString()}>
+                            {tokens}
+                            {selections}
+                        </div>
                         )
                     }
                 )
