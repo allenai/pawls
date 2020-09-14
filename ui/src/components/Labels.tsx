@@ -22,6 +22,10 @@ export const Labels = () => {
             }
             // Tab key
             if (e.keyCode === 9) {
+                if (!annotationStore.activeLabel) {
+                    annotationStore.setActiveLabel(annotationStore.labels[0])
+                    return;
+                }
                 const currentIndex = annotationStore.labels.indexOf(annotationStore.activeLabel)
                 let next = currentIndex === annotationStore.labels.length - 1 ? 0 : currentIndex + 1
                 // Shift + Tab is the other way.
@@ -42,11 +46,11 @@ export const Labels = () => {
         <>
             {annotationStore.labels.map(label => (
                 <CheckableTag
-                    key={label}
+                    key={label.text}
                     onClick={() => {annotationStore.setActiveLabel(label)}}
                     checked={label === annotationStore.activeLabel}
                 >
-                    {label}
+                    {label.text}
                 </CheckableTag>           
             ))}
         </>

@@ -19,7 +19,7 @@ class Configuration(NamedTuple):
     output_directory: str, required.
         The directory where the pdfs, metadata and
         annotation output will be stored.
-    labels: List[str], required.
+    labels: List[Dict[str, str]], required.
         The labels in use for annotation.
     pdfs: List[str], required.
         The pdfs that you want to annotate. This can be updated,
@@ -32,7 +32,7 @@ class Configuration(NamedTuple):
     """
 
     output_directory: str
-    labels: List[str]
+    labels: List[Dict[str, str]]
     pdfs: List[str]
     preprocessors: List[str] = None
 

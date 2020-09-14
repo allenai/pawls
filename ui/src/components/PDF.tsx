@@ -2,7 +2,6 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Token } from '../api';
 import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
 import { Selection } from '../components'
 
@@ -106,9 +105,6 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 
 interface PageProps {
     pageInfo: PDFPageInfo;
-    selection?: Bounds;
-    activeSelection?: Bounds[];
-    selectedTokens?: Token[];
     annotations: TokenSpanAnnotation[];
     onError: (e: Error) => void;
 }
@@ -185,7 +181,13 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
                             )
                         })
                     const selections = annotation.bounds.map((bound, i) => (
-                        <Selection key={i} label={annotation.label} bounds={pageInfo.getScaledBounds(bound)} />)
+                            <Selection
+                               key={annotation.toString()}
+                               label={annotation.label}
+                               bounds={pageInfo.getScaledBounds(bound)}
+                               isActiveSelection={false}
+                            />
+                          )
                         )
                     return (
                         <>
@@ -251,7 +253,7 @@ export const PDF = () => {
             ) : undefined}
             onMouseUp={selection ? (
                 () => {
-                    if (pdfStore.doc && pdfStore.pages) {
+                    if (pdfStore.doc && pdfStore.pages && annotationStore.activeLabel) {
                         let annotation = new TokenSpanAnnotation([], [], [], annotationStore.activeLabel)
 
                         // Loop over all pages to find tokens that intersect with the current
@@ -278,7 +280,7 @@ export const PDF = () => {
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
                 const existingAnnotations = annotationStore.tokenSpanAnnotations.map(a => a.annotationsForPage(pageIndex))
-                if (selection) {
+                if (selection && annotationStore.activeLabel) {
                     const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
                     // When the user is actively making a selection, we render the
                     // bounds below rather than in the page, for 2 reasons:
@@ -298,7 +300,13 @@ export const PDF = () => {
                         onError={pdfStore.onError} />
                 );
             })}
-            {selection ? <Selection bounds={selection} /> : null}
+            {selection && annotationStore.activeLabel ? (
+                <Selection
+                   bounds={selection}
+                   label={annotationStore.activeLabel}
+                   isActiveSelection={true}
+                />
+            ) : null}
         </PDFAnnotationsContainer>
     );
 };

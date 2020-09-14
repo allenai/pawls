@@ -7,7 +7,7 @@ import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
 import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -40,8 +40,8 @@ export const PDFPage = () => {
         useState<TokenSpanAnnotation>();
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
-    const [ activeLabel, setActiveLabel] = useState<string>("");
-    const [ labels, setLabels] = useState<string[]>([]);
+    const [ activeLabel, setActiveLabel] = useState<Label>();
+    const [ labels, setLabels] = useState<Label[]>([]);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's

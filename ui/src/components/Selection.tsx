@@ -1,64 +1,88 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { useContext } from 'react';
+import styled, { ThemeContext } from 'styled-components';
 
 import { Bounds } from '../context';
+import { Label } from '../api'
 
 interface SelectionProps {
     bounds: Bounds
-    label?: string
+    label?: Label
+    isActiveSelection: boolean
 
  }
- 
-export const Selection = ({ bounds, label }: SelectionProps) => {
+
+ function hexToRgb(hex: string) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) {
+        throw new Error("Unable to parse color.")
+    }
+    return {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    }
+  }
+  
+
+export const Selection = ({ bounds, label, isActiveSelection }: SelectionProps) => {
+
+    const theme = useContext(ThemeContext)
+    let color;
+    if (!label) {
+        color = theme.color.N4.hex // grey as the default.
+    } else {
+        color = label.color
+    }
+
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
     const rotateX = height < 0 ? -180 : 0;
     const border = 3
+
+    const rgbColor = hexToRgb(color)
+
     return (
-         <SelectionBounds
-            border={border}
+         <span
              style={{
+                 position: "absolute",
                  left: `${bounds.left}px`,
                  top: `${bounds.top}px`,
                  width: `${Math.abs(width)}px`,
                  height: `${Math.abs(height)}px`,
                  transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
                  transformOrigin: 'top left',
+                 border: `${border}px solid ${color}`,
+                 background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.1)`
+
              }} >
-             {label ? (
+             {label && !isActiveSelection ? (
                  <SelectionLabel
                     border={border}
+                    color={color}
                  >
-                     {label}
+                     {label.text}
                  </SelectionLabel>
              ): null}
-         </SelectionBounds>
+         </span>
      );
  }
 
-// TODO(Mark): Set unique colours per label.
 // TODO(Mark): Make annotations deleteable on click.
-
-interface WithBorderThickness {
-    border: number
-}
-
-const SelectionBounds = styled.span<WithBorderThickness>(({ border, theme }) => `
-    position: absolute;
-    border: ${border}px solid ${theme.color.G4};
-    background: rgba(${theme.color.G4.rgb.r}, ${theme.color.G4.rgb.g}, ${theme.color.G4.rgb.b}, 0.1);
-`);
 
 // We use transform here because we need to translate the label upward
 // to sit on top of the bounds as a function of *its own* height,
 // not the height of it's parent.
-const SelectionLabel = styled.span<WithBorderThickness>(({ border, theme }) => `
+interface SelectionLabelProps {
+    border: number
+    color: string
+}
+const SelectionLabel = styled.span<SelectionLabelProps>(({ border, color }) => `
     position: absolute;
     right: -${border}px;
     transform:translateY(-100%);
-    border: ${border} solid ${theme.color.G4};
-    background: ${theme.color.G4};
+    border: ${border} solid  ${color};
+    background: ${color};
     font-weight: bold;
     user-select: none;
 `);
