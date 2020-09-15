@@ -16,6 +16,8 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
 
     const annotationStore = useContext(AnnotationStore);
 
+    const flatAnnotations = Object.values(annotationStore.pageAnnotations).flat()
+
     return(
         <SidebarContainer width={sidebarWidth}>
             <h2>Pawls</h2>
@@ -30,11 +32,11 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
                 <SidebarItemTitle>
                     Annotations
                 </SidebarItemTitle>
-                {annotationStore.tokenSpanAnnotations.length === 0 ? (
+                {flatAnnotations.length === 0 ? (
                     <>None</>
                 ) : (
                     <ul>
-                        {annotationStore.tokenSpanAnnotations.map((annotation, i) => (
+                        {flatAnnotations.map((annotation, i) => (
                             <li key={annotation.toString()} >
                                 Annotation #{i + 1}
                             </li>
