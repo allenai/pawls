@@ -116,15 +116,25 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
 
     const annotationStore = useContext(AnnotationStore);
 
-    const removeAnnotationCallback = (annotation: TokenSpanAnnotation): (() => void) => {
-        return () => {
-            // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
-            // TODO(Mark): This doesn't work for annotations which are across pages,
-            // because they won't have the same id. We need to generate them instead.
-            const annotationId = annotation.toString()
-            const dropped = annotationStore.tokenSpanAnnotations.filter(a => a.toString()!== annotationId)
-            annotationStore.setTokenSpanAnnotations(dropped)
+    const removeAnnotation = (annotation: TokenSpanAnnotation, page: number): void => {
+        // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
+        const store = annotationStore.pageAnnotations.slice(0)
+        const annotationId = annotation.toString()
+        const dropped = annotationStore.pageAnnotations[page].filter(a => a.toString()!== annotationId)
+        store[page] = dropped
+
+        if (annotation.linkedAnnotation) {
+            // TODO(Mark): Currently this assumes that only individual annotations
+            // are linked - if that changes, update this to use an interative modification
+            // of `store`, NOT recursive, because the updates to the actual annotationStore
+            // context get stomped on by the subsequent updates. We have to collect all the changes
+            // locally and update the context one time.
+            const page = annotation.linkedAnnotation.page
+            const annotationId = annotation.linkedAnnotation.toString()
+            const dropped = annotationStore.pageAnnotations[page].filter(a => a.toString()!== annotationId)
+            store[page] = dropped
         }
+        annotationStore.setPageAnnotations(store)
     }
 
     useEffect(() => {
@@ -184,10 +194,8 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
                             tokens={annotation.tokens}
                             key={annotation.toString()}
                             label={annotation.label}
-                            // TODO(Mark): Currently annotations are guaranteed to have only a single
-                            // bounds per page, but this will need to be updated if this assumption changes.
-                            bounds={pageInfo.getScaledBounds(annotation.bounds[0])}
-                            onClickDelete={removeAnnotationCallback(annotation)}
+                            bounds={pageInfo.getScaledBounds(annotation.bounds)}
+                            onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
                         />
                     )
                 )
@@ -249,22 +257,29 @@ export const PDF = () => {
             onMouseUp={selection ? (
                 () => {
                     if (pdfStore.doc && pdfStore.pages && annotationStore.activeLabel) {
-                        let annotation = new TokenSpanAnnotation([], [], [], annotationStore.activeLabel)
+                        let annotation: TokenSpanAnnotation | undefined = undefined
 
                         // Loop over all pages to find tokens that intersect with the current
                         // selection, since we allow selections to cross page boundaries.
+                        const store = annotationStore.pageAnnotations.slice(0)
                         for (let i = 0; i < pdfStore.doc.numPages; i++) {
                             const p = pdfStore.pages[i];
                             const next = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-                            if (next.tokens.length > 0) {
-                                annotation = annotation.mergeWith(next)
+
+                            if (next && annotation === undefined) {
+                                // First annotation we have seen.
+                                annotation = next
+                                store[i].push(annotation)
+                            } else if (next && annotation) {
+                                // This is an annotation for an additional page, so first,
+                                // we link it to the previous annotation, and then we update.
+                                annotation.link(next)
+                                next.link(annotation)
+                                annotation = next
+                                store[i].push(annotation)
                             }
                         }
-                        if (annotation.tokens.length > 0) {
-                            const withNewAnnotation =
-                                annotationStore.tokenSpanAnnotations.concat([ annotation ])
-                            annotationStore.setTokenSpanAnnotations(withNewAnnotation);
-                        }
+                        annotationStore.setPageAnnotations(store)
                     }
                     setSelection(undefined);
 
@@ -274,11 +289,7 @@ export const PDF = () => {
             {pdfStore.pages.map((p, pageIndex) => {
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
-                const existingAnnotations = annotationStore.tokenSpanAnnotations
-                .map(a => a.annotationsForPage(pageIndex))
-                // TODO(Mark): This should not be needed - switch to a data structure
-                // which maps pages to single annotations so we can retrieve them easily.
-                .filter(a => a.bounds.length > 0)
+                const existingAnnotations = annotationStore.pageAnnotations[pageIndex]
 
                 let extraTokens: TokenId[] | undefined = undefined
                 if (selection && annotationStore.activeLabel) {
@@ -289,8 +300,9 @@ export const PDF = () => {
                     // 2) The computed bounds for the annotation encapsulate it,
                     //    but this is a weird experience when you are trying to accurately
                     //    select tokens.
-                    
-                    extraTokens = annotation.tokens
+                    if (annotation) {
+                        extraTokens = annotation.tokens
+                    }
                 }
 
                 return (

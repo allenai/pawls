@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
-import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore } from '../context';
+import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore, PageAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -35,7 +35,8 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ tokenSpanAnnotations, setTokenSpanAnnotations ] = useState<TokenSpanAnnotation[]>([]);
+    const [ pageAnnotations, setPageAnnotations ] = useState<PageAnnotations>([]);
+
     const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
         useState<TokenSpanAnnotation>();
 
@@ -114,6 +115,11 @@ export const PDFPage = () => {
             return Promise.all(loadPages);
         }).then(pages => {
             setPages(pages);
+            // Initialize the store for keeping our per-page annotations.
+            pages.forEach((p) => {
+                pageAnnotations.push([])
+            })
+
             setViewState(ViewState.LOADED);
         }).catch((err: any) => {
             if (err instanceof Error) {
@@ -161,8 +167,8 @@ export const PDFPage = () => {
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
-                                tokenSpanAnnotations,
-                                setTokenSpanAnnotations,
+                                pageAnnotations,
+                                setPageAnnotations,
                                 selectedTokenSpanAnnotation,
                                 setSelectedTokenSpanAnnotation
                             }}
