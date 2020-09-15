@@ -2,8 +2,8 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds } from '../context';
-import { Selection } from '../components'
+import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId } from '../context';
+import { Selection, SelectionBoundary, SelectionTokens } from '../components'
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -106,10 +106,11 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 interface PageProps {
     pageInfo: PDFPageInfo;
     annotations: TokenSpanAnnotation[];
+    extraTokens?: TokenId[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, annotations, onError }: PageProps) => {
+const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
 
@@ -118,6 +119,8 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
     const removeAnnotationCallback = (annotation: TokenSpanAnnotation): (() => void) => {
         return () => {
             // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
+            // TODO(Mark): This doesn't work for annotations which are across pages,
+            // because they won't have the same id. We need to generate them instead.
             const annotationId = annotation.toString()
             const dropped = annotationStore.tokenSpanAnnotations.filter(a => a.toString()!== annotationId)
             annotationStore.setTokenSpanAnnotations(dropped)
@@ -175,41 +178,21 @@ const Page = ({ pageInfo, annotations, onError }: PageProps) => {
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-
-                isVisible && annotations.map((annotation) => {
-                    const tokens = annotation.tokens.map((t, i) => {
-                        const b = pageInfo.getScaledTokenBounds(pageInfo.tokens[t.tokenIndex]);
-                        return (
-                            <TokenSpan
-                                key={i}
-                                isSelected={true}
-                                style={{
-                                    left: `${b.left}px`,
-                                    top: `${b.top}px`,
-                                    width: `${b.right - b.left}px`,
-                                    height: `${b.bottom - b.top}px`
-                                }} />
-                            )
-                        })
-                    const selections = annotation.bounds.map((bound, i) => (
-                            <Selection
-                               key={annotation.toString()}
-                               label={annotation.label}
-                               bounds={pageInfo.getScaledBounds(bound)}
-                               isActiveSelection={false}
-                               onClickDelete={removeAnnotationCallback(annotation)}
-                            />
-                          )
-                        )
-                    return (
-                        <div key={annotation.toString()}>
-                            {tokens}
-                            {selections}
-                        </div>
-                        )
-                    }
+                isVisible && annotations.map((annotation) => (
+                        <Selection
+                            pageInfo={pageInfo}
+                            tokens={annotation.tokens}
+                            key={annotation.toString()}
+                            label={annotation.label}
+                            // TODO(Mark): Currently annotations are guaranteed to have only a single
+                            // bounds per page, but this will need to be updated if this assumption changes.
+                            bounds={pageInfo.getScaledBounds(annotation.bounds[0])}
+                            onClickDelete={removeAnnotationCallback(annotation)}
+                        />
+                    )
                 )
             }
+            {extraTokens ? <SelectionTokens pageInfo={pageInfo} tokens={extraTokens}/> : null}
         </PageAnnotationsContainer>
     );
 };
@@ -291,7 +274,13 @@ export const PDF = () => {
             {pdfStore.pages.map((p, pageIndex) => {
                 // If the user is selecting something, display that. Otherwise display the
                 // currently selection annotation.
-                const existingAnnotations = annotationStore.tokenSpanAnnotations.map(a => a.annotationsForPage(pageIndex))
+                const existingAnnotations = annotationStore.tokenSpanAnnotations
+                .map(a => a.annotationsForPage(pageIndex))
+                // TODO(Mark): This should not be needed - switch to a data structure
+                // which maps pages to single annotations so we can retrieve them easily.
+                .filter(a => a.bounds.length > 0)
+
+                let extraTokens: TokenId[] | undefined = undefined
                 if (selection && annotationStore.activeLabel) {
                     const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
                     // When the user is actively making a selection, we render the
@@ -300,8 +289,8 @@ export const PDF = () => {
                     // 2) The computed bounds for the annotation encapsulate it,
                     //    but this is a weird experience when you are trying to accurately
                     //    select tokens.
-                    annotation.bounds = []
-                    existingAnnotations.push(annotation)
+                    
+                    extraTokens = annotation.tokens
                 }
 
                 return (
@@ -309,14 +298,14 @@ export const PDF = () => {
                         key={p.page.pageNumber}
                         pageInfo={p}
                         annotations={existingAnnotations}
+                        extraTokens={extraTokens}
                         onError={pdfStore.onError} />
                 );
             })}
             {selection && annotationStore.activeLabel ? (
-                <Selection
+                <SelectionBoundary
                    bounds={selection}
-                   label={annotationStore.activeLabel}
-                   isActiveSelection={true}
+                   color={annotationStore.activeLabel.color}
                 />
             ) : null}
         </PDFAnnotationsContainer>
@@ -328,17 +317,6 @@ export const PDF = () => {
 const PDFAnnotationsContainer = styled.div`
     position: relative;
 `;
-
-interface TokenSpanProps {
-    isSelected?: boolean;
-}
-
-const TokenSpan = styled.span<TokenSpanProps>(({ theme, isSelected }) =>`
-    position: absolute;
-    background: ${isSelected ? theme.color.B6 : 'none'};
-    opacity: 0.2;
-    border-radius: 3px;
-`);
 
 const PageAnnotationsContainer = styled.div(({ theme }) =>`
     position: relative;
