@@ -42,7 +42,7 @@ interface _AnnotationStore {
     pageAnnotations: PageAnnotations;
     selectedTokenSpanAnnotation?: TokenSpanAnnotation;
     setSelectedTokenSpanAnnotation: (t?: TokenSpanAnnotation) => void;
-    setPageAnnotations: (t: TokenSpanAnnotation[], p: number) => void;
+    setPageAnnotations: (t: PageAnnotations) => void;
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
@@ -55,7 +55,7 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     setSelectedTokenSpanAnnotation: (_?: TokenSpanAnnotation) => {
         throw new Error('Unimplemented');
     },
-    setPageAnnotations: (_: TokenSpanAnnotation[], __: number) => {
+    setPageAnnotations: (_: PageAnnotations) => {
         throw new Error('Unimplemented');
     }
 });

@@ -35,19 +35,7 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pageAnnotations, setAllPageAnnotations ] = useState<PageAnnotations>([]);
-
-    const setPageAnnotations = (t: TokenSpanAnnotation[], p: number): void => {
-
-        // TODO(Mark): In review, understand why the non-mutable version of this
-        // results in a state race when setPageAnnotations is called in a loop.
-        pageAnnotations[p] = t
-        //setAllPageAnnotations([
-        //    ...pageAnnotations.slice(0, p),
-        //    t,
-        //    ...pageAnnotations.slice(p + 1)
-        //])
-    }
+    const [ pageAnnotations, setPageAnnotations ] = useState<PageAnnotations>([]);
 
     const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
         useState<TokenSpanAnnotation>();
