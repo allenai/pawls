@@ -11,16 +11,16 @@ export class TokenId {
  }
 
 
-export class TokenSpanAnnotation {
+export class Annotation {
     constructor(
-        public readonly tokens: TokenId[],
         public bounds: Bounds,
         public readonly page: number,
         public readonly label: Label,
-        public linkedAnnotation: TokenSpanAnnotation | undefined = undefined
+        public readonly tokens: TokenId[] | undefined = undefined,
+        public linkedAnnotation: Annotation | undefined = undefined
     ) {}
 
-    link(a: TokenSpanAnnotation): void {
+    link(a: Annotation): void {
         if (a.label !== this.label) {
             throw new Error("Cannot link annotations with different labels.")
         }
@@ -28,36 +28,44 @@ export class TokenSpanAnnotation {
     }
 
     toString() {
-        return this.tokens.map(t => t.toString()).join('-');
+        return [
+            this.bounds.top.toString(),
+            this.bounds.bottom.toString(),
+            this.bounds.left.toString(),
+            this.bounds.right.toString(),
+            this.label.text,
+            this.tokens ? this.tokens.map(t => t.toString()).join('-') : null
+        ].join("-")
     }
 };
 
 
-export type PageAnnotations = TokenSpanAnnotation[][]
+
+export type PdfAnnotations = Annotation[][]
 
 interface _AnnotationStore {
     labels: Label[]
     activeLabel?: Label
     setActiveLabel: (label: Label) => void;
-    pageAnnotations: PageAnnotations;
-    selectedTokenSpanAnnotation?: TokenSpanAnnotation;
-    setSelectedTokenSpanAnnotation: (t?: TokenSpanAnnotation) => void;
-    setPageAnnotations: (t: PageAnnotations) => void;
+    pdfAnnotations: PdfAnnotations;
+    selectedAnnotation?: Annotation;
+    setSelectedAnnotation: (t?: Annotation) => void;
+    setPdfAnnotations: (t: PdfAnnotations) => void;
     freeFormAnnotations: boolean;
     toggleFreeFormAnnotations: (state: boolean) => void;
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
-    pageAnnotations: [],
+    pdfAnnotations: [],
     labels: [],
     activeLabel: undefined,
     setActiveLabel:(_?: Label) => {
         throw new Error("Unimplemented")
     },
-    setSelectedTokenSpanAnnotation: (_?: TokenSpanAnnotation) => {
+    setSelectedAnnotation: (_?: Annotation) => {
         throw new Error('Unimplemented');
     },
-    setPageAnnotations: (_: PageAnnotations) => {
+    setPdfAnnotations: (_: PdfAnnotations) => {
         throw new Error('Unimplemented');
     },
     freeFormAnnotations: false,

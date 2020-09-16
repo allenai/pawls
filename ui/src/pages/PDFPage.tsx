@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
-import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore, PageAnnotations } from '../context';
+import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -35,10 +35,9 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pageAnnotations, setPageAnnotations ] = useState<PageAnnotations>([]);
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>([]);
 
-    const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
-        useState<TokenSpanAnnotation>();
+    const [ selectedAnnotation, setSelectedAnnotation ] = useState<Annotation>();
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
@@ -118,7 +117,7 @@ export const PDFPage = () => {
             setPages(pages);
             // Initialize the store for keeping our per-page annotations.
             pages.forEach((p) => {
-                pageAnnotations.push([])
+                pdfAnnotations.push([])
             })
 
             setViewState(ViewState.LOADED);
@@ -168,10 +167,10 @@ export const PDFPage = () => {
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
-                                pageAnnotations,
-                                setPageAnnotations,
-                                selectedTokenSpanAnnotation,
-                                setSelectedTokenSpanAnnotation,
+                                pdfAnnotations,
+                                setPdfAnnotations,
+                                selectedAnnotation,
+                                setSelectedAnnotation,
                                 freeFormAnnotations,
                                 toggleFreeFormAnnotations
                             }}

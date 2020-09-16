@@ -16,7 +16,7 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
 
     const annotationStore = useContext(AnnotationStore);
 
-    const flatAnnotations = Object.values(annotationStore.pageAnnotations).flat()
+    const flatAnnotations = Object.values(annotationStore.pdfAnnotations).flat()
 
     return(
         <SidebarContainer width={sidebarWidth}>
