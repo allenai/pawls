@@ -1,7 +1,7 @@
 
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { Link , Header} from '@allenai/varnish';
+import { Link } from '@allenai/varnish';
 
 import { AnnotationStore } from '../context';
 import { Labels } from "./Labels";

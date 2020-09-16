@@ -112,7 +112,7 @@ function doOverlap(a: Bounds, b: Bounds): boolean {
 }
 
 export function handleNewAnnotations(
-    pages: PDFPageInfo[],
+    page: PDFPageInfo,
     selection: Bounds,
     existingAnnotations: PdfAnnotations,
     activeLabel: Label,
@@ -121,29 +121,17 @@ export function handleNewAnnotations(
 
     const updatedAnnotations = existingAnnotations.slice(0)
     let annotation: Optional<Annotation> = undefined
-    for (let i = 0; i < pages.length; i++) {
-        const p = pages[i];
-        const normalized = normalizeBounds(selection)
-        let next: Optional<Annotation> = undefined
-        if (freeform){
-            next = p.getFreeFormAnnotationForBounds(normalized, activeLabel)
-            console.log(next)
-        } else {
-            next = p.getAnnotationForBounds(normalized, activeLabel)
-            console.log(next)
-        }
-        if (next && annotation === undefined) {
-            // First annotation we have seen.
-            annotation = next
-            updatedAnnotations[i].push(annotation)
-        } else if (next && annotation) {
-            // This is an annotation for an additional page, so first,
-            // we link it to the previous annotation, and then we update.
-            annotation.link(next)
-            next.link(annotation)
-            annotation = next
-            updatedAnnotations[i].push(annotation)
-        }
+    
+    const pageIndex = page.page.pageNumber - 1
+    const normalized = normalizeBounds(selection)
+    if (freeform){
+        annotation = page.getFreeFormAnnotationForBounds(normalized, activeLabel)
+    } else {
+        annotation = page.getAnnotationForBounds(normalized, activeLabel)
+    }
+    if (annotation !== undefined) {
+        // First annotation we have seen.
+        updatedAnnotations[pageIndex].push(annotation)
     }
     return updatedAnnotations
 }
@@ -159,8 +147,6 @@ export class PDFPageInfo {
 
     getFreeFormAnnotationForBounds(selection: Bounds, label: Label): Optional<Annotation> {
 
-        console.log("incoming", selection)
-        console.log("page Bounds", this.bounds)
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');
         }
@@ -172,6 +158,9 @@ export class PDFPageInfo {
             return undefined
         }
 
+        console.log("incoming", selection)
+        console.log("page Bounds", this.bounds)
+        console.log("relative selection", relativeTo(selection, this.bounds))
 
         const clipped = clipToContain(selection, this.bounds)
         // Here we invert the scale, because the user has drawn this bounding
@@ -179,6 +168,7 @@ export class PDFPageInfo {
         // the annotation, we want to remove this, because storing it with respect
         // to the PDF page's original scale means we can render it everywhere.
         const bounds = scaled(selection, 1 / this.scale)
+        console.log("pdf scale bounds", bounds)
         
         return new Annotation(bounds, this.page.pageNumber - 1, label)
 
@@ -218,7 +208,7 @@ export class PDFPageInfo {
             const tokenBound = this.getTokenBounds(this.tokens[i])
             if (doOverlap(
                 scaled(tokenBound, this.scale), 
-                relativeTo(selection, this.bounds))
+                selection)
                 ) {
                 ids.push(new TokenId(this.page.pageNumber - 1, i));
                 tokenBounds.push(tokenBound);
