@@ -86,6 +86,7 @@ interface PageProps {
 const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
+    const [ scale, setScale ] = useState<number>(1);
 
     const annotationStore = useContext(AnnotationStore);
 
@@ -143,6 +144,7 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
                 }
                 pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current)
                 renderer.rescaleAndRender(pageInfo.scale);
+                setScale(pageInfo.scale)
                 determinePageVisiblity();
             };
             window.addEventListener('resize', handleResize);
@@ -161,7 +163,7 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
             <PageCanvas ref={canvasRef} />
             {// We only render the tokens if the page is visible, as rendering them all makes the
              // page slow and/or crash.
-                isVisible && annotations.map((annotation) => (
+                scale && isVisible && annotations.map((annotation) => (
                         <Selection
                             pageInfo={pageInfo}
                             tokens={annotation.tokens}
