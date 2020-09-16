@@ -90,10 +90,18 @@ const Page = ({ pageInfo, onError }: PageProps) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [ selection, setSelection ] = useState<Bounds>();
+    const [ extraTokens, setExtraTokens ] = useState<TokenId[]>();
 
-    const extraTokens = undefined
     const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
 
+    useEffect(() => {
+        if (selection && !annotationStore.freeFormAnnotations && annotationStore.activeLabel){
+            const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
+            if (annotation && annotation.tokens){
+                setExtraTokens(annotation.tokens)
+            }
+        }
+    }, [selection])
 
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
@@ -230,13 +238,13 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                     )
                 )
             }
-            {extraTokens ? <SelectionTokens pageInfo={pageInfo} tokens={extraTokens}/> : null}
             {selection && annotationStore.activeLabel ? (
                 <SelectionBoundary
                    bounds={selection}
                    color={annotationStore.activeLabel.color}
                 />
             ) : null}
+            {extraTokens ? <SelectionTokens pageInfo={pageInfo} tokens={extraTokens}/> : null}
 
         </PageAnnotationsContainer>
     );
@@ -269,12 +277,6 @@ export const PDF = () => {
         </>
     );
 };
-
-
-
-const PDFAnnotationsContainer = styled.div`
-    position: relative;
-`;
 
 const PageAnnotationsContainer = styled.div(({ theme }) =>`
     position: relative;
