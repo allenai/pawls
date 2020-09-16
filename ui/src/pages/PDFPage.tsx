@@ -43,6 +43,7 @@ export const PDFPage = () => {
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
+    const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's
@@ -170,7 +171,9 @@ export const PDFPage = () => {
                                 pageAnnotations,
                                 setPageAnnotations,
                                 selectedTokenSpanAnnotation,
-                                setSelectedTokenSpanAnnotation
+                                setSelectedTokenSpanAnnotation,
+                                freeFormAnnotations,
+                                toggleFreeFormAnnotations
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>

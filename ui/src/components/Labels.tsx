@@ -1,14 +1,21 @@
 import React, { useContext, useEffect }  from 'react';
 import styled from "styled-components";
-import { Tag } from "@allenai/varnish";
+import { Tag, Switch } from "@allenai/varnish";
 
 import { AnnotationStore } from "../context";
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
 const { CheckableTag } = Tag;
 
 export const Labels = () => {
 
     const annotationStore = useContext(AnnotationStore)
+
+    const onToggle = () => {
+        annotationStore.toggleFreeFormAnnotations(
+            !annotationStore.freeFormAnnotations
+        )
+    }
 
     useEffect(() => {
 
@@ -41,20 +48,44 @@ export const Labels = () => {
             window.removeEventListener("keydown", onKeyPress)
         })
     }, [annotationStore])
-    
+
     // TODO(Mark): Style the tags so it's clear you can select them with the numeric keys.
     return (
-        <>
-            {annotationStore.labels.map(label => (
-                <CheckableTag
-                    key={label.text}
-                    onClick={() => {annotationStore.setActiveLabel(label)}}
-                    checked={label === annotationStore.activeLabel}
-                >
-                    {label.text}
-                </CheckableTag>           
-            ))}
+        <> 
+          <Container>
+            <div>
+                {annotationStore.labels.map(label => (
+                    <CheckableTag
+                        key={label.text}
+                        onClick={() => {annotationStore.setActiveLabel(label)}}
+                        checked={label === annotationStore.activeLabel}
+                    >
+                        {label.text}
+                    </CheckableTag>           
+                ))}
+            </div>
+            <div>
+                Free Form Annotations
+                <Toggle 
+                onChange={onToggle}
+                checkedChildren={<CheckOutlined />}
+                unCheckedChildren={<CloseOutlined />}
+                />
+            </div>
+          </Container>
         </>
     )
 }
 
+
+const Toggle = styled(Switch)`
+  margin: 4px;
+`
+
+const Container = styled.div(({ theme }) => `
+   margin-top: ${theme.spacing.md};
+   div + div {
+       margin-top: ${theme.spacing.md};
+   }
+
+`);

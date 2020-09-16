@@ -43,6 +43,8 @@ interface _AnnotationStore {
     selectedTokenSpanAnnotation?: TokenSpanAnnotation;
     setSelectedTokenSpanAnnotation: (t?: TokenSpanAnnotation) => void;
     setPageAnnotations: (t: PageAnnotations) => void;
+    freeFormAnnotations: boolean;
+    toggleFreeFormAnnotations: (state: boolean) => void;
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
@@ -57,5 +59,9 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     },
     setPageAnnotations: (_: PageAnnotations) => {
         throw new Error('Unimplemented');
-    }
+    },
+    freeFormAnnotations: false,
+    toggleFreeFormAnnotations: (_: boolean) => {
+        throw new Error('Unimplemented');
+    },
 });
