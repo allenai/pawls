@@ -27,19 +27,6 @@ function scaled(bounds: Bounds, scale: number): Bounds {
 }
 
 /**
- * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
- * bounds.
- */
-function relativeTo(a: Bounds, b: Bounds): Bounds {
-    return {
-        left: a.left - b.left,
-        top: a.top - b.top,
-        right: a.right - b.left,
-        bottom: a.bottom - b.top
-    };
-}
-
-/**
  * Computes a bound which contains all of the bounds passed as arguments.
  */
 function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
@@ -66,10 +53,6 @@ function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
     maxBound.bottom = maxBound.bottom + padding
 
     return maxBound
-}
-
-function clipToContain(a: Bounds, b: Bounds) {
-
 }
 
 /**
@@ -151,24 +134,11 @@ export class PDFPageInfo {
             throw new Error('Unknown Page Bounds');
         }
 
-        // TODO(Mark): This is wrong, because we need to find the page
-        // that contains the largest % of the box, and then clip the box to
-        // the bounds of that page..
-        if (!doOverlap(selection, relativeTo(selection, this.bounds))) {
-            return undefined
-        }
-
-        console.log("incoming", selection)
-        console.log("page Bounds", this.bounds)
-        console.log("relative selection", relativeTo(selection, this.bounds))
-
-        const clipped = clipToContain(selection, this.bounds)
         // Here we invert the scale, because the user has drawn this bounding
         // box, so it is *already* scaled with respect to the client's view. For
         // the annotation, we want to remove this, because storing it with respect
         // to the PDF page's original scale means we can render it everywhere.
         const bounds = scaled(selection, 1 / this.scale)
-        console.log("pdf scale bounds", bounds)
         
         return new Annotation(bounds, this.page.pageNumber - 1, label)
 
@@ -189,8 +159,7 @@ export class PDFPageInfo {
            
            whether a grobid token (tokenBound), scaled to the current scale of the
            pdf in the client (scaled(tokenBound, this.scale)), is overlapping with
-           the bounding box drawn by the user (selection) relative to the edge of 
-           the pdf in the client (relativeTo(selection, this.bounds)).
+           the bounding box drawn by the user (selection).
 
            But! Once we have computed this, we store the grobid tokens and the bound
            that contains all of them relative to the *original grobid tokens*.
@@ -206,10 +175,7 @@ export class PDFPageInfo {
         const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
             const tokenBound = this.getTokenBounds(this.tokens[i])
-            if (doOverlap(
-                scaled(tokenBound, this.scale), 
-                selection)
-                ) {
+            if (doOverlap(scaled(tokenBound, this.scale), selection)) {
                 ids.push(new TokenId(this.page.pageNumber - 1, i));
                 tokenBounds.push(tokenBound);
             }
