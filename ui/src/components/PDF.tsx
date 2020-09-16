@@ -2,8 +2,8 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId, Optional, normalizeBounds, handleNewAnnotations } from '../context';
-import { Selection, SelectionBoundary, SelectionTokens } from '../components'
+import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId, normalizeBounds, handleNewAnnotations } from '../context';
+import { Selection} from '../components'
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -181,6 +181,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 // Clear the selected annotation, if there is one.
                 // TODO (@codeviking): This might change.
                 annotationStore.setSelectedAnnotation(undefined);
+                setExtraTokens(undefined)
                 if (!selection) {
                     const left = event.pageX - containerRef.current.offsetLeft;
                     const top = event.pageY - containerRef.current.offsetTop;
@@ -239,12 +240,14 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 )
             }
             {selection && annotationStore.activeLabel ? (
-                <SelectionBoundary
+                <Selection
+                   pageInfo={pageInfo}
+                   tokens={extraTokens}
                    bounds={selection}
-                   color={annotationStore.activeLabel.color}
+                   label={annotationStore.activeLabel}
+                   showInfo={false}
                 />
             ) : null}
-            {extraTokens ? <SelectionTokens pageInfo={pageInfo} tokens={extraTokens}/> : null}
 
         </PageAnnotationsContainer>
     );
