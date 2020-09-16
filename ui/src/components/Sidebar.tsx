@@ -1,11 +1,16 @@
 
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { Link } from '@allenai/varnish';
+import { Link , Header} from '@allenai/varnish';
 
 import { AnnotationStore } from '../context';
 import { Labels } from "./Labels";
 import { PaperMetadata } from "../api";
+
+import { Logos } from '@allenai/varnish';
+
+const { AI2Logo } = Logos;
+
 
 interface SidebarProps {
     sidebarWidth: string;
@@ -20,6 +25,7 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
 
     return(
         <SidebarContainer width={sidebarWidth}>
+            <AI2Logo color="white" size="micro"/>
             <h2>Pawls</h2>
             <SidebarItem>
                 <SidebarItemTitle>
