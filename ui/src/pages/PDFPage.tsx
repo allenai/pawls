@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
-import { PDFPageInfo, TokenSpanAnnotation, AnnotationStore, PDFStore, PageAnnotations } from '../context';
+import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -35,14 +35,14 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pageAnnotations, setPageAnnotations ] = useState<PageAnnotations>([]);
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>([]);
 
-    const [ selectedTokenSpanAnnotation, setSelectedTokenSpanAnnotation ] =
-        useState<TokenSpanAnnotation>();
+    const [ selectedAnnotation, setSelectedAnnotation ] = useState<Annotation>();
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
+    const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's
@@ -117,7 +117,7 @@ export const PDFPage = () => {
             setPages(pages);
             // Initialize the store for keeping our per-page annotations.
             pages.forEach((p) => {
-                pageAnnotations.push([])
+                pdfAnnotations.push([])
             })
 
             setViewState(ViewState.LOADED);
@@ -167,10 +167,12 @@ export const PDFPage = () => {
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
-                                pageAnnotations,
-                                setPageAnnotations,
-                                selectedTokenSpanAnnotation,
-                                setSelectedTokenSpanAnnotation
+                                pdfAnnotations,
+                                setPdfAnnotations,
+                                selectedAnnotation,
+                                setSelectedAnnotation,
+                                freeFormAnnotations,
+                                toggleFreeFormAnnotations
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>

@@ -7,6 +7,11 @@ import { AnnotationStore } from '../context';
 import { Labels } from "./Labels";
 import { PaperMetadata } from "../api";
 
+import { Logos } from '@allenai/varnish';
+
+const { AI2Logo } = Logos;
+
+
 interface SidebarProps {
     sidebarWidth: string;
     assignedPapers: PaperMetadata[];
@@ -16,10 +21,11 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
 
     const annotationStore = useContext(AnnotationStore);
 
-    const flatAnnotations = Object.values(annotationStore.pageAnnotations).flat()
+    const flatAnnotations = Object.values(annotationStore.pdfAnnotations).flat()
 
     return(
         <SidebarContainer width={sidebarWidth}>
+            <AI2Logo color="white" size="micro"/>
             <h2>Pawls</h2>
             <SidebarItem>
                 <SidebarItemTitle>

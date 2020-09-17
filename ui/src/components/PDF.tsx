@@ -2,8 +2,8 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { TokenSpanAnnotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId } from '../context';
-import { Selection, SelectionBoundary, SelectionTokens } from '../components'
+import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId, normalizeBounds, handleNewAnnotations } from '../context';
+import { Selection} from '../components'
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -51,33 +51,6 @@ class PDFPageRenderer {
     }
 }
 
-/**
- * Returns the provided bounds in their normalized form. Normalized means that the left
- * coordinate is always less than the right coordinate, and that the top coordinate is always
- * left than the bottom coordinate.
- *
- * This is required because objects in the DOM are positioned and sized by setting their top-left
- * corner, width and height. This means that when a user composes a selection and moves to the left,
- * or up, from where they started might result in a negative width and/or height. We don't normalize
- * these values as we're tracking the mouse as it'd result in the wrong visual effect. Instead we
- * rotate the bounds we render on the appropriate axis. This means we need to account for this
- * later when calculating what tokens the bounds intersect with.
- */
-function normalizeBounds(b: Bounds): Bounds {
-    const normalized = Object.assign({}, b);
-    if (b.right < b.left) {
-        const l = b.left;
-        normalized.left = b.right;
-        normalized.right = l;
-    }
-    if (b.bottom < b.top) {
-        const t = b.top;
-        normalized.top = b.bottom;
-        normalized.bottom = t;
-    }
-    return normalized;
-}
-
 function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
     if (canvas.parentElement === null) {
         throw new Error('No canvas parent');
@@ -105,22 +78,27 @@ function getPageBoundsFromCanvas(canvas: HTMLCanvasElement): Bounds {
 
 interface PageProps {
     pageInfo: PDFPageInfo;
-    annotations: TokenSpanAnnotation[];
-    extraTokens?: TokenId[];
     onError: (e: Error) => void;
 }
 
-const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
+const Page = ({ pageInfo, onError }: PageProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
+    const [ scale, setScale ] = useState<number>(1);
 
     const annotationStore = useContext(AnnotationStore);
 
-    const removeAnnotation = (annotation: TokenSpanAnnotation, page: number): void => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [ selection, setSelection ] = useState<Bounds>();
+    const [ extraTokens, setExtraTokens ] = useState<TokenId[]>();
+
+    const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
+
+    const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
-        const store = annotationStore.pageAnnotations.slice(0)
+        const store = annotationStore.pdfAnnotations.slice(0)
         const annotationId = annotation.toString()
-        const dropped = annotationStore.pageAnnotations[page].filter(a => a.toString()!== annotationId)
+        const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
         store[page] = dropped
 
         if (annotation.linkedAnnotation) {
@@ -131,10 +109,10 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
             // locally and update the context one time.
             const page = annotation.linkedAnnotation.page
             const annotationId = annotation.linkedAnnotation.toString()
-            const dropped = annotationStore.pageAnnotations[page].filter(a => a.toString()!== annotationId)
+            const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
             store[page] = dropped
         }
-        annotationStore.setPageAnnotations(store)
+        annotationStore.setPdfAnnotations(store)
     }
 
     useEffect(() => {
@@ -170,6 +148,7 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
                 }
                 pageInfo.bounds = getPageBoundsFromCanvas(canvasRef.current)
                 renderer.rescaleAndRender(pageInfo.scale);
+                setScale(pageInfo.scale)
                 determinePageVisiblity();
             };
             window.addEventListener('resize', handleResize);
@@ -184,45 +163,7 @@ const Page = ({ pageInfo, annotations, extraTokens, onError }: PageProps) => {
     }, [ pageInfo, onError ]); // We deliberately only run this once.
 
     return (
-        <PageAnnotationsContainer>
-            <PageCanvas ref={canvasRef} />
-            {// We only render the tokens if the page is visible, as rendering them all makes the
-             // page slow and/or crash.
-                isVisible && annotations.map((annotation) => (
-                        <Selection
-                            pageInfo={pageInfo}
-                            tokens={annotation.tokens}
-                            key={annotation.toString()}
-                            label={annotation.label}
-                            bounds={pageInfo.getScaledBounds(annotation.bounds)}
-                            onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
-                        />
-                    )
-                )
-            }
-            {extraTokens ? <SelectionTokens pageInfo={pageInfo} tokens={extraTokens}/> : null}
-        </PageAnnotationsContainer>
-    );
-};
-
-
-export const PDF = () => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [ selection, setSelection ] = useState<Bounds>();
-
-    const pdfStore = useContext(PDFStore);
-    const annotationStore = useContext(AnnotationStore);
-
-    // TODO (@codeviking): Use error boundaries to capture these.
-    if (!pdfStore.doc) {
-        throw new Error('No Document');
-    }
-    if (!pdfStore.pages) {
-        throw new Error('Document without Pages');
-    }
-
-    return (
-        <PDFAnnotationsContainer
+        <PageAnnotationsContainer
             ref={containerRef}
             onMouseDown={(event) => {
                 if (containerRef.current === null) {
@@ -230,7 +171,7 @@ export const PDF = () => {
                 }
                 // Clear the selected annotation, if there is one.
                 // TODO (@codeviking): This might change.
-                annotationStore.setSelectedTokenSpanAnnotation(undefined);
+                annotationStore.setSelectedAnnotation(undefined);
                 if (!selection) {
                     const left = event.pageX - containerRef.current.offsetLeft;
                     const top = event.pageY - containerRef.current.offsetTop;
@@ -256,79 +197,83 @@ export const PDF = () => {
             ) : undefined}
             onMouseUp={selection ? (
                 () => {
-                    if (pdfStore.doc && pdfStore.pages && annotationStore.activeLabel) {
-                        let annotation: TokenSpanAnnotation | undefined = undefined
-
-                        // Loop over all pages to find tokens that intersect with the current
-                        // selection, since we allow selections to cross page boundaries.
-                        const store = annotationStore.pageAnnotations.slice(0)
-                        for (let i = 0; i < pdfStore.doc.numPages; i++) {
-                            const p = pdfStore.pages[i];
-                            const next = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-
-                            if (next && annotation === undefined) {
-                                // First annotation we have seen.
-                                annotation = next
-                                store[i].push(annotation)
-                            } else if (next && annotation) {
-                                // This is an annotation for an additional page, so first,
-                                // we link it to the previous annotation, and then we update.
-                                annotation.link(next)
-                                next.link(annotation)
-                                annotation = next
-                                store[i].push(annotation)
-                            }
-                        }
-                        annotationStore.setPageAnnotations(store)
+                    if (annotationStore.activeLabel) {
+                        const updatedAnnotations = handleNewAnnotations(
+                            //TODO(Mark): Change
+                            pageInfo,
+                            selection,
+                            annotationStore.pdfAnnotations,
+                            annotationStore.activeLabel,
+                            annotationStore.freeFormAnnotations
+                        )
+                        annotationStore.setPdfAnnotations(updatedAnnotations)
                     }
                     setSelection(undefined);
 
                 }
             ) : undefined}
+        
         >
-            {pdfStore.pages.map((p, pageIndex) => {
-                // If the user is selecting something, display that. Otherwise display the
-                // currently selection annotation.
-                const existingAnnotations = annotationStore.pageAnnotations[pageIndex]
-
-                let extraTokens: TokenId[] | undefined = undefined
-                if (selection && annotationStore.activeLabel) {
-                    const annotation = p.getTokenSpanAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-                    // When the user is actively making a selection, we render the
-                    // bounds below rather than in the page, for 2 reasons:
-                    // 1) The bounds might go across pages
-                    // 2) The computed bounds for the annotation encapsulate it,
-                    //    but this is a weird experience when you are trying to accurately
-                    //    select tokens.
-                    if (annotation) {
-                        extraTokens = annotation.tokens
-                    }
+            <PageCanvas ref={canvasRef} />
+            {// We only render the tokens if the page is visible, as rendering them all makes the
+             // page slow and/or crash.
+                scale && isVisible && annotations.map((annotation) => (
+                        <Selection
+                            pageInfo={pageInfo}
+                            tokens={annotation.tokens}
+                            key={annotation.toString()}
+                            label={annotation.label}
+                            bounds={pageInfo.getScaledBounds(annotation.bounds)}
+                            onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
+                        />
+                    )
+                )
+            }
+            {selection && annotationStore.activeLabel ? (() => {
+                if (selection && !annotationStore.freeFormAnnotations && annotationStore.activeLabel){
+                    const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
+                    if (annotation && annotation.tokens){
+                        return(<Selection
+                            pageInfo={pageInfo}
+                            tokens={annotation.tokens}
+                            bounds={selection}
+                            label={annotationStore.activeLabel}
+                            showInfo={false}
+                        />)
                 }
+            }
+        })() : null}
 
+        </PageAnnotationsContainer>
+    );
+};
+
+export const PDF = () => {
+
+    const pdfStore = useContext(PDFStore);
+
+    // TODO (@codeviking): Use error boundaries to capture these.
+    if (!pdfStore.doc) {
+        throw new Error('No Document');
+    }
+    if (!pdfStore.pages) {
+        throw new Error('Document without Pages');
+    }
+
+    return (
+        <>
+            {pdfStore.pages.map((p) => {
                 return (
                     <Page
                         key={p.page.pageNumber}
                         pageInfo={p}
-                        annotations={existingAnnotations}
-                        extraTokens={extraTokens}
-                        onError={pdfStore.onError} />
+                        onError={pdfStore.onError}
+                    />
                 );
             })}
-            {selection && annotationStore.activeLabel ? (
-                <SelectionBoundary
-                   bounds={selection}
-                   color={annotationStore.activeLabel.color}
-                />
-            ) : null}
-        </PDFAnnotationsContainer>
+        </>
     );
 };
-
-
-
-const PDFAnnotationsContainer = styled.div`
-    position: relative;
-`;
 
 const PageAnnotationsContainer = styled.div(({ theme }) =>`
     position: relative;

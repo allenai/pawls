@@ -96,10 +96,10 @@ interface SelectionProps {
     tokens?: TokenId[]
     label: Label
     onClickDelete?: () => void
-
+    showInfo?: boolean
  }
 
-export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete }: SelectionProps) => {
+export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, showInfo = true }: SelectionProps) => {
     const theme = useContext(ThemeContext)
     let color;
     if (!label) {
@@ -112,24 +112,26 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete }: Se
     return (
         <>
           <SelectionBoundary color={color} bounds={bounds}>
-            <SelectionInfo border={border} color={color}>
-              <span>
-                {label.text}
-              </span>
-            <CloseCircleFilled
-              onClick={(e) => {
-                  e.stopPropagation();
-                  if (onClickDelete){
-                      onClickDelete()
-                  }
-              }}
-              // We have to prevent the default behaviour for
-              // the pdf canvas here, in order to be able to capture
-              // the click event.
-              onMouseDown={(e) => {e.stopPropagation()}}
-              onMouseUp={(e) => {e.stopPropagation()}}
-            />
-            </SelectionInfo>
+            {showInfo ? (
+                <SelectionInfo border={border} color={color}>
+                <span>
+                    {label.text}
+                </span>
+                <CloseCircleFilled
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (onClickDelete){
+                            onClickDelete()
+                        }
+                    }}
+                    // We have to prevent the default behaviour for
+                    // the pdf canvas here, in order to be able to capture
+                    // the click event.
+                    onMouseDown={(e) => {e.stopPropagation()}}
+                    onMouseUp={(e) => {e.stopPropagation()}}
+                />
+                </SelectionInfo>
+            ): null}
           </SelectionBoundary>
           { 
             // NOTE: It's important that the parent element of the tokens

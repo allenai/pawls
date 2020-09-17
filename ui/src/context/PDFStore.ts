@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token, Label } from '../api';
-import { TokenId, TokenSpanAnnotation } from './AnnotationStore';
+import { TokenId, Annotation, PdfAnnotations } from './AnnotationStore';
 
 
 export type Optional<T> = T | undefined;
@@ -23,19 +23,6 @@ function scaled(bounds: Bounds, scale: number): Bounds {
         top: bounds.top * scale,
         right: bounds.right * scale,
         bottom: bounds.bottom * scale
-    };
-}
-
-/**
- * Returns the provided bounds adjusted to be relative to the top-left corner of the provided
- * bounds.
- */
-function relativeTo(a: Bounds, b: Bounds): Bounds {
-    return {
-        left: a.left - b.left,
-        top: a.top - b.top,
-        right: a.right - b.left,
-        bottom: a.bottom - b.top
     };
 }
 
@@ -66,9 +53,34 @@ function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
     maxBound.bottom = maxBound.bottom + padding
 
     return maxBound
-
 }
 
+/**
+ * Returns the provided bounds in their normalized form. Normalized means that the left
+ * coordinate is always less than the right coordinate, and that the top coordinate is always
+ * left than the bottom coordinate.
+ *
+ * This is required because objects in the DOM are positioned and sized by setting their top-left
+ * corner, width and height. This means that when a user composes a selection and moves to the left,
+ * or up, from where they started might result in a negative width and/or height. We don't normalize
+ * these values as we're tracking the mouse as it'd result in the wrong visual effect. Instead we
+ * rotate the bounds we render on the appropriate axis. This means we need to account for this
+ * later when calculating what tokens the bounds intersect with.
+ */
+export function normalizeBounds(b: Bounds): Bounds {
+    const normalized = Object.assign({}, b);
+    if (b.right < b.left) {
+        const l = b.left;
+        normalized.left = b.right;
+        normalized.right = l;
+    }
+    if (b.bottom < b.top) {
+        const t = b.top;
+        normalized.top = b.bottom;
+        normalized.bottom = t;
+    }
+    return normalized;
+}
 
 /**
  * Returns true if the provided bounds overlap.
@@ -82,13 +94,57 @@ function doOverlap(a: Bounds, b: Bounds): boolean {
     return true;
 }
 
+export function handleNewAnnotations(
+    page: PDFPageInfo,
+    selection: Bounds,
+    existingAnnotations: PdfAnnotations,
+    activeLabel: Label,
+    freeform: boolean,
+    ): PdfAnnotations {
+
+    const updatedAnnotations = existingAnnotations.slice(0)
+    let annotation: Optional<Annotation> = undefined
+    
+    const pageIndex = page.page.pageNumber - 1
+    const normalized = normalizeBounds(selection)
+    if (freeform){
+        annotation = page.getFreeFormAnnotationForBounds(normalized, activeLabel)
+    } else {
+        annotation = page.getAnnotationForBounds(normalized, activeLabel)
+    }
+    if (annotation !== undefined) {
+        // First annotation we have seen.
+        updatedAnnotations[pageIndex].push(annotation)
+    }
+    return updatedAnnotations
+}
+
+
+
 export class PDFPageInfo {
     constructor(
         public readonly page: pdfjs.PDFPageProxy,
         public readonly tokens: Token[] = [],
         public bounds?: Bounds
     ) {}
-    getTokenSpanAnnotationForBounds(selection: Bounds, label: Label): Optional<TokenSpanAnnotation> {
+
+    getFreeFormAnnotationForBounds(selection: Bounds, label: Label): Optional<Annotation> {
+
+        if (this.bounds === undefined) {
+            throw new Error('Unknown Page Bounds');
+        }
+
+        // Here we invert the scale, because the user has drawn this bounding
+        // box, so it is *already* scaled with respect to the client's view. For
+        // the annotation, we want to remove this, because storing it with respect
+        // to the PDF page's original scale means we can render it everywhere.
+        const bounds = scaled(selection, 1 / this.scale)
+        
+        return new Annotation(bounds, this.page.pageNumber - 1, label)
+
+    }
+
+    getAnnotationForBounds(selection: Bounds, label: Label): Optional<Annotation> {
 
         /* This function is quite complicated. Our objective here is to
            compute overlaps between a bounding box provided by a user and
@@ -103,8 +159,7 @@ export class PDFPageInfo {
            
            whether a grobid token (tokenBound), scaled to the current scale of the
            pdf in the client (scaled(tokenBound, this.scale)), is overlapping with
-           the bounding box drawn by the user (selection) relative to the edge of 
-           the pdf in the client (relativeTo(selection, this.bounds)).
+           the bounding box drawn by the user (selection).
 
            But! Once we have computed this, we store the grobid tokens and the bound
            that contains all of them relative to the *original grobid tokens*.
@@ -120,10 +175,7 @@ export class PDFPageInfo {
         const tokenBounds: Bounds[] = [];
         for(let i = 0; i < this.tokens.length; i++) {
             const tokenBound = this.getTokenBounds(this.tokens[i])
-            if (doOverlap(
-                scaled(tokenBound, this.scale), 
-                relativeTo(selection, this.bounds))
-                ) {
+            if (doOverlap(scaled(tokenBound, this.scale), selection)) {
                 ids.push(new TokenId(this.page.pageNumber - 1, i));
                 tokenBounds.push(tokenBound);
             }
@@ -132,7 +184,7 @@ export class PDFPageInfo {
             return undefined
         }
         const bounds = spanningBound(tokenBounds)
-        return new TokenSpanAnnotation(ids, bounds, this.page.pageNumber - 1, label)
+        return new Annotation(bounds, this.page.pageNumber - 1, label, ids)
     }
 
 
