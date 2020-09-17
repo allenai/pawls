@@ -94,15 +94,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
 
     const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
 
-    useEffect(() => {
-        if (selection && !annotationStore.freeFormAnnotations && annotationStore.activeLabel){
-            const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-            if (annotation && annotation.tokens){
-                setExtraTokens(annotation.tokens)
-            }
-        }
-    }, [selection])
-
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
         const store = annotationStore.pdfAnnotations.slice(0)
@@ -181,7 +172,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 // Clear the selected annotation, if there is one.
                 // TODO (@codeviking): This might change.
                 annotationStore.setSelectedAnnotation(undefined);
-                setExtraTokens(undefined)
                 if (!selection) {
                     const left = event.pageX - containerRef.current.offsetLeft;
                     const top = event.pageY - containerRef.current.offsetTop;
@@ -239,20 +229,24 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                     )
                 )
             }
-            {selection && annotationStore.activeLabel ? (
-                <Selection
-                   pageInfo={pageInfo}
-                   tokens={extraTokens}
-                   bounds={selection}
-                   label={annotationStore.activeLabel}
-                   showInfo={false}
-                />
-            ) : null}
+            {selection && annotationStore.activeLabel ? (() => {
+                if (selection && !annotationStore.freeFormAnnotations && annotationStore.activeLabel){
+                    const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
+                    if (annotation && annotation.tokens){
+                        return(<Selection
+                            pageInfo={pageInfo}
+                            tokens={annotation.tokens}
+                            bounds={selection}
+                            label={annotationStore.activeLabel}
+                            showInfo={false}
+                        />)
+                }
+            }
+        })() : null}
 
         </PageAnnotationsContainer>
     );
 };
-
 
 export const PDF = () => {
 
