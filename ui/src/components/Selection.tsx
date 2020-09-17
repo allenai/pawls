@@ -97,7 +97,6 @@ interface SelectionProps {
     label: Label
     onClickDelete?: () => void
     showInfo?: boolean
-
  }
 
 export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, showInfo = true }: SelectionProps) => {
@@ -119,17 +118,17 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, show
                     {label.text}
                 </span>
                 <CloseCircleFilled
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClickDelete){
-                        onClickDelete()
-                    }
-                }}
-                // We have to prevent the default behaviour for
-                // the pdf canvas here, in order to be able to capture
-                // the click event.
-                onMouseDown={(e) => {e.stopPropagation()}}
-                onMouseUp={(e) => {e.stopPropagation()}}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (onClickDelete){
+                            onClickDelete()
+                        }
+                    }}
+                    // We have to prevent the default behaviour for
+                    // the pdf canvas here, in order to be able to capture
+                    // the click event.
+                    onMouseDown={(e) => {e.stopPropagation()}}
+                    onMouseUp={(e) => {e.stopPropagation()}}
                 />
                 </SelectionInfo>
             ): null}
