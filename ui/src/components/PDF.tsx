@@ -2,7 +2,7 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, TokenId, normalizeBounds, handleNewAnnotations } from '../context';
+import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations } from '../context';
 import { Selection} from '../components'
 
 class PDFPageRenderer {
@@ -90,7 +90,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [ selection, setSelection ] = useState<Bounds>();
-    const [ extraTokens, setExtraTokens ] = useState<TokenId[]>();
 
     const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
 
@@ -230,17 +229,18 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 )
             }
             {selection && annotationStore.activeLabel ? (() => {
-                if (selection && !annotationStore.freeFormAnnotations && annotationStore.activeLabel){
+                if (selection && annotationStore.activeLabel){
                     const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-                    if (annotation && annotation.tokens){
-                        return(<Selection
+                    const hasTokens = annotation && !annotationStore.freeFormAnnotations
+                    return(
+                        <Selection
                             pageInfo={pageInfo}
-                            tokens={annotation.tokens}
+                            tokens={hasTokens && annotation ? annotation.tokens: undefined}
                             bounds={selection}
                             label={annotationStore.activeLabel}
                             showInfo={false}
-                        />)
-                }
+                        />
+                    )
             }
         })() : null}
 
