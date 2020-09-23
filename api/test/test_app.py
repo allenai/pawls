@@ -1,7 +1,16 @@
+import shutil
+import os
 from unittest import TestCase
+
 from fastapi.testclient import TestClient
 
 from main import app
+
+
+def copy_and_overwrite(from_path: str, to_path: str):
+    if os.path.exists(to_path):
+        shutil.rmtree(to_path)
+    shutil.copytree(from_path, to_path)
 
 
 class TestApp(TestCase):
@@ -9,6 +18,15 @@ class TestApp(TestCase):
         super().setUp()
 
         self.client = TestClient(app)
+        self.TEST_DIR = "test/fixtures/tmp/"
+        os.makedirs(self.TEST_DIR, exist_ok=True)
+        copy_and_overwrite(
+            "test/fixtures/data/",
+            os.path.join(self.TEST_DIR, "papers")
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.TEST_DIR)
 
     def test_root(self):
         response = self.client.get("/")
