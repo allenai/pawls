@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Annotation } from '../context';
 
 export interface Token {
     x: number;
@@ -85,5 +86,16 @@ export interface PaperMetadata {
 
 export async function getAssignedPapers(): Promise<PaperMetadata[]> {
     return axios.get("/api/annotation/allocation/metadata")
+                .then(r => r.data)
+}
+
+export function saveAnnotations(sha: string, annotations: Annotation[]): void {
+
+    axios.post(`/api/doc/${sha}/annotations`, annotations)
+    
+}
+
+export async function getAnnotations(sha: string): Promise<Annotation[]> {
+    return axios.get(`/api/doc/${sha}/annotations`)
                 .then(r => r.data)
 }

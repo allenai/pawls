@@ -16,7 +16,7 @@ export class Annotation {
         public bounds: Bounds,
         public readonly page: number,
         public readonly label: Label,
-        public readonly tokens: TokenId[] | undefined = undefined,
+        public readonly tokens: TokenId[] | null = null,
         public linkedAnnotation: Annotation | undefined = undefined
     ) {}
 

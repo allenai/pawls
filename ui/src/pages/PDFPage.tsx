@@ -7,7 +7,7 @@ import { Result, Progress } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -58,6 +58,9 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
+    const onSave = () => {
+        saveAnnotations(sha, pdfAnnotations.flat())
+    }
 
     useEffect(() => {
         getLabels().then(labels => {
@@ -116,8 +119,25 @@ export const PDFPage = () => {
         }).then(pages => {
             setPages(pages);
             // Initialize the store for keeping our per-page annotations.
+            const initialPageAnnotations: PdfAnnotations = []
             pages.forEach((p) => {
+                // TODO(Mark): understand how to remove this. Without it,
+                // the <Page> renders without this state being updated first,
+                // which makes it crash. Maybe just set to undefined and
+                // conditionally render?
                 pdfAnnotations.push([])
+                initialPageAnnotations.push([])
+            })
+            // Get any existing annotations for this pdf.
+            getAnnotations(sha).then(annotations => {
+                annotations.forEach((annotation) => {
+                    initialPageAnnotations[annotation.page].push(annotation)
+                })
+            setPdfAnnotations(initialPageAnnotations)
+
+            }).catch((err: any) => {
+                console.error(`Error Fetching Existing Annotations: `, err);
+                setViewState(ViewState.ERROR);
             })
 
             setViewState(ViewState.LOADED);
@@ -176,7 +196,11 @@ export const PDFPage = () => {
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>
-                                <Sidebar assignedPapers={assignedPapers} sidebarWidth={sidebarWidth}/>
+                                <Sidebar
+                                    assignedPapers={assignedPapers}
+                                    sidebarWidth={sidebarWidth}
+                                    onSave={onSave}
+                                />
                                 <PDFContainer>
                                     <PDF />
                                 </PDFContainer>

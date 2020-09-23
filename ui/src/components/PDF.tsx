@@ -92,6 +92,8 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const [ selection, setSelection ] = useState<Bounds>();
 
     const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
+    console.log("Page number: ", pageInfo.page.pageNumber - 1)
+    console.log("anotations: ", annotations)
 
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
@@ -219,7 +221,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 scale && isVisible && annotations.map((annotation) => (
                         <Selection
                             pageInfo={pageInfo}
-                            tokens={annotation.tokens}
+                            tokens={annotation.tokens || undefined}
                             key={annotation.toString()}
                             label={annotation.label}
                             bounds={pageInfo.getScaledBounds(annotation.bounds)}
@@ -235,7 +237,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                     return(
                         <Selection
                             pageInfo={pageInfo}
-                            tokens={hasTokens && annotation ? annotation.tokens: undefined}
+                            tokens={hasTokens && annotation ? annotation.tokens || undefined: undefined}
                             bounds={selection}
                             label={annotationStore.activeLabel}
                             showInfo={false}
