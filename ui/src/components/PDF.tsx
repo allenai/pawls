@@ -92,8 +92,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const [ selection, setSelection ] = useState<Bounds>();
 
     const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
-    console.log("Page number: ", pageInfo.page.pageNumber - 1)
-    console.log("anotations: ", annotations)
 
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
