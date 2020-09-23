@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 
 from app import pdf_structure
 from app.metadata import PaperMetadata
+from app.annotations import Annotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 
@@ -84,6 +85,26 @@ async def get_pdf(sha: str):
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
 
     return FileResponse(pdf, media_type="application/pdf")
+
+
+@app.get("/api/doc/{sha}/annotations")
+def get_existing_annotations(sha: str):
+
+    annotations = os.path.join(configuration.output_directory, sha, "annotations.json")
+    exists = os.path.exists(annotations)
+
+    if exists:
+        return json.load(open(annotations))
+    else:
+        return {}
+
+
+@app.post("/api/doc/{sha}/annotations")
+def save_annotations(sha: str, annotations: List[Annotation]):
+
+    annotations_path = os.path.join(configuration.output_directory, sha, "annotations.json")
+    with open(annotations_path, "w+") as f:
+        json.dump(annotations, f)
 
 
 @app.get("/api/docs")
