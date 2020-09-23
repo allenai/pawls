@@ -1,25 +1,25 @@
 
-from typing import NamedTuple, Optional, List
+from typing import Optional, List
+from pydantic import BaseModel
 
-
-class Bounds(NamedTuple):
+class Bounds(BaseModel):
     left: float
     top: float
     right: float
     bottom: float
 
 
-class Label(NamedTuple):
+class Label(BaseModel):
     text: str
     color: str
 
 
-class TokenId(NamedTuple):
+class TokenId(BaseModel):
     pageIndex: int
     tokenIndex: int
 
 
-class Annotation(NamedTuple):
+class Annotation(BaseModel):
     page: int
     label: Label
     bounds: Bounds
