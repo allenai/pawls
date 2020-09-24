@@ -2,12 +2,12 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, Sidebar } from '../components';
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -35,7 +35,7 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>([]);
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
 
     const [ selectedAnnotation, setSelectedAnnotation ] = useState<Annotation>();
 
@@ -58,6 +58,21 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
+    const onSave = () => {
+
+        if (pdfAnnotations) {
+            saveAnnotations(sha, pdfAnnotations.flat()) .then(() => {
+                notification.success({message: "Saved Annotations!"})
+            }).catch((err) => {
+
+                notification.error({
+                    message: "Sorry, something went wrong!",
+                    description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
+                })
+                console.log("Failed to save annotations: ", err)
+            })
+        }
+    }
 
     useEffect(() => {
         getLabels().then(labels => {
@@ -116,8 +131,20 @@ export const PDFPage = () => {
         }).then(pages => {
             setPages(pages);
             // Initialize the store for keeping our per-page annotations.
+            const initialPageAnnotations: PdfAnnotations = []
             pages.forEach((p) => {
-                pdfAnnotations.push([])
+                initialPageAnnotations.push([])
+            })
+            // Get any existing annotations for this pdf.
+            getAnnotations(sha).then(annotations => {
+                annotations.forEach((annotation) => {
+                    initialPageAnnotations[annotation.page].push(annotation)
+                })
+            setPdfAnnotations(initialPageAnnotations)
+
+            }).catch((err: any) => {
+                console.error(`Error Fetching Existing Annotations: `, err);
+                setViewState(ViewState.ERROR);
             })
 
             setViewState(ViewState.LOADED);
@@ -154,7 +181,7 @@ export const PDFPage = () => {
                 </CenterOnPage>
             );
         case ViewState.LOADED:
-            if (doc) {
+            if (doc && pdfAnnotations) {
                 const sidebarWidth = "300px";
                 return (
                     <PDFStore.Provider value={{
@@ -176,7 +203,11 @@ export const PDFPage = () => {
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>
-                                <Sidebar assignedPapers={assignedPapers} sidebarWidth={sidebarWidth}/>
+                                <Sidebar
+                                    assignedPapers={assignedPapers}
+                                    sidebarWidth={sidebarWidth}
+                                    onSave={onSave}
+                                />
                                 <PDFContainer>
                                     <PDF />
                                 </PDFContainer>
@@ -184,6 +215,8 @@ export const PDFPage = () => {
                         </AnnotationStore.Provider>
                     </PDFStore.Provider>
                 );
+            } else {
+                return (null);
             }
         // eslint-disable-line: no-fallthrough
         case ViewState.ERROR:

@@ -16,7 +16,7 @@ export class Annotation {
         public bounds: Bounds,
         public readonly page: number,
         public readonly label: Label,
-        public readonly tokens: TokenId[] | undefined = undefined,
+        public readonly tokens: TokenId[] | null = null,
         public linkedAnnotation: Annotation | undefined = undefined
     ) {}
 
@@ -36,6 +36,10 @@ export class Annotation {
             this.label.text,
             this.tokens ? this.tokens.map(t => t.toString()).join('-') : null
         ].join("-")
+    }
+
+    static fromObject(obj: Annotation) {
+        return new Annotation(obj.bounds, obj.page, obj.label, obj.tokens, obj.linkedAnnotation)
     }
 };
 

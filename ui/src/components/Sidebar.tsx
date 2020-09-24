@@ -1,7 +1,7 @@
 
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { Link } from '@allenai/varnish';
+import { Link, Button } from '@allenai/varnish';
 
 import { AnnotationStore } from '../context';
 import { Labels } from "./Labels";
@@ -15,9 +15,10 @@ const { AI2Logo } = Logos;
 interface SidebarProps {
     sidebarWidth: string;
     assignedPapers: PaperMetadata[];
+    onSave: () => void
 }
 
-export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
+export const Sidebar = ({sidebarWidth, assignedPapers, onSave}: SidebarProps) => {
 
     const annotationStore = useContext(AnnotationStore);
 
@@ -37,6 +38,14 @@ export const Sidebar = ({sidebarWidth, assignedPapers}: SidebarProps) => {
             <SidebarItem>
                 <SidebarItemTitle>
                     Annotations
+                    <Button
+                        type="primary"
+                        size="small"
+                        onClick={onSave}
+                        style={{margin: "8px"}}
+                    >
+                        Save
+                    </Button>
                 </SidebarItemTitle>
                 {flatAnnotations.length === 0 ? (
                     <>None</>
@@ -102,6 +111,7 @@ const SidebarItem = styled.div(({ theme }) => `
     border-radius: 5px;
 
 `);
+
 
 // text-transform is necessary because h5 is all caps in antd/varnish.
 const SidebarItemTitle = styled.h5(({ theme }) => `
