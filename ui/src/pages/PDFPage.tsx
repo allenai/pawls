@@ -6,7 +6,8 @@ import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage, Sidebar } from '../components';
+import { PDF, CenterOnPage } from '../components';
+import {SidebarContainer, Labels, Annotations, AssignedPaperList, Header} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
@@ -61,7 +62,7 @@ export const PDFPage = () => {
     const onSave = () => {
 
         if (pdfAnnotations) {
-            saveAnnotations(sha, pdfAnnotations.flat()) .then(() => {
+            saveAnnotations(sha, pdfAnnotations.flat()).then(() => {
                 notification.success({message: "Saved Annotations!"})
             }).catch((err) => {
 
@@ -167,32 +168,30 @@ export const PDFPage = () => {
         case ViewState.LOADING:
             return (
                 <WithSidebar width={sidebarWidth}>
-                <Sidebar
-                    assignedPapers={assignedPapers}
-                    sidebarWidth={sidebarWidth}
-                    onSave={onSave}
-                />
-                <CenterOnPage>
-                    <Progress
-                        type="circle"
-                        percent={progress}
-                        strokeColor={{ '0%': theme.color.T6, '100%': theme.color.G6 }} />
-                </CenterOnPage>
+                    <SidebarContainer width={sidebarWidth}>
+                        <Header/>
+                        <AssignedPaperList papers={assignedPapers}/>
+                    </SidebarContainer>
+                    <CenterOnPage>
+                        <Progress
+                            type="circle"
+                            percent={progress}
+                            strokeColor={{ '0%': theme.color.T6, '100%': theme.color.G6 }} />
+                    </CenterOnPage>
                 </WithSidebar>
             );
         case ViewState.NOT_FOUND:
             return (
                 <WithSidebar width={sidebarWidth}>
-                <Sidebar
-                    assignedPapers={assignedPapers}
-                    sidebarWidth={sidebarWidth}
-                    onSave={onSave}
-                />
-                <CenterOnPage>
-                    <Result
-                        icon={<QuestionCircleOutlined />}
-                        title="PDF Not Found" />
-                </CenterOnPage>
+                    <SidebarContainer width={sidebarWidth}>
+                        <Header/>
+                        <AssignedPaperList papers={assignedPapers}/>
+                    </SidebarContainer>
+                    <CenterOnPage>
+                        <Result
+                            icon={<QuestionCircleOutlined />}
+                            title="PDF Not Found" />
+                    </CenterOnPage>
                 </WithSidebar>
             );
         case ViewState.LOADED:
@@ -217,11 +216,12 @@ export const PDFPage = () => {
                             }}
                         >
                             <WithSidebar width={sidebarWidth}>
-                                <Sidebar
-                                    assignedPapers={assignedPapers}
-                                    sidebarWidth={sidebarWidth}
-                                    onSave={onSave}
-                                />
+                                <SidebarContainer width={sidebarWidth}>
+                                    <Header/>
+                                    <AssignedPaperList papers={assignedPapers}/>
+                                    <Annotations onSave={onSave} annotations={pdfAnnotations}/>
+                                    <Labels/>
+                                </SidebarContainer>
                                 <PDFContainer>
                                     <PDF />
                                 </PDFContainer>
@@ -236,16 +236,15 @@ export const PDFPage = () => {
         case ViewState.ERROR:
             return (
                 <WithSidebar width={sidebarWidth}>
-                <Sidebar
-                    assignedPapers={assignedPapers}
-                    sidebarWidth={sidebarWidth}
-                    onSave={onSave}
-                />
-                <CenterOnPage>
-                    <Result
-                        status="warning"
-                        title="Unable to Render Document" />
-                </CenterOnPage>
+                    <SidebarContainer width={sidebarWidth}>
+                        <Header/>
+                        <AssignedPaperList papers={assignedPapers}/>
+                    </SidebarContainer>
+                    <CenterOnPage>
+                        <Result
+                            status="warning"
+                            title="Unable to Render Document" />
+                    </CenterOnPage>
                 </WithSidebar>
             );
     }
