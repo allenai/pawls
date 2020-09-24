@@ -162,27 +162,41 @@ export const PDFPage = () => {
         });
     }, [ sha ]);
 
+    const sidebarWidth = "300px";
     switch (viewState) {
         case ViewState.LOADING:
             return (
+                <WithSidebar width={sidebarWidth}>
+                <Sidebar
+                    assignedPapers={assignedPapers}
+                    sidebarWidth={sidebarWidth}
+                    onSave={onSave}
+                />
                 <CenterOnPage>
                     <Progress
                         type="circle"
                         percent={progress}
                         strokeColor={{ '0%': theme.color.T6, '100%': theme.color.G6 }} />
                 </CenterOnPage>
+                </WithSidebar>
             );
         case ViewState.NOT_FOUND:
             return (
+                <WithSidebar width={sidebarWidth}>
+                <Sidebar
+                    assignedPapers={assignedPapers}
+                    sidebarWidth={sidebarWidth}
+                    onSave={onSave}
+                />
                 <CenterOnPage>
                     <Result
                         icon={<QuestionCircleOutlined />}
                         title="PDF Not Found" />
                 </CenterOnPage>
+                </WithSidebar>
             );
         case ViewState.LOADED:
             if (doc && pdfAnnotations) {
-                const sidebarWidth = "300px";
                 return (
                     <PDFStore.Provider value={{
                         doc,
@@ -221,11 +235,18 @@ export const PDFPage = () => {
         // eslint-disable-line: no-fallthrough
         case ViewState.ERROR:
             return (
+                <WithSidebar width={sidebarWidth}>
+                <Sidebar
+                    assignedPapers={assignedPapers}
+                    sidebarWidth={sidebarWidth}
+                    onSave={onSave}
+                />
                 <CenterOnPage>
                     <Result
                         status="warning"
                         title="Unable to Render Document" />
                 </CenterOnPage>
+                </WithSidebar>
             );
     }
 };
