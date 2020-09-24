@@ -89,13 +89,12 @@ export async function getAssignedPapers(): Promise<PaperMetadata[]> {
                 .then(r => r.data)
 }
 
-export function saveAnnotations(sha: string, annotations: Annotation[]): void {
 
-    axios.post(`/api/doc/${sha}/annotations`, annotations)
-    
+export function saveAnnotations(sha: string, annotations: Annotation[]): Promise<any> {
+    return axios.post(`/api/doc/${sha}/annotations`, annotations)
 }
 
 export async function getAnnotations(sha: string): Promise<Annotation[]> {
     return axios.get(`/api/doc/${sha}/annotations`)
-                .then(r => r.data)
+                .then(r => r.data.map((ann: any) => Annotation.fromObject(ann)))
 }

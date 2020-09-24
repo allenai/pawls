@@ -2,7 +2,7 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
@@ -35,7 +35,7 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>([]);
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
 
     const [ selectedAnnotation, setSelectedAnnotation ] = useState<Annotation>();
 
@@ -59,7 +59,19 @@ export const PDFPage = () => {
     const theme = useContext(ThemeContext);
 
     const onSave = () => {
-        saveAnnotations(sha, pdfAnnotations.flat())
+
+        if (pdfAnnotations) {
+            saveAnnotations(sha, pdfAnnotations.flat()) .then(() => {
+                notification.success({message: "Saved Annotations!"})
+            }).catch((err) => {
+
+                notification.error({
+                    message: "Sorry, something went wrong!",
+                    description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
+                })
+                console.log("Failed to save annotations: ", err)
+            })
+        }
     }
 
     useEffect(() => {
@@ -121,11 +133,6 @@ export const PDFPage = () => {
             // Initialize the store for keeping our per-page annotations.
             const initialPageAnnotations: PdfAnnotations = []
             pages.forEach((p) => {
-                // TODO(Mark): understand how to remove this. Without it,
-                // the <Page> renders without this state being updated first,
-                // which makes it crash. Maybe just set to undefined and
-                // conditionally render?
-                pdfAnnotations.push([])
                 initialPageAnnotations.push([])
             })
             // Get any existing annotations for this pdf.
@@ -174,7 +181,7 @@ export const PDFPage = () => {
                 </CenterOnPage>
             );
         case ViewState.LOADED:
-            if (doc) {
+            if (doc && pdfAnnotations) {
                 const sidebarWidth = "300px";
                 return (
                     <PDFStore.Provider value={{
@@ -208,6 +215,8 @@ export const PDFPage = () => {
                         </AnnotationStore.Provider>
                     </PDFStore.Provider>
                 );
+            } else {
+                return (null);
             }
         // eslint-disable-line: no-fallthrough
         case ViewState.ERROR:

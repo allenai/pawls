@@ -7,7 +7,7 @@ import { AnnotationStore } from '../context';
 import { Labels } from "./Labels";
 import { PaperMetadata } from "../api";
 
-import { Logos, message } from '@allenai/varnish';
+import { Logos } from '@allenai/varnish';
 
 const { AI2Logo } = Logos;
 
@@ -41,7 +41,7 @@ export const Sidebar = ({sidebarWidth, assignedPapers, onSave}: SidebarProps) =>
                     <Button
                         type="primary"
                         size="small"
-                        onClick={() => { onSave(); message.success("Saved Annotations!") }}
+                        onClick={onSave}
                         style={{margin: "8px"}}
                     >
                         Save
