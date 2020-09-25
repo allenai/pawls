@@ -1,6 +1,6 @@
 <div align="center">
     <br>
-    <img src="https://raw.githubusercontent.com/allenai/pawls/ui/src/components/sidebar/pawlsLogo.png" width="400"/>
+    <img src="./ui/src/components/sidebar/pawlsLogo.png" width="400"/>
     <p>
     **P**DF **A**nnotations with **L**abels and **S**tructure is software that makes it easy
     to collect a series of annotations associated with a PDF document. It was written
