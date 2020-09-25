@@ -2,8 +2,10 @@ import React, { useContext, useEffect }  from 'react';
 import styled from "styled-components";
 import { Tag, Switch } from "@allenai/varnish";
 
-import { AnnotationStore } from "../context";
+import { AnnotationStore } from "../../context";
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+
+import { SidebarItem, SidebarItemTitle } from "./common";
 
 const { CheckableTag } = Tag;
 
@@ -51,7 +53,10 @@ export const Labels = () => {
 
     // TODO(Mark): Style the tags so it's clear you can select them with the numeric keys.
     return (
-        <> 
+        <SidebarItem> 
+          <SidebarItemTitle>
+              Labels
+          </SidebarItemTitle>
           <Container>
             <div>
                 {annotationStore.labels.map(label => (
@@ -73,7 +78,7 @@ export const Labels = () => {
                 />
             </div>
           </Container>
-        </>
+        </SidebarItem>
     )
 }
 
