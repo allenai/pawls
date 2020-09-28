@@ -37,6 +37,8 @@ export const SidebarItem = styled.div(({ theme }) => `
 export const SidebarItemTitle = styled.h5(({ theme }) => `
     margin: ${theme.spacing.xs} 0;
     text-transform: capitalize;
+    padding-bottom: ${theme.spacing.xs};
+    border-bottom: 2px solid ${theme.color.N8};
 `);
 
 export const Contrast = styled.div`

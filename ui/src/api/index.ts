@@ -73,6 +73,11 @@ export async function getLabels(): Promise<Label[]> {
                 .then(r => r.data)
 }
 
+export async function getRelations(): Promise<Label[]> {
+    return axios.get("/api/annotation/relations")
+                .then(r => r.data)
+}
+
 
 export interface PaperMetadata {
 

@@ -168,9 +168,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 if (containerRef.current === null) {
                     throw new Error('No Container');
                 }
-                // Clear the selected annotation, if there is one.
-                // TODO (@codeviking): This might change.
-                annotationStore.setSelectedAnnotation(undefined);
                 if (!selection) {
                     const left = event.pageX - containerRef.current.offsetLeft;
                     const top = event.pageY - containerRef.current.offsetTop;
