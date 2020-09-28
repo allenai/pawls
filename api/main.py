@@ -193,6 +193,14 @@ def get_labels() -> List[Dict[str, str]]:
     """
     return configuration.labels
 
+@app.get("/api/annotation/relations")
+def get_relations() -> List[Dict[str, str]]:
+    """
+    Get the relations used for annotation for this app.
+    """
+    return configuration.relations
+
+
 
 @app.get("/api/annotation/allocation")
 def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:

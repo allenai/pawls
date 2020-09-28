@@ -2,6 +2,7 @@
 from typing import Optional, List
 from pydantic import BaseModel
 
+
 class Bounds(BaseModel):
     left: float
     top: float

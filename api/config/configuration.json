@@ -18,6 +18,17 @@
             "color": "#2F85F7"
         }
     ],
+    "relations": [
+        {
+            "text": "Caption Of",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Definition",
+            "color": "#FFD45D"
+        }
+    ],
+
     "pdfs": [
         "34f25a8704614163c4095b3ee2fc969b60de4698",
         "3febb2bed8865945e7fddc99efd791887bb7e14f",

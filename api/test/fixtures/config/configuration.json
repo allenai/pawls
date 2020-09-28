@@ -1,6 +1,26 @@
 {
     "output_directory": "test/fixtures/tmp/papers",
-    "labels": ["test", "label"],
+    "labels": [
+        {
+            "text": "Figure Text",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Section Header",
+            "color": "#FFD45D"
+        }
+    ],
+    "relations": [
+        {
+            "text": "Caption Of",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Definition",
+            "color": "#FFD45D"
+        }
+    ],
+
     "pdfs": [],
     "preprocessors": ["grobid"]
 }
