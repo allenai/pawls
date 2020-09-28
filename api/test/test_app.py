@@ -40,9 +40,30 @@ class TestApp(TestCase):
         assert response.status_code == 404
 
     def test_get_labels(self):
-
         response = self.client.get("/api/annotation/labels")
-        assert response.json() == ["test", "label"]
+        assert response.json() == [
+            {
+                "text": "Figure Text",
+                "color": "#70DDBA"
+            },
+            {
+                "text": "Section Header",
+                "color": "#FFD45D"
+            }
+        ]
+
+    def test_get_relations(self):
+        response = self.client.get("/api/annotation/relations")
+        assert response.json() == [
+            {
+                "text": "Caption Of",
+                "color": "#70DDBA"
+            },
+            {
+                "text": "Definition",
+                "color": "#FFD45D"
+            }
+        ]
 
     def test_get_allocations(self):
 

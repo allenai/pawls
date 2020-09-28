@@ -21,6 +21,8 @@ class Configuration(NamedTuple):
         annotation output will be stored.
     labels: List[Dict[str, str]], required.
         The labels in use for annotation.
+    relations: List[Dict[str, str]], required.
+        The relations in use for annotation.
     pdfs: List[str], required.
         The pdfs that you want to annotate. This can be updated,
         and new pdfs will be _added_ to the annotation set. Removing
@@ -33,6 +35,7 @@ class Configuration(NamedTuple):
 
     output_directory: str
     labels: List[Dict[str, str]]
+    relations: List[Dict[str, str]]
     pdfs: List[str]
     preprocessors: List[str] = None
 

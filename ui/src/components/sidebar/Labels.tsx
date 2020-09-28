@@ -1,6 +1,6 @@
 import React, { useContext, useEffect }  from 'react';
 import styled from "styled-components";
-import { Tag, Switch } from "@allenai/varnish";
+import { Tag, Switch} from "@allenai/varnish";
 
 import { AnnotationStore } from "../../context";
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
@@ -69,6 +69,21 @@ export const Labels = () => {
                     </CheckableTag>           
                 ))}
             </div>
+            <SidebarItemTitle>
+                Relations
+            </SidebarItemTitle>
+            <div>
+                {annotationStore.relations.map(relation => (
+                    <CheckableTag
+                        key={relation.text}
+                        onClick={() => {annotationStore.setActiveRelation(relation)}}
+                        checked={relation === annotationStore.activeRelation}
+                    >
+                        {relation.text}
+                    </CheckableTag>           
+                ))}
+            </div>
+
             <div>
                 Free Form Annotations
                 <Toggle 

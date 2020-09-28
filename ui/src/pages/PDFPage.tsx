@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage } from '../components';
 import {SidebarContainer, Labels, Annotations, AssignedPaperList, Header} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -38,11 +38,13 @@ export const PDFPage = () => {
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
 
-    const [ selectedAnnotation, setSelectedAnnotation ] = useState<Annotation>();
+    const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([]);
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
+    const [ relations, setRelations] = useState<Label[]>([]);
+    const [ activeRelation, setActiveRelation] = useState<Label>();
     const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
@@ -81,6 +83,14 @@ export const PDFPage = () => {
             setActiveLabel(labels[0])
         })
     }, []) 
+
+    useEffect(() => {
+        getRelations().then(relations => {
+            setRelations(relations)
+            setActiveRelation(labels[0])
+        })
+    }, []) 
+    
 
     useEffect( () => {
         getAssignedPapers().then((paperMetadata) => {
@@ -207,10 +217,13 @@ export const PDFPage = () => {
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
+                                relations,
+                                activeRelation,
+                                setActiveRelation,
                                 pdfAnnotations,
                                 setPdfAnnotations,
-                                selectedAnnotation,
-                                setSelectedAnnotation,
+                                selectedAnnotations,
+                                setSelectedAnnotations,
                                 freeFormAnnotations,
                                 toggleFreeFormAnnotations
                             }}

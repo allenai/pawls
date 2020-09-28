@@ -51,9 +51,14 @@ interface _AnnotationStore {
     labels: Label[]
     activeLabel?: Label
     setActiveLabel: (label: Label) => void;
+
+    relations: Label[]
+    activeRelation?: Label
+    setActiveRelation: (label: Label) => void;
+
     pdfAnnotations: PdfAnnotations;
-    selectedAnnotation?: Annotation;
-    setSelectedAnnotation: (t?: Annotation) => void;
+    selectedAnnotations: Annotation[];
+    setSelectedAnnotations: (t: Annotation[]) => void;
     setPdfAnnotations: (t: PdfAnnotations) => void;
     freeFormAnnotations: boolean;
     toggleFreeFormAnnotations: (state: boolean) => void;
@@ -66,7 +71,13 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     setActiveLabel:(_?: Label) => {
         throw new Error("Unimplemented")
     },
-    setSelectedAnnotation: (_?: Annotation) => {
+    relations: [],
+    activeRelation: undefined,
+    setActiveRelation:(_?: Label) => {
+        throw new Error("Unimplemented")
+    },
+    selectedAnnotations: [],
+    setSelectedAnnotations: (_?: Annotation[]) => {
         throw new Error('Unimplemented');
     },
     setPdfAnnotations: (_: PdfAnnotations) => {

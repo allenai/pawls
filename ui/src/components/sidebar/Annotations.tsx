@@ -21,7 +21,7 @@ export const Annotations = ({onSave, annotations}: AnnotationsProps) => {
                     type="primary"
                     size="small"
                     onClick={onSave}
-                    style={{margin: "8px"}}
+                    style={{marginLeft: "8px"}}
                 >
                     Save
                 </Button>
