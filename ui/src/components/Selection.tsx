@@ -34,6 +34,21 @@ export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryPr
 
     return (
         <span
+          onClick={(e) => {
+              // Here we are preventing the default PdfAnnotationsContainer
+              // behaviour of drawing a new bounding box if the shift key
+              // is pressed in order to allow users to select multiple
+              // annotations and associate them together with a relation.
+              if (e.shiftKey) {
+              e.stopPropagation();
+                console.log("Shift + Click!")
+            }
+          }}
+          onMouseDown={(e) => {
+            if (e.shiftKey) {
+                e.stopPropagation()
+            }
+        }}    
           style={{
             position: "absolute",
             left: `${bounds.left}px`,
@@ -81,7 +96,11 @@ export const SelectionTokens = ({pageInfo, tokens}: SelectionTokenProps) => {
                         left: `${b.left}px`,
                         top: `${b.top}px`,
                         width: `${b.right - b.left}px`,
-                        height: `${b.bottom - b.top}px`
+                        height: `${b.bottom - b.top}px`,
+                        // Tokens don't respond to pointerEvents because
+                        // they are ontop of the bounding boxes and the canvas,
+                        // which do respond to pointer events.
+                        pointerEvents: 'none'
                     }} />
                 )
 
@@ -128,7 +147,6 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, show
                     // the pdf canvas here, in order to be able to capture
                     // the click event.
                     onMouseDown={(e) => {e.stopPropagation()}}
-                    onMouseUp={(e) => {e.stopPropagation()}}
                 />
                 </SelectionInfo>
             ): null}

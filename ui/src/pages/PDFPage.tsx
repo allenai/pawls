@@ -87,7 +87,7 @@ export const PDFPage = () => {
     useEffect(() => {
         getRelations().then(relations => {
             setRelations(relations)
-            setActiveRelation(labels[0])
+            setActiveRelation(relations[0])
         })
     }, []) 
     
