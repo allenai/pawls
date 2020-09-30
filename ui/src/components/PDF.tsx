@@ -115,6 +115,9 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     }
 
     const onShiftClick = (annotation: Annotation): (s: boolean) => void => {
+        // TODO(Mark): Remove this currying by changing to use a map for
+        // the selectedAnnotations keyed by id, so that we just pop if it is there
+        // and push if it isn't.
         return (selected: boolean) => {
 
             const current = annotationStore.selectedAnnotations
