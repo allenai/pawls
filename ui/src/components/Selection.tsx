@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
-import { Bounds, TokenId, PDFPageInfo } from '../context';
+import { Bounds, TokenId, PDFPageInfo, AnnotationStore } from '../context';
 import { Label } from '../api'
 import { CloseCircleFilled } from '@ant-design/icons';
 
@@ -25,6 +25,8 @@ interface SelectionBoundaryProps {
 }
 
 export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryProps) => {
+
+    const annotationStore = useContext(AnnotationStore)
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
@@ -40,8 +42,9 @@ export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryPr
               // is pressed in order to allow users to select multiple
               // annotations and associate them together with a relation.
               if (e.shiftKey) {
-              e.stopPropagation();
-                console.log("Shift + Click!")
+                e.stopPropagation();
+                const current = annotationStore.selectedAnnotations
+                
             }
           }}
           onMouseDown={(e) => {

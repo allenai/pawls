@@ -1,4 +1,6 @@
 import { createContext } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+
 import { Bounds } from "./PDFStore";
 import { Label } from "../api";
 
@@ -12,13 +14,18 @@ export class TokenId {
 
 
 export class Annotation {
+    public readonly id: string
+
     constructor(
         public bounds: Bounds,
         public readonly page: number,
         public readonly label: Label,
         public readonly tokens: TokenId[] | null = null,
-        public linkedAnnotation: Annotation | undefined = undefined
-    ) {}
+        public linkedAnnotation: Annotation | undefined = undefined,
+        id: string | undefined = undefined
+    ) {
+        this.id = id ? id: uuidv4()
+    }
 
     link(a: Annotation): void {
         if (a.label !== this.label) {
@@ -28,14 +35,7 @@ export class Annotation {
     }
 
     toString() {
-        return [
-            this.bounds.top.toString(),
-            this.bounds.bottom.toString(),
-            this.bounds.left.toString(),
-            this.bounds.right.toString(),
-            this.label.text,
-            this.tokens ? this.tokens.map(t => t.toString()).join('-') : null
-        ].join("-")
+        return this.id
     }
 
     static fromObject(obj: Annotation) {
