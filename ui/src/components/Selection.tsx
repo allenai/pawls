@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
 import { Bounds, TokenId, PDFPageInfo, AnnotationStore } from '../context';
@@ -22,18 +22,19 @@ interface SelectionBoundaryProps {
     color: string
     bounds: Bounds
     children?: React.ReactNode
+    annotationId?: string
+    onClick?: (selected: boolean) => void
 }
 
-export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryProps) => {
+export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionBoundaryProps) => {
 
-    const annotationStore = useContext(AnnotationStore)
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
     const rotateX = height < 0 ? -180 : 0;
     const border = 3
     const rgbColor = hexToRgb(color)
-
+    const [selected, setSelected] = useState(false)
     return (
         <span
           onClick={(e) => {
@@ -41,9 +42,10 @@ export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryPr
               // behaviour of drawing a new bounding box if the shift key
               // is pressed in order to allow users to select multiple
               // annotations and associate them together with a relation.
-              if (e.shiftKey) {
+              if (e.shiftKey && onClick) {
                 e.stopPropagation();
-                const current = annotationStore.selectedAnnotations
+                onClick(selected)
+                setSelected(!selected)
                 
             }
           }}
@@ -61,7 +63,7 @@ export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryPr
             transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
             transformOrigin: 'top left',
             border: `${border}px solid ${color}`,
-            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.1)`,
+            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${selected ? 0.3: 0.1})`,
         }}
         >
             {children ? children: null}
@@ -118,10 +120,11 @@ interface SelectionProps {
     tokens?: TokenId[]
     label: Label
     onClickDelete?: () => void
+    onClick?: (selected: boolean) => void
     showInfo?: boolean
  }
 
-export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, showInfo = true }: SelectionProps) => {
+export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, onClick, showInfo = true }: SelectionProps) => {
     const theme = useContext(ThemeContext)
     let color;
     if (!label) {
@@ -133,7 +136,7 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, show
 
     return (
         <>
-          <SelectionBoundary color={color} bounds={bounds}>
+          <SelectionBoundary color={color} bounds={bounds} onClick={onClick}>
             {showInfo ? (
                 <SelectionInfo border={border} color={color}>
                 <span>

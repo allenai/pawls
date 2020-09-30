@@ -114,6 +114,23 @@ const Page = ({ pageInfo, onError }: PageProps) => {
         annotationStore.setPdfAnnotations(store)
     }
 
+    const onShiftClick = (annotation: Annotation): (s: boolean) => void => {
+        return (selected: boolean) => {
+
+            const current = annotationStore.selectedAnnotations
+            if (selected) {
+                const filtered = current.filter(elt => elt !== annotation)
+                annotationStore.setSelectedAnnotations(filtered)
+                console.log(annotationStore.selectedAnnotations)
+            } else {
+                current.push(annotation)
+                annotationStore.setSelectedAnnotations(current)
+                console.log(annotationStore.selectedAnnotations)
+            }
+        }
+    }
+
+
     useEffect(() => {
         try {
             const determinePageVisiblity = () => {
@@ -219,6 +236,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                             tokens={annotation.tokens || undefined}
                             key={annotation.toString()}
                             label={annotation.label}
+                            onClick={onShiftClick(annotation)}
                             bounds={pageInfo.getScaledBounds(annotation.bounds)}
                             onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
                         />
