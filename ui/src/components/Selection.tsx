@@ -23,7 +23,7 @@ interface SelectionBoundaryProps {
     bounds: Bounds
     children?: React.ReactNode
     annotationId?: string
-    onClick?: (selected: boolean) => void
+    onClick?: () => void
 }
 
 export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionBoundaryProps) => {
@@ -44,7 +44,7 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
               // annotations and associate them together with a relation.
               if (e.shiftKey && onClick) {
                 e.stopPropagation();
-                onClick(selected)
+                onClick()
                 setSelected(!selected)
                 
             }
@@ -120,7 +120,7 @@ interface SelectionProps {
     tokens?: TokenId[]
     label: Label
     onClickDelete?: () => void
-    onClick?: (selected: boolean) => void
+    onClick?: () => void
     showInfo?: boolean
  }
 

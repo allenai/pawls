@@ -38,7 +38,7 @@ export const PDFPage = () => {
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
 
-    const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([]);
+    const [ selectedAnnotations, setSelectedAnnotations ] = useState<Map<string, Annotation>>(new Map());
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();

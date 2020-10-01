@@ -114,22 +114,16 @@ const Page = ({ pageInfo, onError }: PageProps) => {
         annotationStore.setPdfAnnotations(store)
     }
 
-    const onShiftClick = (annotation: Annotation): (s: boolean) => void => {
-        // TODO(Mark): Remove this currying by changing to use a map for
-        // the selectedAnnotations keyed by id, so that we just pop if it is there
-        // and push if it isn't.
-        return (selected: boolean) => {
-
+    const onShiftClick = (annotation: Annotation): () => void => {
+        return () => {
             const current = annotationStore.selectedAnnotations
-            if (selected) {
-                const filtered = current.filter(elt => elt !== annotation)
-                annotationStore.setSelectedAnnotations(filtered)
-                console.log(annotationStore.selectedAnnotations)
+            if (current.has(annotation.id)) {
+                current.delete(annotation.id)
             } else {
-                current.push(annotation)
-                annotationStore.setSelectedAnnotations(current)
-                console.log(annotationStore.selectedAnnotations)
+                current.set(annotation.id, annotation)
             }
+            annotationStore.setSelectedAnnotations(current)
+            console.log(annotationStore.selectedAnnotations)
         }
     }
 
