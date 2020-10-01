@@ -117,12 +117,15 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const onShiftClick = (annotation: Annotation): () => void => {
         return () => {
             const current = annotationStore.selectedAnnotations
-            if (current.has(annotation.id)) {
-                current.delete(annotation.id)
+
+            if (current.some((other) => other.id === annotation.id)) {
+                const next = current.filter((other) => other.id !== annotation.id)
+                annotationStore.setSelectedAnnotations(next)
             } else {
-                current.set(annotation.id, annotation)
+                current.push(annotation)
+                annotationStore.setSelectedAnnotations(current)
             }
-            annotationStore.setSelectedAnnotations(current)
+
             console.log(annotationStore.selectedAnnotations)
         }
     }

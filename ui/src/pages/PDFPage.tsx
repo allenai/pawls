@@ -6,7 +6,7 @@ import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
-import { PDF, CenterOnPage } from '../components';
+import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, AssignedPaperList, Header} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
@@ -38,7 +38,7 @@ export const PDFPage = () => {
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
 
-    const [ selectedAnnotations, setSelectedAnnotations ] = useState<Map<string, Annotation>>(new Map());
+    const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
@@ -46,6 +46,8 @@ export const PDFPage = () => {
     const [ relations, setRelations] = useState<Label[]>([]);
     const [ activeRelation, setActiveRelation] = useState<Label>();
     const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
+
+    const [ relationModalVisible, setRelationModalVisible] = useState<boolean>(false);
 
     // React's Error Boundaries don't work for us because a lot of work is done by pdfjs in
     // a background task (a web worker). We instead setup a top level error handler that's
@@ -98,7 +100,9 @@ export const PDFPage = () => {
             // Shift key up
             if (e.keyCode === 16) {
                 console.log("You released the shift key!")
-                console.log(selectedAnnotations)
+                setRelationModalVisible(true)
+
+
             }
         }
 
@@ -254,6 +258,15 @@ export const PDFPage = () => {
                                     <Labels/>
                                 </SidebarContainer>
                                 <PDFContainer>
+                                    <RelationModal 
+                                        visible={relationModalVisible}
+                                        onClick={() => {
+                                            setRelationModalVisible(false)
+                                            setSelectedAnnotations([])
+                                        }}
+                                        source={selectedAnnotations}
+                                        setSource={setSelectedAnnotations}
+                                        />
                                     <PDF />
                                 </PDFContainer>
                             </WithSidebar>
