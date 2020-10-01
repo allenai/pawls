@@ -91,6 +91,24 @@ export const PDFPage = () => {
         })
     }, []) 
     
+    useEffect(() => {
+
+        const onShiftUp = (e: KeyboardEvent) => {
+
+            // Shift key up
+            if (e.keyCode === 16) {
+                console.log("You released the shift key!")
+                console.log(selectedAnnotations)
+            }
+        }
+
+        window.addEventListener("keyup", onShiftUp)
+        return (() => {
+            window.removeEventListener("keyup", onShiftUp)
+        })
+    }, [])
+
+
 
     useEffect( () => {
         getAssignedPapers().then((paperMetadata) => {

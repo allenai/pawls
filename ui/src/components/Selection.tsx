@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect} from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
 import { Bounds, TokenId, PDFPageInfo, AnnotationStore } from '../context';
@@ -35,6 +35,7 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
     const border = 3
     const rgbColor = hexToRgb(color)
     const [selected, setSelected] = useState(false)
+
     return (
         <span
           onClick={(e) => {
