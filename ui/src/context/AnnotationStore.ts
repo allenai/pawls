@@ -13,6 +13,28 @@ export class TokenId {
  }
 
 
+export class RelationGroup {
+
+    constructor(
+        public source: string[],
+        public target: string[],
+        public label: Label
+    ){}
+
+    remove(a: Annotation) {
+        const sourceEmpty = this.source.length === 0 
+        const targetEmpty = this.target.length === 0 
+        this.source = this.source.filter((id) => id !== a.id)
+        this.target = this.target.filter((id) => id !== a.id)
+        const nowSourceEmpty = this.source.length === 0 
+        const nowTargetEmpty = this.target.length === 0 
+        // TODO(Mark): Finish logic here for if the relation group
+        // should be deleted. Probably delete if target is empty
+        // , source is empty but target is not, etc.
+    }
+}
+
+
 export class Annotation {
     public readonly id: string
 
@@ -52,9 +74,12 @@ interface _AnnotationStore {
     activeLabel?: Label
     setActiveLabel: (label: Label) => void;
 
-    relations: Label[]
-    activeRelation?: Label
-    setActiveRelation: (label: Label) => void;
+    relationLabels: Label[]
+    activeRelationLabel?: Label
+    setActiveRelationLabel: (label: Label) => void;
+
+    pdfRelations: RelationGroup[],
+    setPdfRelations: (t: RelationGroup[]) => void,
 
     pdfAnnotations: PdfAnnotations;
     selectedAnnotations: Annotation[]
@@ -71,15 +96,20 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     setActiveLabel:(_?: Label) => {
         throw new Error("Unimplemented")
     },
-    relations: [],
-    activeRelation: undefined,
-    setActiveRelation:(_?: Label) => {
+    relationLabels: [],
+    activeRelationLabel: undefined,
+    setActiveRelationLabel:(_?: Label) => {
         throw new Error("Unimplemented")
+    },
+    pdfRelations: [],
+    setPdfRelations: (_?: RelationGroup[]) => {
+        throw new Error('Unimplemented');
     },
     selectedAnnotations: [],
     setSelectedAnnotations: (_?: Annotation[]) => {
         throw new Error('Unimplemented');
     },
+
     setPdfAnnotations: (_: PdfAnnotations) => {
         throw new Error('Unimplemented');
     },

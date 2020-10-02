@@ -9,7 +9,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, AssignedPaperList, Header} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
-import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations } from '../context';
+import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -37,14 +37,15 @@ export const PDFPage = () => {
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
+    const [ pdfRelations, setPdfRelations ] = useState<RelationGroup[]>([]);
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
-    const [ relations, setRelations] = useState<Label[]>([]);
-    const [ activeRelation, setActiveRelation] = useState<Label>();
+    const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
+    const [ activeRelationLabel, setActiveRelationLabel] = useState<Label>();
     const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
 
     const [ relationModalVisible, setRelationModalVisible] = useState<boolean>(false);
@@ -88,8 +89,8 @@ export const PDFPage = () => {
 
     useEffect(() => {
         getRelations().then(relations => {
-            setRelations(relations)
-            setActiveRelation(relations[0])
+            setRelationLabels(relations)
+            setActiveRelationLabel(relations[0])
         })
     }, []) 
     
@@ -239,9 +240,11 @@ export const PDFPage = () => {
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
-                                relations,
-                                activeRelation,
-                                setActiveRelation,
+                                relationLabels,
+                                activeRelationLabel,
+                                setActiveRelationLabel,
+                                pdfRelations,
+                                setPdfRelations,
                                 pdfAnnotations,
                                 setPdfAnnotations,
                                 selectedAnnotations,
