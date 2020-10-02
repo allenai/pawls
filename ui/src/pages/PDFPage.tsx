@@ -80,6 +80,15 @@ export const PDFPage = () => {
         }
     }
 
+    const onRelationModalClose = (group: RelationGroup) => {
+
+        pdfRelations.push(group)
+        setPdfRelations(pdfRelations)
+        setRelationModalVisible(false)
+        setSelectedAnnotations([])
+        console.log(pdfRelations)
+    }
+
     useEffect(() => {
         getLabels().then(labels => {
             setLabels(labels)
@@ -102,8 +111,6 @@ export const PDFPage = () => {
             if (e.keyCode === 16) {
                 console.log("You released the shift key!")
                 setRelationModalVisible(true)
-
-
             }
         }
 
@@ -261,15 +268,15 @@ export const PDFPage = () => {
                                     <Labels/>
                                 </SidebarContainer>
                                 <PDFContainer>
-                                    <RelationModal 
-                                        visible={relationModalVisible}
-                                        onClick={() => {
-                                            setRelationModalVisible(false)
-                                            setSelectedAnnotations([])
-                                        }}
-                                        source={selectedAnnotations}
-                                        setSource={setSelectedAnnotations}
-                                        />
+                                    {activeRelationLabel ? 
+                                        <RelationModal 
+                                            visible={relationModalVisible}
+                                            onClick={onRelationModalClose}
+                                            source={selectedAnnotations}
+                                            setSource={setSelectedAnnotations}
+                                            label={activeRelationLabel}
+                                            />
+                                        : null}
                                     <PDF />
                                 </PDFContainer>
                             </WithSidebar>

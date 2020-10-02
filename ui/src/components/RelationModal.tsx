@@ -1,17 +1,19 @@
 import React, { useState} from 'react';
 import { Modal, Row, Col } from '@allenai/varnish';
-import { Annotation } from '../context';
+import { Annotation, RelationGroup } from '../context';
 import { ReactSortable } from "react-sortablejs";
 import styled from 'styled-components';
+import { Label } from '../api';
 
 interface RelationModalProps {
     visible: boolean
-    onClick: () => void
+    onClick: (group: RelationGroup) => void
     source: Annotation[]
     setSource: (a: Annotation[]) => void
+    label: Label
 }
 
-export const RelationModal = ({visible, onClick, source, setSource}: RelationModalProps) => {
+export const RelationModal = ({visible, onClick, source, setSource, label}: RelationModalProps) => {
     
     const [target, setTarget] = useState<Annotation[]>([])
 
@@ -19,7 +21,10 @@ export const RelationModal = ({visible, onClick, source, setSource}: RelationMod
     <Modal
         title="Annotate Relations"
         visible={visible}
-        onOk={() => {onClick(); setTarget([])}}
+        onOk={() => {
+            onClick(new RelationGroup(source.map(s => s.id), target.map(t => t.id), label));
+            setTarget([])
+        }}
     >
     <Row>
         <Col span={12}>
