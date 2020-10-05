@@ -1,9 +1,10 @@
 import React, { useState, useContext} from 'react';
 import { Modal, Row, Col, Tag } from '@allenai/varnish';
-import { Annotation, RelationGroup, AnnotationStore } from '../context';
+import { Annotation, RelationGroup, AnnotationStore, PDFStore, PDFPageInfo } from '../context';
 import { ReactSortable } from "react-sortablejs";
 import styled from 'styled-components';
 import { Label } from '../api';
+import { AnnotationSummary } from "./AnnotationSummary";
 
 const { CheckableTag } = Tag;
 
@@ -15,13 +16,16 @@ interface RelationModalProps {
     setSource: (a: Annotation[]) => void
     target: Annotation[]
     setTarget: (a: Annotation[]) => void
-    label: Label
+    label: Label,
+    pages: PDFPageInfo[]
 }
 
 
-export const RelationModal = ({visible, onClick, onCancel, source, setSource, target, setTarget, label}: RelationModalProps) => {
+
+export const RelationModal = ({visible, onClick, onCancel, source, setSource, target, setTarget, label, pages}: RelationModalProps) => {
  
     const annotationStore = useContext(AnnotationStore)
+
 
     return (
     <Modal
@@ -32,7 +36,6 @@ export const RelationModal = ({visible, onClick, onCancel, source, setSource, ta
         onCancel={onCancel}
         onOk={() => {
             onClick(new RelationGroup(source.map(s => s.id), target.map(t => t.id), label));
-            setTarget([])
         }}
     >
     <Row>
@@ -48,7 +51,7 @@ export const RelationModal = ({visible, onClick, onCancel, source, setSource, ta
                 {source.map((item, i) => (
                     <div key={item.id}>
                         <div key={i} id={item.id}>
-                            {item.id}
+                            <AnnotationSummary annotation={item} pageInfo={pages[item.page]}/>
                         </div>
                     </div>
                         )
@@ -78,7 +81,11 @@ export const RelationModal = ({visible, onClick, onCancel, source, setSource, ta
             delay={2}
             group="relations"
         >
-            {target.map((item) => (<div key={item.id}>{item.id}</div>))}
+            {target.map((item) => (
+                <div key={item.id}>
+                    <AnnotationSummary annotation={item} pageInfo={pages[item.page]}/>
+                </div>))
+            }
         </Sortable>
         </Col>
     </Row>
