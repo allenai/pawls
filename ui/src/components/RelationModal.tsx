@@ -1,33 +1,42 @@
-import React, { useState} from 'react';
-import { Modal, Row, Col } from '@allenai/varnish';
-import { Annotation, RelationGroup } from '../context';
+import React, { useState, useContext} from 'react';
+import { Modal, Row, Col, Tag } from '@allenai/varnish';
+import { Annotation, RelationGroup, AnnotationStore } from '../context';
 import { ReactSortable } from "react-sortablejs";
 import styled from 'styled-components';
 import { Label } from '../api';
 
+const { CheckableTag } = Tag;
+
 interface RelationModalProps {
     visible: boolean
     onClick: (group: RelationGroup) => void
+    onCancel: () => void
     source: Annotation[]
     setSource: (a: Annotation[]) => void
+    target: Annotation[]
+    setTarget: (a: Annotation[]) => void
     label: Label
 }
 
-export const RelationModal = ({visible, onClick, source, setSource, label}: RelationModalProps) => {
-    
-    const [target, setTarget] = useState<Annotation[]>([])
+
+export const RelationModal = ({visible, onClick, onCancel, source, setSource, target, setTarget, label}: RelationModalProps) => {
+ 
+    const annotationStore = useContext(AnnotationStore)
 
     return (
     <Modal
         title="Annotate Relations"
+        width={600}
         visible={visible}
+        maskClosable={true}
+        onCancel={onCancel}
         onOk={() => {
             onClick(new RelationGroup(source.map(s => s.id), target.map(t => t.id), label));
             setTarget([])
         }}
     >
     <Row>
-        <Col span={12}>
+        <Col span={10}>
             <h5>Source</h5>
             <Sortable
                 list={source} 
@@ -47,7 +56,20 @@ export const RelationModal = ({visible, onClick, source, setSource, label}: Rela
                 }
             </Sortable>
         </Col>
-        <Col span={12}>
+
+        <Col span={4}>
+            <h5>Relation</h5>
+            {annotationStore.relationLabels.map(relation => (
+                        <CheckableTag
+                            key={relation.text}
+                            onClick={() => {annotationStore.setActiveRelationLabel(relation)}}
+                            checked={relation === annotationStore.activeRelationLabel}
+                        >
+                            {relation.text}
+                        </CheckableTag>           
+                    ))}
+        </Col>
+        <Col span={10}>
         <h5>Target</h5>
         <Sortable
             list={target} 

@@ -34,6 +34,8 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
     const rotateX = height < 0 ? -180 : 0;
     const border = 3
     const rgbColor = hexToRgb(color)
+    // TODO(Mark): This should be stateless, currently it
+    // doesn't drop the darker background after relations are done.
     const [selected, setSelected] = useState(false)
 
     return (
@@ -123,9 +125,19 @@ interface SelectionProps {
     onClickDelete?: () => void
     onClick?: () => void
     showInfo?: boolean
+    isSelected?: boolean
  }
 
-export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, onClick, showInfo = true }: SelectionProps) => {
+export const Selection = ({
+    pageInfo, 
+    tokens,
+    bounds,
+    label,
+    onClickDelete,
+    onClick,
+    showInfo = true,
+    isSelected = false
+}: SelectionProps) => {
     const theme = useContext(ThemeContext)
     let color;
     if (!label) {
