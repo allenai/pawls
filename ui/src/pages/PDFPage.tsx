@@ -40,7 +40,6 @@ export const PDFPage = () => {
     const [ pdfRelations, setPdfRelations ] = useState<RelationGroup[]>([]);
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
-    const [ targetAnnotations, setTargetAnnotations ] = useState<Annotation[]>([])
 
     const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
@@ -87,7 +86,6 @@ export const PDFPage = () => {
         setPdfRelations(pdfRelations)
         setRelationModalVisible(false)
         setSelectedAnnotations([])
-        setTargetAnnotations([])
         console.log(pdfRelations)
     }
 
@@ -95,7 +93,6 @@ export const PDFPage = () => {
 
         setRelationModalVisible(false)
         setSelectedAnnotations([])
-        setTargetAnnotations([])
     }
 
 
@@ -284,9 +281,6 @@ export const PDFPage = () => {
                                             onClick={onRelationModalOk}
                                             onCancel={onRelationModalCancel}
                                             source={selectedAnnotations}
-                                            setSource={setSelectedAnnotations}
-                                            target={targetAnnotations}
-                                            setTarget={setTargetAnnotations}
                                             label={activeRelationLabel}
                                             pages={pages}
                                             />

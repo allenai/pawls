@@ -29,13 +29,17 @@ export const RelationModal = ({visible, onClick, onCancel, source, label, pages}
         width={800}
         visible={visible}
         maskClosable={true}
-        onCancel={onCancel}
+        onCancel={() => {
+            setTargetKeys([])
+            onCancel()
+        }}
         onOk={() => {
 
             const sourceIds = source
                 .filter(s => !targetKeys.some((k) => k === s.id))
                 .map(s => s.id)
             onClick(new RelationGroup(sourceIds, targetKeys, label));
+            setTargetKeys([])
         }}
     >
         <h5>Relation</h5>
