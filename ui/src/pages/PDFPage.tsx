@@ -245,7 +245,7 @@ export const PDFPage = () => {
                 </WithSidebar>
             );
         case ViewState.LOADED:
-            if (doc && pdfAnnotations) {
+            if (doc && pdfAnnotations && pages) {
                 return (
                     <PDFStore.Provider value={{
                         doc,
@@ -288,6 +288,7 @@ export const PDFPage = () => {
                                             target={targetAnnotations}
                                             setTarget={setTargetAnnotations}
                                             label={activeRelationLabel}
+                                            pages={pages}
                                             />
                                         : null}
                                     <PDF />

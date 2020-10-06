@@ -10,18 +10,21 @@ interface AnnotationSummaryProps {
 
 export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps) => {
 
+    const text = annotation.tokens === null ? "Freeform" : 
+            annotation.tokens.map(t => pageInfo.tokens[t.tokenIndex].text).join(" ")
+
     return (
-        <>
-        {annotation.tokens === null ? "Freeform" : (
-            annotation.tokens.map(t => pageInfo.tokens[t.tokenIndex].text)
-        )}
         <div>
-            {annotation.label.text}
+            {text}
+            <div>
+                <span>
+                    {annotation.label.text}
+                </span>
+                <span>
+                    Page: {pageInfo.page.pageNumber}
+                </span>
+            </div>
         </div>
-        <div>
-            Page: {pageInfo.page.pageNumber}
-        </div>
-        </>
     );
 
 }
