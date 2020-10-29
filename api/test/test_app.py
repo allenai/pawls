@@ -105,8 +105,11 @@ class TestApp(TestCase):
 
         response = self.client.post(
             f"/api/doc/{self.pdf_sha}/annotations",
-            json=[annotation]
+            json={"annotations": [annotation], "relations": []}
         )
         # Annotation should be there.
         response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
-        assert response.json() == [annotation]
+        assert response.json() == {
+            "annotations": [annotation],
+            "relations": []
+            }

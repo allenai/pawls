@@ -25,3 +25,14 @@ class Annotation(BaseModel):
     label: Label
     bounds: Bounds
     tokens: Optional[List[TokenId]] = None
+
+
+class RelationGroup(BaseModel):
+    source: List[str]
+    target: List[str]
+    label: Label
+
+
+class PdfAnnotation(BaseModel):
+
+    annotations: List[Annotation]

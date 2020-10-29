@@ -32,6 +32,10 @@ export class RelationGroup {
         // should be deleted. Probably delete if target is empty
         // , source is empty but target is not, etc.
     }
+
+    static fromObject(obj: RelationGroup) {
+        return new RelationGroup(obj.source, obj.target, obj.label)
+    }
 }
 
 

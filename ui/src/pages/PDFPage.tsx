@@ -67,7 +67,7 @@ export const PDFPage = () => {
     const onSave = () => {
 
         if (pdfAnnotations) {
-            saveAnnotations(sha, pdfAnnotations.flat()).then(() => {
+            saveAnnotations(sha, pdfAnnotations.flat(), pdfRelations).then(() => {
                 notification.success({message: "Saved Annotations!"})
             }).catch((err) => {
 
@@ -184,11 +184,12 @@ export const PDFPage = () => {
                 initialPageAnnotations.push([])
             })
             // Get any existing annotations for this pdf.
-            getAnnotations(sha).then(annotations => {
-                annotations.forEach((annotation) => {
+            getAnnotations(sha).then(paperAnnotations => {
+                paperAnnotations.annotations.forEach((annotation) => {
                     initialPageAnnotations[annotation.page].push(annotation)
                 })
-            setPdfAnnotations(initialPageAnnotations)
+                setPdfRelations(paperAnnotations.relations)
+                setPdfAnnotations(initialPageAnnotations)
 
             }).catch((err: any) => {
                 console.error(`Error Fetching Existing Annotations: `, err);

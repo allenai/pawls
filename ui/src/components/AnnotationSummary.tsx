@@ -1,6 +1,7 @@
 import React from 'react';
 import { Annotation, PDFPageInfo } from '../context';
-
+import { Tag } from "@allenai/varnish";
+import styled from 'styled-components';
 
 
 interface AnnotationSummaryProps {
@@ -17,14 +18,20 @@ export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps
         <div>
             {text}
             <div>
-                <span>
-                    {annotation.label.text}
-                </span>
-                <span>
-                    Page: {pageInfo.page.pageNumber}
-                </span>
+                <Details>
+                    <Tag color={annotation.label.color}>
+                        {annotation.label.text}
+                    </Tag>
+                    <Tag>
+                        Page {pageInfo.page.pageNumber}
+                    </Tag>
+                </Details>
             </div>
         </div>
     );
 
 }
+
+const Details = styled.span`
+    font-size: 10px
+`

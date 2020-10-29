@@ -42,7 +42,7 @@ export const RelationModal = ({visible, onClick, onCancel, source, label, pages}
             setTargetKeys([])
         }}
     >
-        <h5>Relation</h5>
+        <h5>Choose a Relation</h5>
         {annotationStore.relationLabels.map(relation => (
             <CheckableTag
                 key={relation.text}
@@ -52,9 +52,10 @@ export const RelationModal = ({visible, onClick, onCancel, source, label, pages}
                 {relation.text}
             </CheckableTag>           
         ))}
+        <br/>
         <Transfer
             dataSource={transferSource}
-            listStyle={{width: 300}}
+            listStyle={{width: 300, marginTop: "20px"}}
             showSearch={false}
             targetKeys={targetKeys}
             onChange={setTargetKeys}
