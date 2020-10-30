@@ -7,7 +7,7 @@ import { Result, Progress, notification } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
-import {SidebarContainer, Labels, Annotations, AssignedPaperList, Header} from "../components/sidebar";
+import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
@@ -273,6 +273,7 @@ export const PDFPage = () => {
                                     <Header/>
                                     <AssignedPaperList papers={assignedPapers}/>
                                     <Annotations onSave={onSave} annotations={pdfAnnotations}/>
+                                    <Relations relations={pdfRelations}/>
                                     <Labels/>
                                 </SidebarContainer>
                                 <PDFContainer>
