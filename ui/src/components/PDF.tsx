@@ -100,17 +100,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
         const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
         store[page] = dropped
 
-        if (annotation.linkedAnnotation) {
-            // TODO(Mark): Currently this assumes that only individual annotations
-            // are linked - if that changes, update this to use an interative modification
-            // of `store`, NOT recursive, because the updates to the actual annotationStore
-            // context get stomped on by the subsequent updates. We have to collect all the changes
-            // locally and update the context one time.
-            const page = annotation.linkedAnnotation.page
-            const annotationId = annotation.linkedAnnotation.toString()
-            const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
-            store[page] = dropped
-        }
         annotationStore.setPdfAnnotations(store)
     }
 

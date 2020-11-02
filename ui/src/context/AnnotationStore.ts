@@ -21,16 +21,36 @@ export class RelationGroup {
         public label: Label
     ){}
 
-    remove(a: Annotation) {
+    updateForAnnotationDeletion(a: Annotation): boolean {
         const sourceEmpty = this.source.length === 0 
-        const targetEmpty = this.target.length === 0 
+        const targetEmpty = this.target.length === 0
+
         this.source = this.source.filter((id) => id !== a.id)
         this.target = this.target.filter((id) => id !== a.id)
+
         const nowSourceEmpty = this.source.length === 0 
         const nowTargetEmpty = this.target.length === 0 
-        // TODO(Mark): Finish logic here for if the relation group
-        // should be deleted. Probably delete if target is empty
-        // , source is empty but target is not, etc.
+
+        // Only target had any annotations, now it has none,
+        // so delete.
+        if (sourceEmpty && nowTargetEmpty) {
+            return true
+        }
+        // Only source had any annotations, now it has none,
+        // so delete.
+        if (targetEmpty && nowSourceEmpty) {
+            return true
+        }
+        // Source was not empty, but now it is, so delete.
+        if (!sourceEmpty && nowSourceEmpty) {
+            return true
+        }
+        // Target was not empty, but now it is, so delete.
+        if (!targetEmpty && nowTargetEmpty) {
+            return true
+        }
+
+        return false
     }
 
     static fromObject(obj: RelationGroup) {
@@ -47,17 +67,9 @@ export class Annotation {
         public readonly page: number,
         public readonly label: Label,
         public readonly tokens: TokenId[] | null = null,
-        public linkedAnnotation: Annotation | undefined = undefined,
         id: string | undefined = undefined
     ) {
         this.id = id ? id: uuidv4()
-    }
-
-    link(a: Annotation): void {
-        if (a.label !== this.label) {
-            throw new Error("Cannot link annotations with different labels.")
-        }
-        this.linkedAnnotation = a
     }
 
     toString() {
@@ -65,7 +77,7 @@ export class Annotation {
     }
 
     static fromObject(obj: Annotation) {
-        return new Annotation(obj.bounds, obj.page, obj.label, obj.tokens, obj.linkedAnnotation)
+        return new Annotation(obj.bounds, obj.page, obj.label, obj.tokens)
     }
 };
 
