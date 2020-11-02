@@ -87,8 +87,9 @@ class TestApp(TestCase):
     def test_get_annotations(self):
         # Empty
         response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
-        assert response.json() == []
+        assert response.json() == {"annotations": [], "relations": []}
         annotation = {
+            "id": "this-is-an-id",
             "page": 1,
             "label": {
                 "text": "label1",
