@@ -21,7 +21,7 @@ export class RelationGroup {
         public label: Label
     ){}
 
-    updateForAnnotationDeletion(a: Annotation): boolean {
+    updateForAnnotationDeletion(a: Annotation): RelationGroup | undefined {
         const sourceEmpty = this.source.length === 0 
         const targetEmpty = this.target.length === 0
 
@@ -34,23 +34,23 @@ export class RelationGroup {
         // Only target had any annotations, now it has none,
         // so delete.
         if (sourceEmpty && nowTargetEmpty) {
-            return true
+            return undefined
         }
         // Only source had any annotations, now it has none,
         // so delete.
         if (targetEmpty && nowSourceEmpty) {
-            return true
+            return undefined
         }
         // Source was not empty, but now it is, so delete.
         if (!sourceEmpty && nowSourceEmpty) {
-            return true
+            return undefined
         }
         // Target was not empty, but now it is, so delete.
         if (!targetEmpty && nowTargetEmpty) {
-            return true
+            return undefined
         }
 
-        return false
+        return new RelationGroup(this.source, this.target, this.label)
     }
 
     static fromObject(obj: RelationGroup) {
