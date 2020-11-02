@@ -86,7 +86,6 @@ export const PDFPage = () => {
         setPdfRelations(pdfRelations)
         setRelationModalVisible(false)
         setSelectedAnnotations([])
-        console.log(pdfRelations)
     }
 
     const onRelationModalCancel = () => {
@@ -116,7 +115,6 @@ export const PDFPage = () => {
 
             // Shift key up
             if (e.keyCode === 16) {
-                console.log("You released the shift key!")
                 setRelationModalVisible(true)
             }
         }

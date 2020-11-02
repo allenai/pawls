@@ -120,8 +120,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 current.push(annotation)
                 annotationStore.setSelectedAnnotations(current)
             }
-
-            console.log(annotationStore.selectedAnnotations)
         }
     }
 
