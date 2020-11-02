@@ -21,6 +21,7 @@ class TokenId(BaseModel):
 
 
 class Annotation(BaseModel):
+    id: str
     page: int
     label: Label
     bounds: Bounds

@@ -77,7 +77,7 @@ export class Annotation {
     }
 
     static fromObject(obj: Annotation) {
-        return new Annotation(obj.bounds, obj.page, obj.label, obj.tokens)
+        return new Annotation(obj.bounds, obj.page, obj.label, obj.tokens, obj.id)
     }
 };
 
