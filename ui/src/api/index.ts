@@ -104,7 +104,7 @@ export function saveAnnotations(
     sha: string,
     annotations: Annotation[],
     relations: RelationGroup[]
-    ): Promise<any> {
+): Promise<any> {
     return axios.post(`/api/doc/${sha}/annotations`, {annotations, relations})
 }
 
