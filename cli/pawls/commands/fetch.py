@@ -7,10 +7,8 @@ import botocore
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
-@click.argument("shas", type=str, nargs=-1, help="A list of S2 pdf shas.")
-@click.argument(
-    "out_dir", type=click.Path(exists=False), help="The directory to save the pdfs to."
-)
+@click.argument("shas", type=str, nargs=-1)
+@click.argument("out_dir", type=click.Path(exists=False))
 @click.option(
     "--sha-file",
     "-f",
@@ -21,13 +19,13 @@ import botocore
     "--flat",
     type=bool,
     default=False,
-    help="A path to a file containing pdf shas.",
+    help="Download pdfs to a single directory only, without the directory structure required by pawls.",
 )
 def fetch(
     shas: Tuple[str],
     out_dir: click.Path,
     sha_file: click.Path = None,
-    flat: bool = False
+    flat: bool = False,
 ):
     shas = list(shas)
     if sha_file is not None:
@@ -36,9 +34,9 @@ def fetch(
 
     result = bulk_fetch_pdfs_for_s2_ids(
         shas,
-        out_dir
-        pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download
-        )
+        out_dir,
+        pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download,
+    )
     print(f"Successfully saved {len(result['success'])} pdfs to {str(out_dir)}")
 
 
@@ -48,7 +46,7 @@ S3_BUCKET_PDFS = {"default": "ai2-s2-pdfs", "private": "ai2-s2-pdfs-private"}
 
 def _per_dir_pdf_download(target_dir: str, sha: str):
     os.makedirs(os.path.join(target_dir, sha), exist_ok=True)
-    return os.path.join(target_dir, sha, f"{sha}.pdf"
+    return os.path.join(target_dir, sha, f"{sha}.pdf")
 
 
 def _default_pdf_path(target_dir: str, sha: str):
@@ -58,7 +56,7 @@ def _default_pdf_path(target_dir: str, sha: str):
 def bulk_fetch_pdfs_for_s2_ids(
     s2_ids: List[str],
     target_dir: str,
-    pdf_path_func: Callable[[str, str], str] = _default_pdf_path
+    pdf_path_func: Callable[[str, str], str] = _default_pdf_path,
 ) -> Dict[str, Set[str]]:
     """
     s2_ids: List[str]
