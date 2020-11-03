@@ -73,11 +73,11 @@ export const Labels = () => {
                 Relations
             </SidebarItemTitle>
             <div>
-                {annotationStore.relations.map(relation => (
+                {annotationStore.relationLabels.map(relation => (
                     <CheckableTag
                         key={relation.text}
-                        onClick={() => {annotationStore.setActiveRelation(relation)}}
-                        checked={relation === annotationStore.activeRelation}
+                        onClick={() => {annotationStore.setActiveRelationLabel(relation)}}
+                        checked={relation === annotationStore.activeRelationLabel}
                     >
                         {relation.text}
                     </CheckableTag>           

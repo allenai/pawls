@@ -1,7 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect} from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
-import { Bounds, TokenId, PDFPageInfo } from '../context';
+import { Bounds, TokenId, PDFPageInfo, AnnotationStore } from '../context';
 import { Label } from '../api'
 import { CloseCircleFilled } from '@ant-design/icons';
 
@@ -22,18 +22,41 @@ interface SelectionBoundaryProps {
     color: string
     bounds: Bounds
     children?: React.ReactNode
+    annotationId?: string
+    onClick?: () => void
 }
 
-export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryProps) => {
+export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionBoundaryProps) => {
+
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
     const rotateX = height < 0 ? -180 : 0;
     const border = 3
     const rgbColor = hexToRgb(color)
+    // TODO(Mark): This should be stateless, currently it
+    // doesn't drop the darker background after relations are done.
+    const [selected, setSelected] = useState(false)
 
     return (
         <span
+          onClick={(e) => {
+              // Here we are preventing the default PdfAnnotationsContainer
+              // behaviour of drawing a new bounding box if the shift key
+              // is pressed in order to allow users to select multiple
+              // annotations and associate them together with a relation.
+              if (e.shiftKey && onClick) {
+                e.stopPropagation();
+                onClick()
+                setSelected(!selected)
+                
+            }
+          }}
+          onMouseDown={(e) => {
+            if (e.shiftKey) {
+                e.stopPropagation()
+            }
+        }}    
           style={{
             position: "absolute",
             left: `${bounds.left}px`,
@@ -43,7 +66,7 @@ export const SelectionBoundary = ({color, bounds, children}: SelectionBoundaryPr
             transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
             transformOrigin: 'top left',
             border: `${border}px solid ${color}`,
-            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.1)`,
+            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${selected ? 0.3: 0.1})`,
         }}
         >
             {children ? children: null}
@@ -81,7 +104,11 @@ export const SelectionTokens = ({pageInfo, tokens}: SelectionTokenProps) => {
                         left: `${b.left}px`,
                         top: `${b.top}px`,
                         width: `${b.right - b.left}px`,
-                        height: `${b.bottom - b.top}px`
+                        height: `${b.bottom - b.top}px`,
+                        // Tokens don't respond to pointerEvents because
+                        // they are ontop of the bounding boxes and the canvas,
+                        // which do respond to pointer events.
+                        pointerEvents: 'none'
                     }} />
                 )
 
@@ -96,10 +123,21 @@ interface SelectionProps {
     tokens?: TokenId[]
     label: Label
     onClickDelete?: () => void
+    onClick?: () => void
     showInfo?: boolean
+    isSelected?: boolean
  }
 
-export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, showInfo = true }: SelectionProps) => {
+export const Selection = ({
+    pageInfo, 
+    tokens,
+    bounds,
+    label,
+    onClickDelete,
+    onClick,
+    showInfo = true,
+    isSelected = false
+}: SelectionProps) => {
     const theme = useContext(ThemeContext)
     let color;
     if (!label) {
@@ -111,7 +149,7 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, show
 
     return (
         <>
-          <SelectionBoundary color={color} bounds={bounds}>
+          <SelectionBoundary color={color} bounds={bounds} onClick={onClick}>
             {showInfo ? (
                 <SelectionInfo border={border} color={color}>
                 <span>
@@ -128,7 +166,6 @@ export const Selection = ({ pageInfo, tokens, bounds, label, onClickDelete, show
                     // the pdf canvas here, in order to be able to capture
                     // the click event.
                     onMouseDown={(e) => {e.stopPropagation()}}
-                    onMouseUp={(e) => {e.stopPropagation()}}
                 />
                 </SelectionInfo>
             ): null}

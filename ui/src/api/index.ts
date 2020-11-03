@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Annotation } from '../context';
+import { Annotation, RelationGroup } from '../context';
 
 export interface Token {
     x: number;
@@ -95,11 +95,32 @@ export async function getAssignedPapers(): Promise<PaperMetadata[]> {
 }
 
 
-export function saveAnnotations(sha: string, annotations: Annotation[]): Promise<any> {
-    return axios.post(`/api/doc/${sha}/annotations`, annotations)
+export interface PdfAnnotation {
+    annotations: Annotation[],
+    relations: RelationGroup[]
 }
 
-export async function getAnnotations(sha: string): Promise<Annotation[]> {
-    return axios.get(`/api/doc/${sha}/annotations`)
-                .then(r => r.data.map((ann: any) => Annotation.fromObject(ann)))
+export function saveAnnotations(
+    sha: string,
+    annotations: Annotation[],
+    relations: RelationGroup[]
+): Promise<any> {
+    return axios.post(`/api/doc/${sha}/annotations`, {annotations, relations})
 }
+
+export async function getAnnotations(sha: string): Promise<PdfAnnotation> {
+    return axios.get(`/api/doc/${sha}/annotations`)
+                .then(response => {
+                    const ann: PdfAnnotation = response.data
+                    const annotations = ann.annotations.map(a => Annotation.fromObject(a))
+                    const relations = ann.relations.map(r => RelationGroup.fromObject(r))
+
+                    return {
+                        annotations,
+                        relations
+                    }
+
+                
+                }
+            )
+        }

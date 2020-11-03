@@ -2,7 +2,7 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations } from '../context';
+import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations, RelationGroup } from '../context';
 import { Selection} from '../components'
 
 class PDFPageRenderer {
@@ -100,19 +100,29 @@ const Page = ({ pageInfo, onError }: PageProps) => {
         const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
         store[page] = dropped
 
-        if (annotation.linkedAnnotation) {
-            // TODO(Mark): Currently this assumes that only individual annotations
-            // are linked - if that changes, update this to use an interative modification
-            // of `store`, NOT recursive, because the updates to the actual annotationStore
-            // context get stomped on by the subsequent updates. We have to collect all the changes
-            // locally and update the context one time.
-            const page = annotation.linkedAnnotation.page
-            const annotationId = annotation.linkedAnnotation.toString()
-            const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
-            store[page] = dropped
-        }
+        const relations = annotationStore.pdfRelations
+
+        const updatedRelations = relations.map((r) => r.updateForAnnotationDeletion(annotation))
+
         annotationStore.setPdfAnnotations(store)
+        // TODO(Mark): Why can't typescript infer the type here? This seems basic.
+        annotationStore.setPdfRelations(updatedRelations.filter(r => r !== undefined) as RelationGroup[])
     }
+
+    const onShiftClick = (annotation: Annotation): () => void => {
+        return () => {
+            const current = annotationStore.selectedAnnotations
+
+            if (current.some((other) => other.id === annotation.id)) {
+                const next = current.filter((other) => other.id !== annotation.id)
+                annotationStore.setSelectedAnnotations(next)
+            } else {
+                current.push(annotation)
+                annotationStore.setSelectedAnnotations(current)
+            }
+        }
+    }
+
 
     useEffect(() => {
         try {
@@ -219,6 +229,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                             tokens={annotation.tokens || undefined}
                             key={annotation.toString()}
                             label={annotation.label}
+                            onClick={onShiftClick(annotation)}
                             bounds={pageInfo.getScaledBounds(annotation.bounds)}
                             onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
                         />
