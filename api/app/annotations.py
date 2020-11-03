@@ -29,8 +29,8 @@ class Annotation(BaseModel):
 
 
 class RelationGroup(BaseModel):
-    source: List[str]
-    target: List[str]
+    sourceIds: List[str]
+    targetIds: List[str]
     label: Label
 
 

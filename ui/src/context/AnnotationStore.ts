@@ -16,20 +16,20 @@ export class TokenId {
 export class RelationGroup {
 
     constructor(
-        public source: string[],
-        public target: string[],
+        public sourceIds: string[],
+        public targetIds: string[],
         public label: Label
     ){}
 
     updateForAnnotationDeletion(a: Annotation): RelationGroup | undefined {
-        const sourceEmpty = this.source.length === 0 
-        const targetEmpty = this.target.length === 0
+        const sourceEmpty = this.sourceIds.length === 0 
+        const targetEmpty = this.targetIds.length === 0
 
-        this.source = this.source.filter((id) => id !== a.id)
-        this.target = this.target.filter((id) => id !== a.id)
+        const newSourceIds = this.sourceIds.filter((id) => id !== a.id)
+        const newTargetIds = this.targetIds.filter((id) => id !== a.id)
 
-        const nowSourceEmpty = this.source.length === 0 
-        const nowTargetEmpty = this.target.length === 0 
+        const nowSourceEmpty = this.sourceIds.length === 0 
+        const nowTargetEmpty = this.targetIds.length === 0 
 
         // Only target had any annotations, now it has none,
         // so delete.
@@ -50,11 +50,11 @@ export class RelationGroup {
             return undefined
         }
 
-        return new RelationGroup(this.source, this.target, this.label)
+        return new RelationGroup(newSourceIds, newTargetIds, this.label)
     }
 
     static fromObject(obj: RelationGroup) {
-        return new RelationGroup(obj.source, obj.target, obj.label)
+        return new RelationGroup(obj.sourceIds, obj.targetIds, obj.label)
     }
 }
 
