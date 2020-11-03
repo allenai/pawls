@@ -113,4 +113,4 @@ class TestApp(TestCase):
         assert response.json() == {
             "annotations": [annotation],
             "relations": []
-            }
+        }

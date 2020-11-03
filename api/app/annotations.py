@@ -35,5 +35,4 @@ class RelationGroup(BaseModel):
 
 
 class PdfAnnotation(BaseModel):
-
     annotations: List[Annotation]
