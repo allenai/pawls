@@ -39,6 +39,20 @@ def fetch(
     )
     print(f"Successfully saved {len(result['success'])} pdfs to {str(out_dir)}")
 
+    not_found = result["not_found"]
+    if not_found:
+        print(f"Failed to find pdfs for the following ({len(not_found)}) shas:")
+        for sha in not_found:
+            print(sha)
+        print()
+
+    error = result["error"]
+    if error:
+        print(f"Error fetching pdfs for the following ({len(error)}) shas:")
+        for sha in error:
+            print(sha)
+        print()
+
 
 # settings for S3 buckets
 S3_BUCKET_PDFS = {"default": "ai2-s2-pdfs", "private": "ai2-s2-pdfs-private"}
