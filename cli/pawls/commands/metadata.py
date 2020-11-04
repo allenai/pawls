@@ -26,7 +26,7 @@ def metadata(path: click.Path):
         path = Path(p)
         metadata_path = path.parent / "metadata.json"
 
-        sha = path.name.strip(".pdf")
+        sha = path.name.replace(".pdf", "")
         metadata = get_paper_metadata(sha)
 
         if metadata is None:
@@ -36,7 +36,7 @@ def metadata(path: click.Path):
             success += 1
 
         with open(metadata_path, "w+") as out:
-            json.dump(metadata, out)
+            json.dump(metadata._asdict(), out)
 
     print(f"Added metadata for {success} pdfs in {path}.")
     if failed:

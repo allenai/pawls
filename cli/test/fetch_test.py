@@ -14,8 +14,7 @@ class TestFetch(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             result = runner.invoke(fetch, [sha, tempdir])
             assert result.exit_code == 0
-            print(os.path.join(tempdir, sha + ".pdf"))
-            print(os.path.exists(os.path.join(tempdir, sha, sha + ".pdf")))
+            assert os.path.exists(os.path.join(tempdir, sha, sha + ".pdf"))
 
     def test_fetch_nonexistent_pdfs(self):
         runner = CliRunner()
