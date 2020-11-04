@@ -1,10 +1,6 @@
 from typing import NamedTuple, List, Dict
 
 import json
-import os
-
-
-IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
 
 class Configuration(NamedTuple):
@@ -61,8 +57,3 @@ def load_annotators(filepath) -> Annotators:
 
     blob = json.load(open(filepath))
     return Annotators(**blob)
-
-
-def _per_dir_pdf_download(target_dir: str, sha: str):
-    os.makedirs(os.path.join(target_dir, sha), exist_ok=True)
-    return os.path.join(target_dir, sha, f"{sha}.pdf")
