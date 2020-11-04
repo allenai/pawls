@@ -14,7 +14,11 @@ def pawls_cli(verbose):
     logger.setLevel(log_level)
 
 
-subcommands = [commands.fetch.fetch, commands.metadata.metadata]
+subcommands = [
+    commands.fetch,
+    commands.metadata,
+    commands.preprocess
+    ]
 
 for subcommand in subcommands:
     pawls_cli.add_command(subcommand)
