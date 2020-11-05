@@ -23,5 +23,5 @@ pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structu
 cd pawls/cli
 python setup.py install
 export GITHUB_ACCESS_TOKEN=<password from 1password>
-pip install git+git://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
+pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
 ```
