@@ -45,7 +45,6 @@ logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 # The annotation app requires a bit of set up.
 configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
 annotators = pre_serve.load_annotators(ANNOTATORS_FILE)
-pre_serve.maybe_download_pdfs(configuration)
 
 app = FastAPI()
 

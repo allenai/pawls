@@ -1,0 +1,9 @@
+click>=6.7
+# S3 access
+boto3
+
+# Grobid integration
+requests
+
+# pdf-structure service client.
+git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python

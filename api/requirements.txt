@@ -2,9 +2,6 @@
 # Skiff logging
 python-json-logger==0.1.10
 
-# Grobid integration fetches things
-requests
-
 # Server
 fastapi
 uvicorn
@@ -20,9 +17,6 @@ python-multipart
 
 # pdf-structure service client.
 git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
-
-# S3 access
-boto3
 
 # Allows us to use FastAPI's FileResponse for serving pdfs.
 aiofiles
