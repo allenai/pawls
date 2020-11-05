@@ -14,17 +14,8 @@ def pawls_cli(verbose):
     logger.setLevel(log_level)
 
 
-@click.group(context_settings={"help_option_names": ["--help", "-h"]})
-def fetch():
-    pass
-
-
-fetch.add_command(commands.pdfs)
-fetch.add_command(commands.metadata)
-
-
 subcommands = [
-    fetch,
+    commands.fetch,
     commands.preprocess,
 ]
 

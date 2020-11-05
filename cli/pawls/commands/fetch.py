@@ -1,9 +1,11 @@
 import os
-from typing import List, Callable, Set, Dict, Tuple
+from typing import List, Callable, Set, Dict, Tuple, NamedTuple, Optional
 
 import click
 import boto3
 import botocore
+import json
+import requests
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -15,24 +17,37 @@ import botocore
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
     help="A path to a file containing pdf shas.",
 )
-@click.option(
-    "--flat",
-    type=bool,
-    default=False,
-    help="Download pdfs to a single directory only, without the directory structure required by pawls.",
-)
-def pdfs(
-    path: click.Path, shas: Tuple[str], sha_file: click.Path = None, flat: bool = False,
-):
+def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
     shas = list(shas)
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
         shas.extend(extra_ids)
 
     result = bulk_fetch_pdfs_for_s2_ids(
-        shas, path, pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download,
+        shas, path, pdf_path_func=_per_dir_pdf_download,
     )
-    print(f"Successfully saved {len(result['success'])} pdfs to {str(path)}")
+
+    metadata_failed = []
+    for sha in result["success"]:
+        metadata_path = os.path.join(path, sha, "metadata.json")
+        metadata = get_paper_metadata(sha)
+        if metadata is None:
+            metadata_failed.append(sha)
+        else:
+            with open(metadata_path, "w+") as out:
+                json.dump(metadata._asdict(), out)
+
+    print(
+        f"Successfully saved {len(result['success']) - len(metadata_failed)} pdfs and metadata to {str(path)}"
+    )
+
+    if metadata_failed:
+        print(
+            f"Successfully saved {len(metadata_failed)} pdfs, but failed to find metadata for:"
+        )
+        for sha in metadata_failed:
+            print(sha)
+        print()
 
     not_found = result["not_found"]
     if not_found:
@@ -120,3 +135,43 @@ def bulk_fetch_pdfs_for_s2_ids(
                 error.add(s2_id)
 
     return {"error": error, "not_found": not_found, "success": success}
+
+
+S2_API = "https://www.semanticscholar.org/api/1/paper/"
+
+
+class PaperMetadata(NamedTuple):
+    sha: str
+    title: str
+    venue: str
+    year: int
+    cited_by: int
+    authors: List[str]
+
+
+def get_paper_metadata(paper_sha: str) -> Optional[PaperMetadata]:
+    """
+    Fetch a small metadata blob from S2.
+
+    paper_sha: str, required
+        The paper id to search for.
+
+    returns:
+        PaperMetadata if the paper is found, otherwise None.
+    """
+
+    response = requests.get(S2_API + paper_sha)
+    if response.ok:
+        data = response.json()
+
+        return PaperMetadata(
+            sha=paper_sha,
+            title=data["paper"]["title"]["text"],
+            venue=data["paper"]["venue"]["text"],
+            year=int(data["paper"]["year"]["text"]),
+            cited_by=int(data["paper"]["citationStats"]["numCitations"]),
+            authors=[author[0]["name"] for author in data["paper"]["authors"]],
+        )
+
+    else:
+        return None

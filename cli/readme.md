@@ -13,7 +13,7 @@ In order to install the CLI tool, you will need to export this as a bash variabl
 
 ```
 export GITHUB_ACCESS_TOKEN=<password from 1password>
-pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
+pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
 ```
 
 
@@ -23,5 +23,5 @@ pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structu
 cd pawls/cli
 python setup.py install
 export GITHUB_ACCESS_TOKEN=<password from 1password>
-pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
+pip install git+git://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
 ```
