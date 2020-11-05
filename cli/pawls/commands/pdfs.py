@@ -22,10 +22,7 @@ import botocore
     help="Download pdfs to a single directory only, without the directory structure required by pawls.",
 )
 def pdfs(
-    path: click.Path,
-    shas: Tuple[str],
-    sha_file: click.Path = None,
-    flat: bool = False,
+    path: click.Path, shas: Tuple[str], sha_file: click.Path = None, flat: bool = False,
 ):
     shas = list(shas)
     if sha_file is not None:
@@ -33,9 +30,7 @@ def pdfs(
         shas.extend(extra_ids)
 
     result = bulk_fetch_pdfs_for_s2_ids(
-        shas,
-        path,
-        pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download,
+        shas, path, pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download,
     )
     print(f"Successfully saved {len(result['success'])} pdfs to {str(path)}")
 

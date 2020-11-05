@@ -32,4 +32,6 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
         if preprocessor == "grobid":
             process_grobid(sha, str(path), env=which_pdf_service)
 
-    print(f"Added {len(pdfs)} annotations for {preprocessor} to the {which_pdf_service} S2 PDF Structure Service.")
+    print(
+        f"Added {len(pdfs)} annotations for {preprocessor} to the {which_pdf_service} S2 PDF Structure Service."
+    )

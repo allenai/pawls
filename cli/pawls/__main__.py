@@ -26,7 +26,7 @@ fetch.add_command(commands.metadata)
 subcommands = [
     fetch,
     commands.preprocess,
-    ]
+]
 
 for subcommand in subcommands:
     pawls_cli.add_command(subcommand)
