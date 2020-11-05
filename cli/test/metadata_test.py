@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from pawls.commands.metadata import metadata
 
 
-class TestMetadata(unittest.TestCase):
+class TestFetchMetadata(unittest.TestCase):
     def tearDown(self):
         meta_path = (
             "test/fixtures/data/3febb2bed8865945e7fddc99efd791887bb7e14f/metadata.json"

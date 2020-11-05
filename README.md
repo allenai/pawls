@@ -25,8 +25,8 @@ In order to run a local environment, you'll need to use the PAWLS CLI to downloa
 For instance, you can run this command to download the specified PDF:
 
 ```bash
-    pawls fetch 34f25a8704614163c4095b3ee2fc969b60de4698 skiff_files/apps/pawls
-    pawls metadata skiff_files/apps/pawls
+    pawls fetch pdfs skiff_files/apps/pawls 34f25a8704614163c4095b3ee2fc969b60de4698
+    pawls fetch metadata skiff_files/apps/pawls
     pawls preprocess grobid skiff_files/apps/pawls
 ```
 

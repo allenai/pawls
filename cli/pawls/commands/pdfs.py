@@ -7,8 +7,8 @@ import botocore
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
-@click.argument("shas", type=str, nargs=-1)
-@click.argument("out_dir", type=click.Path(exists=False))
+@click.argument("path", type=str, default="./")
+@click.argument("shas", type=str, nargs=-1, required=True)
 @click.option(
     "--sha-file",
     "-f",
@@ -21,9 +21,9 @@ import botocore
     default=False,
     help="Download pdfs to a single directory only, without the directory structure required by pawls.",
 )
-def fetch(
+def pdfs(
+    path: click.Path,
     shas: Tuple[str],
-    out_dir: click.Path,
     sha_file: click.Path = None,
     flat: bool = False,
 ):
@@ -34,10 +34,10 @@ def fetch(
 
     result = bulk_fetch_pdfs_for_s2_ids(
         shas,
-        out_dir,
+        path,
         pdf_path_func=_default_pdf_path if flat else _per_dir_pdf_download,
     )
-    print(f"Successfully saved {len(result['success'])} pdfs to {str(out_dir)}")
+    print(f"Successfully saved {len(result['success'])} pdfs to {str(path)}")
 
     not_found = result["not_found"]
     if not_found:
