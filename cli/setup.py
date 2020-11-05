@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("readme.md", "r") as readme_file:
     readme = readme_file.read()
@@ -22,8 +22,11 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     license="Apache 2.0",
-    packages=find_packages(),
-    install_requires=["click >= 6.7",],
+    install_requires=[
+        "click>=6.7",
+        "requests",
+        "boto3"
+    ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},
     zip_safe=False,
