@@ -1,6 +1,6 @@
 import click
 import logging
-from . import commands
+from pawls import commands
 
 
 logger = logging.getLogger(__name__)

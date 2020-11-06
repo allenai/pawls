@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 import glob
 
-from ..preprocessors.grobid import process_grobid
+from pawls.preprocessors.grobid import process_grobid
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
