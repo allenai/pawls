@@ -17,6 +17,7 @@ def pawls_cli(verbose):
 subcommands = [
     commands.fetch,
     commands.preprocess,
+    commands.assign,
 ]
 
 for subcommand in subcommands:
