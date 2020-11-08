@@ -17,7 +17,17 @@ from pawls.preprocessors.grobid import process_grobid
     help="Whether to add preprocessor annotations to the dev or prod PDF Structure Service.",
 )
 def preprocess(preprocessor: str, path: click.Path, prod: bool):
+    """
+    Run a pre-processor on a pdf/directory of pawls pdfs and
+    send the results to the S2 PDF Structure Service, so they
+    can be used as a base for annotation.
 
+    Current preprocessor options are: "grobid".
+
+    To send all pawls structured pdfs in the current directory for processing:
+
+        `pawls preprocess grobid ./`
+    """
     which_pdf_service = "prod" if prod else "dev"
     if os.path.isdir(path):
         in_glob = os.path.join(path, "*/*.pdf")
