@@ -5,6 +5,7 @@ import click
 import json
 import glob
 
+
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
 @click.argument("annotator", type=str)
@@ -22,7 +23,13 @@ import glob
     default=False,
     help="A flag to assign all current pdfs in a pawls project to an annotator.",
 )
-def assign(path: click.Path, annotator: str, shas: Tuple[str], sha_file: click.Path = None, all: bool = False):
+def assign(
+    path: click.Path,
+    annotator: str,
+    shas: Tuple[str],
+    sha_file: click.Path = None,
+    all: bool = False,
+):
     """
     Assign pdfs and annotators for a project.
 
@@ -65,7 +72,7 @@ def assign(path: click.Path, annotator: str, shas: Tuple[str], sha_file: click.P
                 "relations": 0,
                 "status": "INPROGRESS",
                 "comments": "",
-                "completed_at": None
+                "completed_at": None,
             }
 
     with open(status_path, "w+") as out:
