@@ -37,9 +37,12 @@ def assign(
     Use assign to assign annotators to a project, or assign them
     pdfs fetched using `pawls fetch <pdfs>`.
 
-    Add an annotator called mark:
+    Annotators must be assigned a username corresponding
+    to their AI2 email, e.g `markn` for email `markn@allenai.org`.
 
-        `pawls assign <path to pawls directory> mark`
+    Add an annotator called markn:
+
+        `pawls assign <path to pawls directory> markn`
 
     To assign all current pdfs in the project to an annotator, use:
 

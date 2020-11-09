@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 import logging
 import os
 import json
+import glob
 
 from fastapi import FastAPI, Query, HTTPException, Header
 from fastapi.responses import FileResponse
@@ -17,10 +18,6 @@ IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
 CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
-)
-
-ANNOTATORS_FILE = os.getenv(
-    "PAWLS_ANNOTATORS_FILE", "/usr/local/src/skiff/app/api/config/annotators.json"
 )
 
 handlers = None
@@ -43,7 +40,6 @@ logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 
 # The annotation app requires a bit of set up.
 configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
-annotators = pre_serve.load_annotators(ANNOTATORS_FILE)
 
 app = FastAPI()
 
@@ -57,7 +53,13 @@ def get_user_from_header(header: Optional[str]) -> str:
     if header is None:
         return "development_user"
     else:
-        return header
+        return header.split("@")[0]
+
+
+def all_pdf_shas() -> List[str]:
+
+    pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
+    return [p.split("/")[-2] for p in pdfs]
 
 
 @app.get("/", status_code=204)
@@ -226,6 +228,7 @@ def get_labels() -> List[Dict[str, str]]:
     """
     return configuration.labels
 
+
 @app.get("/api/annotation/relations")
 def get_relations() -> List[Dict[str, str]]:
     """
@@ -248,20 +251,19 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
     if user == "development_user":
-        return configuration.pdfs
+        return all_pdf_shas()
 
-    allocation = annotators.allocations.get(x_auth_request_email, None)
+    # TODO(Mark): remove this work around for the status not being present.
+    if not os.path.exists(os.path.join(configuration.output_directory, "status")):
+        return all_pdf_shas()
 
-    # If there are no annotators configured, assume that all pdfs
-    # are allocated to everyone.
-    if not annotators.annotators and allocation is None:
-        return configuration.pdfs
-
-    elif allocation is None:
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    if not os.path.exists(status_path):
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    return allocation
+    status_json = json.load(open(status_path))
 
+    return list(status_json.keys())
 
 @app.get("/api/annotation/allocation/metadata")
 def get_allocation_metadata(x_auth_request_email: str = Header(None)) -> List[PaperMetadata]:

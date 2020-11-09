@@ -1,0 +1,16 @@
+{
+    "paper1":  {
+        "annotations": 0,
+        "relations": 0,
+        "status": "INPROGRESS",
+        "comments": "",
+        "completed_at": null
+    },
+    "paper2": {
+        "annotations": 0,
+        "relations": 0,
+        "status": "INPROGRESS",
+        "comments": "",
+        "completed_at": null
+    }
+}

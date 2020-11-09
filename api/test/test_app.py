@@ -22,7 +22,11 @@ class TestApp(TestCase):
         os.makedirs(self.TEST_DIR, exist_ok=True)
         copy_and_overwrite(
             "test/fixtures/data/",
-            os.path.join(self.TEST_DIR, "papers")
+            self.TEST_DIR
+        )
+        copy_and_overwrite(
+            "test/fixtures/status/",
+            os.path.join(self.TEST_DIR, "status")
         )
         self.pdf_sha = "3febb2bed8865945e7fddc99efd791887bb7e14f"
 
@@ -75,7 +79,7 @@ class TestApp(TestCase):
 
         # No header, should return all pdfs.
         response = self.client.get("/api/annotation/allocation")
-        assert response.json() == []
+        assert response.json() == ["3febb2bed8865945e7fddc99efd791887bb7e14f"]
 
         # Header, no annotations
         response = self.client.get(
@@ -108,9 +112,20 @@ class TestApp(TestCase):
             f"/api/doc/{self.pdf_sha}/annotations",
             json={"annotations": [annotation], "relations": []}
         )
+        print("response: ", response.json())
+        print(os.listdir(self.TEST_DIR))
+        print(os.listdir(self.TEST_DIR + f"/{self.pdf_sha}"))
         # Annotation should be there.
         response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
         assert response.json() == {
             "annotations": [annotation],
             "relations": []
         }
+    def test_post_annotations(self):
+
+        response = self.client.post(
+            f"/api/doc/{self.pdf_sha}/annotatioans"
+        )
+        print(response.status_code)
+        print(response.json())
+
