@@ -2,6 +2,7 @@ import os
 from typing import Tuple
 
 import click
+from click import UsageError
 import json
 import glob
 
@@ -44,11 +45,21 @@ def assign(
 
         `pawls assign <path to pawls directory> <annotator> --all`
     """
-    shas = list(shas)
+    shas = set(shas)
+
+    pdfs = glob.glob(os.path.join(path, "*/*.pdf"))
+    project_shas = {p.split("/")[-1].replace(".pdf", "") for p in pdfs}
+    diff = shas.difference(project_shas)
+    if diff:
+        print(f"Found shas which are not present in {path}.")
+        print(f"Run pawls fetch {path} <shas> before assigning pdfs to annotators.")
+        for sha in diff:
+            print(sha)
+        raise UsageError()
+
     if all:
         # If --all flag, we use all pdfs in the current project.
-        pdfs = glob.glob(os.path.join(path, "*/*.pdf"))
-        shas.extend([p.split("/")[-1].replace(".pdf", "") for p in pdfs])
+        shas.update(project_shas)
 
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
