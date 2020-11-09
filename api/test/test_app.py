@@ -19,7 +19,6 @@ class TestApp(TestCase):
 
         self.client = TestClient(app)
         self.TEST_DIR = "test/fixtures/tmp/"
-        os.makedirs(self.TEST_DIR, exist_ok=True)
         copy_and_overwrite(
             "test/fixtures/data/",
             self.TEST_DIR
@@ -112,20 +111,9 @@ class TestApp(TestCase):
             f"/api/doc/{self.pdf_sha}/annotations",
             json={"annotations": [annotation], "relations": []}
         )
-        print("response: ", response.json())
-        print(os.listdir(self.TEST_DIR))
-        print(os.listdir(self.TEST_DIR + f"/{self.pdf_sha}"))
         # Annotation should be there.
         response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
         assert response.json() == {
             "annotations": [annotation],
             "relations": []
         }
-    def test_post_annotations(self):
-
-        response = self.client.post(
-            f"/api/doc/{self.pdf_sha}/annotatioans"
-        )
-        print(response.status_code)
-        print(response.json())
-

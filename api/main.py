@@ -99,13 +99,14 @@ async def get_pdf(sha: str):
 
     return FileResponse(pdf, media_type="application/pdf")
 
-@app.post("/api/doc/{sha}/{status}")
+@app.post("/api/doc/{sha}/status")
 def set_pdf_status(
     sha: str,
     status: str,
     x_auth_request_email: str = Header(None)
 ):
-
+    # TODO(Mark): finish this method once the frontend
+    # is configured to use the pdf status.
     user = get_user_from_header(x_auth_request_email)
 
 
