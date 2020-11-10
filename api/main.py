@@ -15,6 +15,7 @@ from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
+DEVELOPMENT_USER = "development_user"
 
 CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
@@ -44,14 +45,18 @@ configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
 app = FastAPI()
 
 
-def get_user_from_header(header: Optional[str]) -> str:
+def get_user_from_header(header: Optional[str]) -> Optional[str]:
     """
     In development (i.e locally, when not deployed to the skiff cluster)
     the X-Auth-Request-Email header is not present. In development,
-    we use the `development_user` role instead.
+    we use the `development_user` role instead. If we are in production
+    and there is no header, we return None so calling functions can
+    handle the web response appropriately.
     """
-    if header is None:
-        return "development_user"
+    if header is None and IN_PRODUCTION == "dev":
+        return DEVELOPMENT_USER
+    elif header is None:
+        return None
     else:
         return header.split("@")[0]
 
@@ -115,6 +120,8 @@ def get_annotations(
     x_auth_request_email: str = Header(None)
 ) -> PdfAnnotation:
     user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
     annotations = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
     exists = os.path.exists(annotations)
 
@@ -145,6 +152,8 @@ def save_annotations(
     """
 
     user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
     annotations_path = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
     json_annotations = [jsonable_encoder(a) for a in annotations]
     json_relations = [jsonable_encoder(r) for r in relations]
@@ -250,7 +259,10 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     # we always return all pdfs, essentially short-circuiting the allocation
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
-    if user == "development_user":
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
+
+    if user == DEVELOPMENT_USER:
         return all_pdf_shas()
 
     # TODO(Mark): remove this work around for the status not being present.

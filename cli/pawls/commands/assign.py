@@ -2,9 +2,10 @@ import os
 from typing import Tuple
 
 import click
-from click import UsageError
+from click import UsageError, BadArgumentUsage
 import json
 import glob
+import re
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -54,11 +55,14 @@ def assign(
     project_shas = {p.split("/")[-1].replace(".pdf", "") for p in pdfs}
     diff = shas.difference(project_shas)
     if diff:
-        print(f"Found shas which are not present in {path}.")
-        print(f"Run pawls fetch {path} <shas> before assigning pdfs to annotators.")
+        error = f"Found shas which are not present in path {path} .\n"
+        error = (
+            error
+            + f"Run pawls fetch {path} <shas> before assigning pdfs to annotators.\n"
+        )
         for sha in diff:
-            print(sha)
-        raise UsageError()
+            error = error + f"{sha}\n"
+        raise UsageError(error)
 
     if all:
         # If --all flag, we use all pdfs in the current project.
@@ -67,6 +71,13 @@ def assign(
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
         shas.extend(extra_ids)
+
+    result = re.match(r"^[a-zA-Z0-9_.+-]+", annotator)
+
+    if not result or result.group(0) != annotator:
+        raise BadArgumentUsage(
+            "Annotator names should be alphanumeric strings (_, ., + and - are also valid characters.)"
+        )
 
     status_dir = os.path.join(path, "status")
     os.makedirs(status_dir, exist_ok=True)
