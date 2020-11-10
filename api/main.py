@@ -57,7 +57,6 @@ def get_user_from_header(header: Optional[str]) -> str:
 
 
 def all_pdf_shas() -> List[str]:
-
     pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
     return [p.split("/")[-2] for p in pdfs]
 
