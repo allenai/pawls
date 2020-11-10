@@ -15,13 +15,10 @@ from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
+DEVELOPMENT_USER = "development_user"
 
 CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
-)
-
-ANNOTATORS_FILE = os.getenv(
-    "PAWLS_ANNOTATORS_FILE", "/usr/local/src/skiff/app/api/config/annotators.json"
 )
 
 handlers = None
@@ -44,9 +41,29 @@ logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
 
 # The annotation app requires a bit of set up.
 configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
-annotators = pre_serve.load_annotators(ANNOTATORS_FILE)
 
 app = FastAPI()
+
+
+def get_user_from_header(header: Optional[str]) -> Optional[str]:
+    """
+    In development (i.e locally, when not deployed to the skiff cluster)
+    the X-Auth-Request-Email header is not present. In development,
+    we use the `development_user` role instead. If we are in production
+    and there is no header, we return None so calling functions can
+    handle the web response appropriately.
+    """
+    if header is None and IN_PRODUCTION == "dev":
+        return DEVELOPMENT_USER
+    elif header is None:
+        return None
+    else:
+        return header.split("@")[0]
+
+
+def all_pdf_shas() -> List[str]:
+    pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
+    return [p.split("/")[-2] for p in pdfs]
 
 
 @app.get("/", status_code=204)
@@ -86,10 +103,26 @@ async def get_pdf(sha: str):
 
     return FileResponse(pdf, media_type="application/pdf")
 
+@app.post("/api/doc/{sha}/status")
+def set_pdf_status(
+    sha: str,
+    status: str,
+    x_auth_request_email: str = Header(None)
+):
+    # TODO(Mark): finish this method once the frontend
+    # is configured to use the pdf status.
+    user = get_user_from_header(x_auth_request_email)
+
 
 @app.get("/api/doc/{sha}/annotations")
-def get_annotations(sha: str) -> PdfAnnotation:
-    annotations = os.path.join(configuration.output_directory, sha, "annotations.json")
+def get_annotations(
+    sha: str,
+    x_auth_request_email: str = Header(None)
+) -> PdfAnnotation:
+    user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
+    annotations = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
     exists = os.path.exists(annotations)
 
     if exists:
@@ -102,10 +135,26 @@ def get_annotations(sha: str) -> PdfAnnotation:
 def save_annotations(
     sha: str,
     annotations: List[Annotation],
-    relations: List[RelationGroup]
+    relations: List[RelationGroup],
+    x_auth_request_email: str = Header(None)
 ):
-    annotations_path = os.path.join(configuration.output_directory, sha, "annotations.json")
+    """
+    sha: str
+        PDF sha to retrieve from the PDF structure service.
+    annotations: List[Annotation]
+        A json blob of the annotations to save.
+    relations: List[RelationGroup]
+        A json blob of the relations between the annotations to save.
+    x_auth_request_email: str
+        This is a header sent with the requests which specifies the user login.
+        For local development, this will be None, because the authentication
+        is controlled by the Skiff Kubernetes cluster.
+    """
 
+    user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
+    annotations_path = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
     json_annotations = [jsonable_encoder(a) for a in annotations]
     json_relations = [jsonable_encoder(r) for r in relations]
 
@@ -114,16 +163,6 @@ def save_annotations(
         "relations": json_relations
     }, open(annotations_path, "w+"))
     return {}
-
-
-@app.get("/api/docs")
-def list_downloaded_pdfs() -> List[str]:
-    """
-    List the currently downloaded pdfs.
-    """
-    # TODO(Mark): Guard against metadata not being present also.
-    pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
-    return [p.split("/")[-2] for p in pdfs]
 
 
 @app.get("/api/doc/{sha}/tokens")
@@ -198,6 +237,7 @@ def get_labels() -> List[Dict[str, str]]:
     """
     return configuration.labels
 
+
 @app.get("/api/annotation/relations")
 def get_relations() -> List[Dict[str, str]]:
     """
@@ -218,21 +258,24 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     # meaning this would always fail. Instead, to smooth local development,
     # we always return all pdfs, essentially short-circuiting the allocation
     # mechanism.
-    if x_auth_request_email is None:
-        return configuration.pdfs
+    user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
 
-    allocation = annotators.allocations.get(x_auth_request_email, None)
+    if user == DEVELOPMENT_USER:
+        return all_pdf_shas()
 
-    # If there are no annotators configured, assume that all pdfs
-    # are allocated to everyone.
-    if not annotators.annotators and allocation is None:
-        return configuration.pdfs
+    # TODO(Mark): remove this work around for the status not being present.
+    if not os.path.exists(os.path.join(configuration.output_directory, "status")):
+        return all_pdf_shas()
 
-    elif allocation is None:
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    if not os.path.exists(status_path):
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    return allocation
+    status_json = json.load(open(status_path))
 
+    return list(status_json.keys())
 
 @app.get("/api/annotation/allocation/metadata")
 def get_allocation_metadata(x_auth_request_email: str = Header(None)) -> List[PaperMetadata]:

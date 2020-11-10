@@ -1,5 +1,5 @@
 {
-    "output_directory": "test/fixtures/tmp/papers",
+    "output_directory": "test/fixtures/tmp",
     "labels": [
         {
             "text": "Figure Text",
@@ -19,8 +19,5 @@
             "text": "Definition",
             "color": "#FFD45D"
         }
-    ],
-
-    "pdfs": [],
-    "preprocessors": ["grobid"]
+    ]
 }

@@ -19,10 +19,13 @@ class TestApp(TestCase):
 
         self.client = TestClient(app)
         self.TEST_DIR = "test/fixtures/tmp/"
-        os.makedirs(self.TEST_DIR, exist_ok=True)
         copy_and_overwrite(
             "test/fixtures/data/",
-            os.path.join(self.TEST_DIR, "papers")
+            self.TEST_DIR
+        )
+        copy_and_overwrite(
+            "test/fixtures/status/",
+            os.path.join(self.TEST_DIR, "status")
         )
         self.pdf_sha = "3febb2bed8865945e7fddc99efd791887bb7e14f"
 
@@ -75,7 +78,7 @@ class TestApp(TestCase):
 
         # No header, should return all pdfs.
         response = self.client.get("/api/annotation/allocation")
-        assert response.json() == []
+        assert response.json() == ["3febb2bed8865945e7fddc99efd791887bb7e14f"]
 
         # Header, no annotations
         response = self.client.get(

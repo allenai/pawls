@@ -18,6 +18,17 @@ import requests
     help="A path to a file containing pdf shas.",
 )
 def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
+    """
+    Download pdfs from Semantic Scholar with metadata
+    to a particular location.
+    Pdfs can be specified by passing a list of pdf shas, or
+    by passing a file containing pdf shas, one per id.
+
+    Download a pdf and associated metadata to the current directory:
+
+        `pawls fetch ./ 34f25a8704614163c4095b3ee2fc969b60de4698`
+
+    """
     shas = list(shas)
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
