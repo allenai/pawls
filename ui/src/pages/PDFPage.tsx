@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -67,6 +67,7 @@ export const PDFPage = () => {
     const onSave = () => {
 
         if (pdfAnnotations) {
+
             saveAnnotations(sha, pdfAnnotations.flat(), pdfRelations).then(() => {
                 notification.success({message: "Saved Annotations!"})
             }).catch((err) => {
@@ -76,6 +77,12 @@ export const PDFPage = () => {
                     description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
                 })
                 console.log("Failed to save annotations: ", err)
+            })
+            const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
+            setPaperStatus(sha, {
+                ...current.status,
+                annotations: pdfAnnotations.flat().length,
+                relations: pdfRelations.length
             })
         }
     }

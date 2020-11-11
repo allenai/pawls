@@ -104,10 +104,10 @@ async def get_pdf(sha: str):
     return FileResponse(pdf, media_type="application/pdf")
 
 
-@app.post("/api/doc/{sha}/status/{state}")
+@app.post("/api/doc/{sha}/status")
 def set_pdf_status(
     sha: str,
-    state: str,
+    status: PaperStatus,
     x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
@@ -115,12 +115,19 @@ def set_pdf_status(
         raise HTTPException(403, "Invalid user email header.")
 
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    if not os.path.exists(status_path):
+    exists = os.path.exists(status_path)
+    if not exists and IN_PRODUCTION == "dev":
+        with open(status_path, "w+") as new:
+            blob = {
+                sha: PaperStatus.empty() for sha in all_pdf_shas()
+            }
+            json.dump(jsonable_encoder(blob), new)
+    elif not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
     with open(status_path, "r+") as st:
         status_json = json.load(st)
-        status_json[sha] = state
+        status_json[sha] = jsonable_encoder(status)
         st.seek(0)
         json.dump(status_json, st)
 
@@ -286,7 +293,7 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     if not os.path.exists(status_path):
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    status_json = json.load(open(status_path)) 
+    status_json = json.load(open(status_path))
 
     response = []
 

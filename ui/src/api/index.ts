@@ -111,6 +111,10 @@ export interface PaperInfo {
     sha: string
 }
 
+export async function setPaperStatus(sha: string, status: PaperStatus): Promise<any> {
+    return axios.post(`/api/doc/${sha}/status`, status)
+}
+
 export async function getAllocatedPaperInfo(): Promise<PaperInfo[]> {
     return axios.get("/api/annotation/allocation/info")
                 .then(r => r.data)
