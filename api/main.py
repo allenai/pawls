@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
 from app import pdf_structure
-from app.metadata import PaperMetadata
+from app.metadata import PaperMetadata, PaperInfo, PaperStatus
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
@@ -103,15 +103,26 @@ async def get_pdf(sha: str):
 
     return FileResponse(pdf, media_type="application/pdf")
 
-@app.post("/api/doc/{sha}/status")
+
+@app.post("/api/doc/{sha}/status/{state}")
 def set_pdf_status(
     sha: str,
-    status: str,
+    state: str,
     x_auth_request_email: str = Header(None)
 ):
-    # TODO(Mark): finish this method once the frontend
-    # is configured to use the pdf status.
     user = get_user_from_header(x_auth_request_email)
+    if user is None:
+        raise HTTPException(403, "Invalid user email header.")
+
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    if not os.path.exists(status_path):
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    with open(status_path, "r+") as st:
+        status_json = json.load(st)
+        status_json[sha] = state
+        st.seek(0)
+        json.dump(status_json, st)
 
 
 @app.get("/api/doc/{sha}/annotations")
@@ -246,13 +257,8 @@ def get_relations() -> List[Dict[str, str]]:
     return configuration.relations
 
 
-@app.get("/api/annotation/allocation")
-def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
-    """
-    Get the allocated pdfs for this user. We use the X-Auth-Request-Email
-    header to identify the user, which needs to correlate with the users
-    present in the annotators.json config file.
-    """
+@app.get("/api/annotation/allocation/info")
+def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperInfo]:
 
     # In development, the app isn't passed the x_auth_request_email header,
     # meaning this would always fail. Instead, to smooth local development,
@@ -262,26 +268,35 @@ def get_allocation(x_auth_request_email: str = Header(None)) -> List[str]:
     if user is None:
         raise HTTPException(403, "Invalid user email header.")
 
-    if user == DEVELOPMENT_USER:
-        return all_pdf_shas()
-
-    # TODO(Mark): remove this work around for the status not being present.
-    if not os.path.exists(os.path.join(configuration.output_directory, "status")):
-        return all_pdf_shas()
+    status_dir_exists = os.path.exists(os.path.join(configuration.output_directory, "status"))
+    if user == DEVELOPMENT_USER or not status_dir_exists:
+        all_pdfs = all_pdf_shas()
+        response = []
+        for sha in all_pdfs:
+            response.append(
+                PaperInfo(
+                    PaperMetadata(**get_metadata(sha)),
+                    PaperStatus.empty(),
+                    sha
+                )
+            )
+        return response
 
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     if not os.path.exists(status_path):
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    status_json = json.load(open(status_path))
+    status_json = json.load(open(status_path)) 
 
-    return list(status_json.keys())
+    response = []
 
-@app.get("/api/annotation/allocation/metadata")
-def get_allocation_metadata(x_auth_request_email: str = Header(None)) -> List[PaperMetadata]:
-    """
-    Get the allocated pdfs for this user. We use the X-Auth-Request-Email
-    header to identify the user, which needs to correlate with the users
-    present in the annotators.json config file.
-    """
-    return [get_metadata(x) for x in get_allocation(x_auth_request_email)]
+    for sha, status in status_json.items():
+        response.append(
+                PaperInfo(
+                    PaperMetadata(**get_metadata(sha)),
+                    PaperStatus(**status),
+                    sha
+                )
+        )
+
+    return response

@@ -97,7 +97,7 @@ def assign(
                 "relations": 0,
                 "status": "INPROGRESS",
                 "comments": "",
-                "completed_at": None,
+                "completedAt": None,
             }
 
     with open(status_path, "w+") as out:
