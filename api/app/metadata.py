@@ -1,7 +1,9 @@
-from typing import NamedTuple, List
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 
-class PaperMetadata(NamedTuple):
+class PaperMetadata(BaseModel):
     sha: str
     title: str
     venue: str
@@ -10,21 +12,25 @@ class PaperMetadata(NamedTuple):
     authors: List[str]
 
 
-class PaperStatus(NamedTuple):
+class PaperStatus(BaseModel):
     annotations: int
     relations: int
     status: str
     comments: str
-    completedAt: str
+    completedAt: Optional[str]
 
     @staticmethod
     def empty():
         return PaperStatus(
-            0, 0, "BLANK", "", None
+            annotations=0,
+            relations=0,
+            status="BLANK",
+            comments="",
+            completedAt=None
         )
 
 
-class PaperInfo(NamedTuple):
+class PaperInfo(BaseModel):
     metadata: PaperMetadata
     status: PaperStatus
     sha: str

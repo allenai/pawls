@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperMetadata, getAssignedPapers, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -41,7 +41,7 @@ export const PDFPage = () => {
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
-    const [ assignedPapers, setAssignedPapers] = useState<PaperMetadata[]>([])
+    const [ assignedPaperInfo, setAssignedPaperInfo] = useState<PaperInfo[]>([])
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
     const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
@@ -128,8 +128,8 @@ export const PDFPage = () => {
 
 
     useEffect( () => {
-        getAssignedPapers().then((paperMetadata) => {
-            setAssignedPapers(paperMetadata)
+        getAllocatedPaperInfo().then((paperInfo) => {
+            setAssignedPaperInfo(paperInfo)
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
             console.log(err)
@@ -216,7 +216,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPapers}/>
+                        <AssignedPaperList papers={assignedPaperInfo}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Progress
@@ -231,7 +231,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPapers}/>
+                        <AssignedPaperList papers={assignedPaperInfo}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Result
@@ -269,7 +269,7 @@ export const PDFPage = () => {
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
-                                    <AssignedPaperList papers={assignedPapers}/>
+                                    <AssignedPaperList papers={assignedPaperInfo}/>
                                     <Annotations onSave={onSave} annotations={pdfAnnotations}/>
                                     <Relations relations={pdfRelations}/>
                                     <Labels/>
@@ -300,7 +300,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPapers}/>
+                        <AssignedPaperList papers={assignedPaperInfo}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Result

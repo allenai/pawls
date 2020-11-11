@@ -275,9 +275,9 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
         for sha in all_pdfs:
             response.append(
                 PaperInfo(
-                    PaperMetadata(**get_metadata(sha)),
-                    PaperStatus.empty(),
-                    sha
+                    metadata=PaperMetadata(**get_metadata(sha)),
+                    status=PaperStatus.empty(),
+                    sha=sha
                 )
             )
         return response
@@ -293,9 +293,9 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     for sha, status in status_json.items():
         response.append(
                 PaperInfo(
-                    PaperMetadata(**get_metadata(sha)),
-                    PaperStatus(**status),
-                    sha
+                    metadata=PaperMetadata(**get_metadata(sha)),
+                    status=PaperStatus(**status),
+                    sha=sha
                 )
         )
 
