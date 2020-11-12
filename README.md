@@ -20,13 +20,13 @@ To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
 
 ### PDFs
 
-In order to run a local environment, you'll need to use the PAWLS CLI to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.
+In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.
 
 For instance, you can run this command to download the specified PDF:
 
 ```bash
-    pawls fetch pdfs skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698
-    pawls preprocess grobid skiff_files/apps/pawls
+    pawls fetch skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698
+    pawls preprocess grobid skiff_files/apps/pawls/papers
 ```
 
 ### Python Development
