@@ -28,6 +28,7 @@ setup(
         "requests",
         "boto3",
         "tqdm",
+        "loguru",
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},
