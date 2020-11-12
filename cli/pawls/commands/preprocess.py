@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from tqdm import tqdm
 import click
 import glob
 
@@ -36,12 +37,16 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
         if not str(path).endswith(".pdf"):
             raise ValueError("Path is not a directory, but also not a pdf.")
         pdfs = [str(path)]
-    for p in pdfs:
+
+    pbar = tqdm(pdfs)
+    status = []
+    for p in pbar:
         path = Path(p)
         sha = path.name.strip(".pdf")
+        pbar.set_description(f"Processing {sha[:10]}...")
         if preprocessor == "grobid":
-            process_grobid(sha, str(path), env=which_pdf_service)
+            status.append(process_grobid(sha, str(path), env=which_pdf_service))
 
     print(
-        f"Added {len(pdfs)} annotations for {preprocessor} to the {which_pdf_service} S2 PDF Structure Service."
+        f"Added {sum(status)}/{len(pdfs)} annotations from {preprocessor} to the {which_pdf_service} S2 PDF Structure Service."
     )

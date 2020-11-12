@@ -26,7 +26,8 @@ setup(
     install_requires=[
         "click>=6.7",
         "requests",
-        "boto3"
+        "boto3",
+        "tqdm",
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},
