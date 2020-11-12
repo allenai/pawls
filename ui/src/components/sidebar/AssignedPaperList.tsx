@@ -1,8 +1,8 @@
 import React from 'react';
 import { SidebarItem, SidebarItemTitle, Contrast } from "./common";
-import {PaperMetadata} from "../../api";
+import { PaperInfo } from "../../api";
 
-export const AssignedPaperList = ({papers}: {papers: PaperMetadata[]}) => {
+export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
     return (
         <SidebarItem>
             <SidebarItemTitle>
@@ -10,10 +10,10 @@ export const AssignedPaperList = ({papers}: {papers: PaperMetadata[]}) => {
             </SidebarItemTitle>
             {papers.length !== 0 ? (
                 <>
-                    {papers.map((metadata) => (
-                        <Contrast key={metadata.sha}>
-                            <a href={`/pdf/${metadata.sha}`}>
-                                    {metadata.title}
+                    {papers.map((info) => (
+                        <Contrast key={info.metadata.sha}>
+                            <a href={`/pdf/${info.metadata.sha}`}>
+                                    {info.metadata.title}
                             </a>
                         </Contrast>
                     ))}

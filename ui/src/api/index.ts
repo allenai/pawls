@@ -89,6 +89,37 @@ export interface PaperMetadata {
     authors: string[]
 }
 
+export enum Status {
+
+    INPROGRESS = "INPROGRESS",
+    FINISHED = "FINISHED",
+    BLANK = "BLANK"
+
+}
+
+export interface PaperStatus {
+    annotations: number,
+    relations: number,
+    status: Status,
+    comments: string,
+    completedAt?: Date
+}
+
+export interface PaperInfo {
+    metadata: PaperMetadata,
+    status: PaperStatus,
+    sha: string
+}
+
+export async function setPaperStatus(sha: string, status: PaperStatus): Promise<any> {
+    return axios.post(`/api/doc/${sha}/status`, status)
+}
+
+export async function getAllocatedPaperInfo(): Promise<PaperInfo[]> {
+    return axios.get("/api/annotation/allocation/info")
+                .then(r => r.data)
+}
+
 export async function getAssignedPapers(): Promise<PaperMetadata[]> {
     return axios.get("/api/annotation/allocation/metadata")
                 .then(r => r.data)
