@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import List
 
 import click
 from click import UsageError, BadArgumentUsage
@@ -56,8 +56,26 @@ class COCOBuilder:
         "id": id, "bbox": bbox, "category_id": category_id, "image_id": image_id, "area": area
     })
 
-    def __init__(self, categories, save_path):
+    def __init__(self, categories: List, save_path: str):
+        """COCOBuilder generates the coco-format dataset based on 
+        source annotation files. 
 
+        It will create a COCO-format annotation json file for every
+        annotated page and convert all the labeled pdf pages into 
+        images, which is stored in `<save_path>/images`. 
+
+        Args:
+            categories (List): 
+                All the labeling categories in the dataset
+            save_path (str): 
+                The folder for saving all the annotation files. 
+
+        Examples::
+            >>> anno_files = AnnotationFiles(**configs) # Initialize anno_files based on configs
+            >>> coco_builder = COCOBuilder(["title", "abstract"], "export_path")
+            >>> coco_builder.build_annotations(anno_files)
+            >>> coco_builder.export()
+        """
         # Create Paths
         self.save_path = save_path
         self.save_path_image = f"{self.save_path}/images"
@@ -172,12 +190,23 @@ class COCOBuilder:
 
 class LabelingConfiguration:
 
-    def __init__(self, config):
+    def __init__(self, config: click.File):
+        """LabelingConfiguration handles parsing the configuration file.
+
+        Args:
+            config (click.File): The config file handle. 
+        """
         self.config = json.load(config)
 
     @property
     def categories(self):
+        """Returns all labeling category names in the config file."
+        """
         return [l['text'] for l in self.config['labels']]
+
+    @property
+    def relations(self):
+        raise NotImplementedError
 
 
 class AnnotationFiles:
@@ -185,7 +214,21 @@ class AnnotationFiles:
     DEVELOPMENT_USER = "development_user"
 
     def __init__(self, labeling_folder: str, annotator: str = None, enforce_all: bool = True):
+        """AnnotationFiles is an iterator for selected annotation files 
+        given the selected annotators and configurations. 
 
+        Args:
+            labeling_folder (str): 
+                The folder to save the pdf annotation files, e.g.,
+                `./skiff_files/apps/pawls/papers`. 
+            annotator (str, optional): 
+                The name of the annotator.
+                If not set, then changed to the default user 
+                `AnnotationFiles.DEVELOPMENT_USER`.
+            enforce_all (bool, optional): 
+                Whether output unfinished annotations of the given user. 
+                Defaults to True.
+        """
         self.labeling_folder = labeling_folder
 
         if annotator is None:
@@ -261,7 +304,7 @@ def export(
     all: bool = False,
 ):
     """
-    Export the COCO annotations for a project.
+    Export the COCO annotations for an annotation project.
 
     To export all annotations of a project of the default annotator, use:
         `pawls export <labeling_folder> <labeling_config> <output_path>`
