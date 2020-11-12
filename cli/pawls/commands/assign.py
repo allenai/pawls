@@ -7,6 +7,14 @@ import json
 import glob
 import re
 
+from enum import IntEnum
+
+
+class LabelingStatus(IntEnum):
+    NONE       = 1
+    INPROGRESS = 2
+    FINISHED   = 3
+
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
@@ -95,7 +103,7 @@ def assign(
             pdf_status[sha] = {
                 "annotations": 0,
                 "relations": 0,
-                "status": "INPROGRESS",
+                "status": LabelingStatus.NONE,
                 "comments": "",
                 "completed_at": None,
             }
