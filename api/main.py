@@ -106,9 +106,7 @@ async def get_pdf(sha: str):
 
 @app.post("/api/doc/{sha}/status")
 def set_pdf_status(
-    sha: str,
-    status: PaperStatus,
-    x_auth_request_email: str = Header(None)
+    sha: str, status: PaperStatus, x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
     if user is None:
@@ -116,13 +114,7 @@ def set_pdf_status(
 
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
-    if not exists and IN_PRODUCTION == "dev":
-        with open(status_path, "w+") as new:
-            blob = {
-                sha: PaperStatus.empty() for sha in all_pdf_shas()
-            }
-            json.dump(jsonable_encoder(blob), new)
-    elif not exists:
+    if not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
     with open(status_path, "r+") as st:
@@ -130,17 +122,19 @@ def set_pdf_status(
         status_json[sha] = jsonable_encoder(status)
         st.seek(0)
         json.dump(status_json, st)
+        st.truncate()
 
 
 @app.get("/api/doc/{sha}/annotations")
 def get_annotations(
-    sha: str,
-    x_auth_request_email: str = Header(None)
+    sha: str, x_auth_request_email: str = Header(None)
 ) -> PdfAnnotation:
     user = get_user_from_header(x_auth_request_email)
     if user is None:
         raise HTTPException(403, "Invalid user email header.")
-    annotations = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
+    annotations = os.path.join(
+        configuration.output_directory, sha, f"{user}_annotations.json"
+    )
     exists = os.path.exists(annotations)
 
     if exists:
@@ -154,7 +148,7 @@ def save_annotations(
     sha: str,
     annotations: List[Annotation],
     relations: List[RelationGroup],
-    x_auth_request_email: str = Header(None)
+    x_auth_request_email: str = Header(None),
 ):
     """
     sha: str
@@ -172,14 +166,16 @@ def save_annotations(
     user = get_user_from_header(x_auth_request_email)
     if user is None:
         raise HTTPException(403, "Invalid user email header.")
-    annotations_path = os.path.join(configuration.output_directory, sha, f"{user}_annotations.json")
+    annotations_path = os.path.join(
+        configuration.output_directory, sha, f"{user}_annotations.json"
+    )
     json_annotations = [jsonable_encoder(a) for a in annotations]
     json_relations = [jsonable_encoder(r) for r in relations]
 
-    json.dump({
-        "annotations": json_annotations,
-        "relations": json_relations
-    }, open(annotations_path, "w+"))
+    json.dump(
+        {"annotations": json_annotations, "relations": json_relations},
+        open(annotations_path, "w+"),
+    )
     return {}
 
 
@@ -275,22 +271,19 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     if user is None:
         raise HTTPException(403, "Invalid user email header.")
 
-    status_dir_exists = os.path.exists(os.path.join(configuration.output_directory, "status"))
-    if user == DEVELOPMENT_USER or not status_dir_exists:
-        all_pdfs = all_pdf_shas()
-        response = []
-        for sha in all_pdfs:
-            response.append(
-                PaperInfo(
-                    metadata=PaperMetadata(**get_metadata(sha)),
-                    status=PaperStatus.empty(),
-                    sha=sha
-                )
-            )
-        return response
-
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    if not os.path.exists(status_path):
+    exists = os.path.exists(status_path)
+
+    # HACK: This if statement deals with the fact that it's annoying to
+    # have to explicitly assign development_user annotators.
+    # Instead we just create it on the fly if it's not there,
+    # meaning this will get run once only.
+    if not exists and IN_PRODUCTION == "dev":
+        with open(status_path, "w+") as new:
+            blob = {sha: PaperStatus.empty() for sha in all_pdf_shas()}
+            json.dump(jsonable_encoder(blob), new)
+
+    elif not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
     status_json = json.load(open(status_path))
@@ -299,11 +292,11 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
 
     for sha, status in status_json.items():
         response.append(
-                PaperInfo(
-                    metadata=PaperMetadata(**get_metadata(sha)),
-                    status=PaperStatus(**status),
-                    sha=sha
-                )
+            PaperInfo(
+                metadata=PaperMetadata(**get_metadata(sha)),
+                status=PaperStatus(**status),
+                sha=sha,
+            )
         )
 
     return response

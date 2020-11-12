@@ -24,9 +24,9 @@ class PaperStatus(BaseModel):
         return PaperStatus(
             annotations=0,
             relations=0,
-            status="BLANK",
+            status="INPROGRESS",
             comments="",
-            completedAt=None
+            completedAt=None,
         )
 
 
