@@ -8,6 +8,166 @@ import glob
 import re
 from loguru import logger
 from glob import glob
+from tqdm import tqdm
+from collections import OrderedDict
+from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfinterp import resolve1
+from pdf2image import convert_from_path
+
+from pawls.commands.assign import LabelingStatus
+
+
+def _load_json(filename):
+    with open(filename, 'r') as fp:
+        return json.load(fp)
+
+
+def _convert_bounds_to_coco_bbox(bounds):
+    x1, y1, x2, y2 = bounds["left"], bounds["top"], bounds["right"], bounds["bottom"]
+    return x1, y1, x2-x1, y2-y1
+
+
+def _get_pdf_pages_and_sizes(filename):
+    """Ref https://stackoverflow.com/a/47686921
+    """
+    with open(filename, 'rb') as fp:
+        parser = PDFParser(fp)
+        document = PDFDocument(parser)
+        num_pages = resolve1(document.catalog['Pages'])['Count']
+        page_sizes = [(int(page.mediabox[2]), int(page.mediabox[3]))
+                      for page in PDFPage.create_pages(document)]
+        return num_pages, page_sizes
+
+
+class COCOBuilder:
+
+    CATEGORY_TEMPLATE = staticmethod(lambda id, category, supercategory=None: {
+        "supercategory": supercategory, "id": id, "name": category
+    })
+    PAPER_TEMPLATE = staticmethod(lambda id, paper_sha, year=None, title=None, pages=None: {
+        "id": id, "paper_sha": paper_sha, "year": year, "title": title, "pages": pages
+    })
+    IMAGE_TEMPLATE = staticmethod(lambda id, file_name, height, width, paper_id, page_number: {
+        "id": id, "file_name": file_name, "height": height, "width": width, "paper_id": paper_id, "page_number": page_number
+    })
+    ANNO_TEMPLATE = staticmethod(lambda id, bbox, category_id, image_id, area: {
+        "id": id, "bbox": bbox, "category_id": category_id, "image_id": image_id, "area": area
+    })
+
+    def __init__(self, categories, save_path):
+
+        # Create Paths
+        self.save_path = save_path
+        self.save_path_image = f"{self.save_path}/images"
+        os.makedirs(self.save_path, exist_ok=True)
+        os.makedirs(self.save_path_image, exist_ok=True)
+
+        # Internal COCO information storage
+        self._categories = self._create_coco_categories(categories)
+        self._name2catid = {ele["name"]: ele["id"] for ele in self._categories}
+        self._images = []
+        self._papers = []
+        self._annotations = []
+
+    def _create_pdf_page_image_filename(self, paper_sha, page_id):
+        return f"{paper_sha}_{page_id}.jpg"
+
+    def _create_coco_categories(self, categories):
+        return [
+            self.CATEGORY_TEMPLATE(idx, category)
+            for idx, category in enumerate(categories)
+        ]
+
+    def add_paper(self, paper_sha, pdf_path, metadata_path, annotation_path):
+
+        paper_metadata = _load_json(metadata_path)
+        assert paper_metadata["sha"] == paper_sha
+
+        num_pages, page_sizes = _get_pdf_pages_and_sizes(pdf_path)
+
+        # Add paper information
+        paper_id = len(self._papers)  # Start from zero
+        paper_info = self.PAPER_TEMPLATE(
+            paper_id,
+            paper_sha,
+            paper_metadata.get("year"),
+            paper_metadata.get("title"),
+            pages=num_pages
+        )
+
+        # Add individual page images and annotations
+        current_images = OrderedDict()
+        current_annotations = []
+        previous_image_id = len(self._images)  # Start from zero
+        previous_anno_id = len(self._annotations)  # Start from zero
+
+        pdf_page_images = convert_from_path(pdf_path)
+        pawls_annotations = _load_json(annotation_path)
+        pawls_annotations = pawls_annotations['annotations']
+        for anno in pawls_annotations:
+            page_id = anno['page']
+
+            image_filename = self._create_pdf_page_image_filename(
+                paper_sha, page_id)
+            width, height = page_sizes[anno['page']]
+
+            if page_id not in current_images:
+                current_images[anno['page']] = \
+                    self.IMAGE_TEMPLATE(
+                        id=previous_image_id + len(current_images),
+                        file_name=image_filename,
+                        height=height,
+                        width=width,
+                        paper_id=paper_id,
+                        page_number=anno['page'],
+                )
+
+            if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
+                pdf_page_images[anno['page']].resize((width, height)).save(
+                    f"{self.save_path_image}/{image_filename}")
+
+            page_image_id = current_images[anno['page']]['id']
+            x, y, w, h = _convert_bounds_to_coco_bbox(anno['bounds'])
+
+            current_annotations.append(
+                self.ANNO_TEMPLATE(
+                    id=previous_anno_id + len(current_annotations),
+                    bbox=[x, y, w, h],
+                    category_id=self._name2catid[anno['label']['text']],
+                    image_id=page_image_id,
+                    area=w*h,
+                )
+            )
+
+        # After all information collection finishes,
+        # add the data to the object storage
+        self._papers.append(paper_info)
+        self._images.extend(list(current_images.values()))
+        self._annotations.extend(current_annotations)
+
+    def create_combined_json(self):
+        return {
+            "papers": self._papers,
+            "images": self._images,
+            "annotations": self._annotations,
+            "categories": self._categories,
+        }
+
+    def build_annotations(self, anno_files):
+
+        pbar = tqdm(anno_files)
+        for anno_file in pbar:
+            pbar.set_description(
+                f"Working on {anno_file['paper_sha'][:10]}...")
+            self.add_paper(**anno_file)
+
+    def export(self, annotation_name="annotations.json"):
+
+        with open(f"{self.save_path}/{annotation_name}", "w") as fp:
+
+            json.dump(self.create_combined_json(), fp)
 
 
 class LabelingConfiguration:
@@ -101,7 +261,7 @@ def export(
     all: bool = False,
 ):
     """
-    Export the annotations for a project.
+    Export the COCO annotations for a project.
 
     To export all annotations of a project of the default annotator, use:
         `pawls export <labeling_folder> <labeling_config> <output_path>`
@@ -113,5 +273,12 @@ def export(
         `pawls export <labeling_folder> <labeling_config> <output_path> -u markn --all`.
     """
 
+    config = LabelingConfiguration(config)
+    anno_files = AnnotationFiles(path, annotator, all)
+    coco_builder = COCOBuilder(config.categories, output)
 
-    pass
+    coco_builder.build_annotations(anno_files)
+    coco_builder.export()
+
+    logger.info(
+        f"Successfully exported {len(anno_files)} annotations to {output}.")

@@ -28,6 +28,8 @@ setup(
         "requests",
         "boto3",
         "tqdm",
+        "pdf2image==1.14.0",
+        "pdfminer",
         "loguru",
     ],
     python_requires=">=3.6",
