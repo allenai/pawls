@@ -33,15 +33,11 @@ export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps
 }
 
 export const Hoverable = styled.div(({ theme }) => `
-    background: ${theme.color.N9};
     padding: 4px 0;
     border-radius: 2px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) min-content min-content;
 
-    :hover {
-        background: ${theme.color.N8}
-    }
 `);
 
 

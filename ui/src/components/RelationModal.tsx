@@ -66,8 +66,6 @@ export const RelationModal = ({visible, onClick, onCancel, source, label, pages}
                 />
             )}
         />
-
-
     </Modal>
     )
 }
