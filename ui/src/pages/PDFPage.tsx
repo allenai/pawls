@@ -277,7 +277,7 @@ export const PDFPage = () => {
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
                                     <AssignedPaperList papers={assignedPaperInfo}/>
-                                    <Annotations onSave={onSave} annotations={pdfAnnotations}/>
+                                    <Annotations onSave={onSave} annotations={pdfAnnotations} pages={pages}/>
                                     <Relations relations={pdfRelations}/>
                                     <Labels/>
                                 </SidebarContainer>
