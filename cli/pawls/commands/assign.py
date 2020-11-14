@@ -11,9 +11,8 @@ from enum import IntEnum
 
 
 class LabelingStatus(IntEnum):
-    NONE       = 1
-    INPROGRESS = 2
-    FINISHED   = 3
+    INPROGRESS = 1
+    FINISHED   = 2
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -103,7 +102,7 @@ def assign(
             pdf_status[sha] = {
                 "annotations": 0,
                 "relations": 0,
-                "status": LabelingStatus.NONE,
+                "status": LabelingStatus.INPROGRESS,
                 "comments": "",
                 "completed_at": None,
             }
