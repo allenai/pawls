@@ -2,13 +2,13 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, notification } from '@allenai/varnish';
+import { Result, Progress, notification, message } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, Status } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -63,6 +63,14 @@ export const PDFPage = () => {
     }, [ setViewState ]);
 
     const theme = useContext(ThemeContext);
+
+    const onStatusChange = (status: Status) => {
+        const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
+        setPaperStatus(sha, {
+            ...current.status,
+            status: status
+        })
+    }
 
     const onSave = () => {
 
@@ -277,7 +285,12 @@ export const PDFPage = () => {
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
                                     <AssignedPaperList papers={assignedPaperInfo}/>
-                                    <Annotations onSave={onSave} annotations={pdfAnnotations} pages={pages}/>
+                                    <Annotations 
+                                        onSave={onSave}
+                                        onStatusChange={onStatusChange}
+                                        annotations={pdfAnnotations}
+                                        pages={pages}
+                                    />
                                     <Relations relations={pdfRelations}/>
                                     <Labels/>
                                 </SidebarContainer>

@@ -22,10 +22,11 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
 
     const [showFinished, setShowFinished] = useState<boolean>(false)
 
-    const finished = papers.filter(p => p.status.status === Status.FINISHED)
     const unfinished = papers.filter(p => p.status.status !== Status.FINISHED)
-    const papersToShow = showFinished ? finished: unfinished
-    
+    const finished = papers.filter(p => p.status.status === Status.FINISHED)
+    const ordered = unfinished.concat(finished)
+    const papersToShow = showFinished ? ordered: unfinished
+
     return (
         <SidebarItem>
             <SidebarItemTitle>

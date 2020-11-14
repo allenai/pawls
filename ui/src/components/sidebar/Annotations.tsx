@@ -1,36 +1,53 @@
 
 import React from 'react';
+import styled from "styled-components"
 import { SidebarItem, SidebarItemTitle } from "./common";
-import { Button } from '@allenai/varnish';
+import { Button, Switch } from '@allenai/varnish';
 import { PdfAnnotations, PDFPageInfo } from "../../context";
 
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
+import { Status } from '../../api';
 
 interface AnnotationsProps {
     onSave: () => void
+    onStatusChange: (s: Status) => void
     annotations: PdfAnnotations
     pages: PDFPageInfo[]
 }
 
 
-export const Annotations = ({onSave, annotations, pages}: AnnotationsProps) => {
+export const Annotations = ({onSave, onStatusChange, annotations, pages}: AnnotationsProps) => {
 
     const flatAnnotations = annotations.flat()
     return (
         <SidebarItem>
             <SidebarItemTitle>
                 Annotations
-                <Button
+                <SmallButton
                     type="primary"
                     size="small"
                     onClick={onSave}
-                    style={{marginLeft: "8px"}}
                 >
                     Save
-                </Button>
+                </SmallButton>
             </SidebarItemTitle>
+            <ToggleDescription>
+                Mark as Finished:
+            </ToggleDescription>
+            <Toggle
+                onChange={e => {
+                    if (e) {
+                        onStatusChange(Status.FINISHED)
+                    } else {
+                        onStatusChange(Status.INPROGRESS)
+                    }
+                }}
+                checkedChildren={<CheckOutlined />}
+                unCheckedChildren={<CloseOutlined />}
+            />
             {flatAnnotations.length === 0 ? (
-                <>None</>
+                <>No Annotations Yet :(</>
             ) : (
                 <div>
                     {flatAnnotations.flatMap((annotation, i) => (
@@ -47,3 +64,19 @@ export const Annotations = ({onSave, annotations, pages}: AnnotationsProps) => {
         </SidebarItem>
     );
 }
+
+
+const SmallButton = styled(Button)`
+    padding: 2px 4px;
+    height: auto;
+    font-size: 16px;
+    margin-left: 10px;
+`
+
+const Toggle = styled(Switch)`
+  margin: 4px;
+`
+const ToggleDescription = styled.span`
+    font-size: 14px;
+    color: ${({ theme }) => theme.color.N6};
+`
