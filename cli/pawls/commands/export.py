@@ -6,7 +6,6 @@ from click import UsageError, BadArgumentUsage
 import json
 import glob
 import re
-from loguru import logger
 from glob import glob
 from tqdm import tqdm
 from collections import OrderedDict
@@ -250,8 +249,8 @@ class AnnotationFiles:
 
         user_assignment_file = f"{self.labeling_folder}/status/{self.annotator}.json"
         if not os.path.exists(user_assignment_file):
-            logger.warning(
-                f"The user annotation file does not exist: {user_assignment_file}")
+            print("Warning:",
+                  f"The user annotation file does not exist: {user_assignment_file}")
             return self.get_all_annotation_files()
 
         user_assignment = _load_json(user_assignment_file)
@@ -323,5 +322,4 @@ def export(
     coco_builder.build_annotations(anno_files)
     coco_builder.export()
 
-    logger.info(
-        f"Successfully exported {len(anno_files)} annotations to {output}.")
+    print(f"Successfully exported {len(anno_files)} annotations to {output}.")

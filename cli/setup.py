@@ -29,8 +29,7 @@ setup(
         "boto3",
         "tqdm",
         "pdf2image==1.14.0",
-        "pdfminer",
-        "loguru",
+        "pdfminer"
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},
