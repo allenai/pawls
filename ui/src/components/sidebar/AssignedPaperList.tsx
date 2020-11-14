@@ -1,21 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
+import styled from "styled-components";
 import { SidebarItem, SidebarItemTitle, Contrast } from "./common";
-import { PaperInfo } from "../../api";
+import { PaperInfo, Status } from "../../api";
+import { Switch } from "@allenai/varnish";
+
+import { FileDoneOutlined, CloseOutlined } from "@ant-design/icons";
+
+
+const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
+
+    return (
+        <Contrast key={paper.metadata.sha}>
+            <a href={`/pdf/${paper.metadata.sha}`}>
+                    {paper.metadata.title}
+            </a>
+        </Contrast>
+    )
+}
 
 export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
+
+    const [showFinished, setShowFinished] = useState<boolean>(false)
+
+    const finished = papers.filter(p => p.status.status === Status.FINISHED)
+    const unfinished = papers.filter(p => p.status.status !== Status.FINISHED)
+    const papersToShow = showFinished ? finished: unfinished
+    
     return (
         <SidebarItem>
             <SidebarItemTitle>
                 Papers
             </SidebarItemTitle>
+            <ToggleDescription>
+                Show Finished Papers:
+            </ToggleDescription>
+            <Toggle
+                onChange={() => setShowFinished(!showFinished)}
+                checkedChildren={<FileDoneOutlined />}
+                unCheckedChildren={<CloseOutlined />}
+            />
             {papers.length !== 0 ? (
                 <>
-                    {papers.map((info) => (
-                        <Contrast key={info.metadata.sha}>
-                            <a href={`/pdf/${info.metadata.sha}`}>
-                                    {info.metadata.title}
-                            </a>
-                        </Contrast>
+                    {papersToShow.map((info) => (
+                        <AssignedPaperRow paper={info}/>
                     ))}
                 </>
             ) : (
@@ -24,3 +51,12 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
         </SidebarItem>
     )
 }
+
+const Toggle = styled(Switch)`
+  margin: 4px;
+`
+const ToggleDescription = styled.span`
+    font-size: 14px;
+    color: ${({ theme }) => theme.color.N6};
+
+`
