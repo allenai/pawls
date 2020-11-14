@@ -2,7 +2,7 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, notification, message } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
@@ -73,9 +73,9 @@ export const PDFPage = () => {
         }
         setPaperStatus(sha, newStatus).then(() => {
             if (status === Status.FINISHED){
-                message.success("Marked paper as Finished!")
+                notification.success({"message": "Marked paper as Finished!"})
             } else {
-                message.info("Marked paper as In Progress.")
+                notification.info({"message":"Marked paper as In Progress."})
             }
             
             const newInfo = {

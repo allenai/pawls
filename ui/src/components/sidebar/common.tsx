@@ -45,6 +45,7 @@ export const Contrast = styled.div`
   a[href] {
     ${Link.contrastLinkColorStyles()};
   }
+  line-height: 1;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;

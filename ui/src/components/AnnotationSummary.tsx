@@ -17,22 +17,22 @@ export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps
             .join(" ")
 
     return (
-        <Hoverable>
+        <PaddedRow>
             <Overflow>
                 {text}
             </Overflow>
-                <SmallTag color={annotation.label.color}>
-                    {annotation.label.text}
-                </SmallTag>
-                <SmallTag color="grey">
-                    Page {pageInfo.page.pageNumber}
-                </SmallTag>
-        </Hoverable>
+            <SmallTag color={annotation.label.color}>
+                {annotation.label.text}
+            </SmallTag>
+            <SmallTag color="grey">
+                Page {pageInfo.page.pageNumber}
+            </SmallTag>
+        </PaddedRow>
     );
 
 }
 
-export const Hoverable = styled.div(({ theme }) => `
+const PaddedRow = styled.div(({ theme }) => `
     padding: 4px 0;
     border-radius: 2px;
     display: grid;
