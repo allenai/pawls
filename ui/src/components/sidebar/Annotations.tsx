@@ -46,21 +46,23 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages}: Annota
                 checkedChildren={<CheckOutlined />}
                 unCheckedChildren={<CloseOutlined />}
             />
-            {flatAnnotations.length === 0 ? (
-                <>No Annotations Yet :(</>
-            ) : (
-                <div>
-                    {flatAnnotations.flatMap((annotation, i) => (
+            <div>
+                {flatAnnotations.length === 0 ? (
+                    <>No Annotations Yet :(</>
+                ) : (
+                    <div>
+                        {flatAnnotations.flatMap((annotation, i) => (
 
-                        <AnnotationSummary 
-                            annotation={annotation}
-                            pageInfo={pages[annotation.page]}
-                        />
+                            <AnnotationSummary 
+                                annotation={annotation}
+                                pageInfo={pages[annotation.page]}
+                            />
 
 
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </div>
         </SidebarItem>
     );
 }

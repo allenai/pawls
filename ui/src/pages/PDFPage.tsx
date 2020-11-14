@@ -65,10 +65,31 @@ export const PDFPage = () => {
     const theme = useContext(ThemeContext);
 
     const onStatusChange = (status: Status) => {
-        const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-        setPaperStatus(sha, {
+        const idx = assignedPaperInfo.findIndex(x => x.sha === sha)
+        const current = assignedPaperInfo[idx]
+        const newStatus = {
             ...current.status,
             status: status
+        }
+        setPaperStatus(sha, newStatus).then(() => {
+            if (status === Status.FINISHED){
+                message.success("Marked paper as Finished!")
+            } else {
+                message.info("Marked paper as In Progress.")
+            }
+            
+            const newInfo = {
+                metadata: current.metadata,
+                status: newStatus,
+                sha: current.sha
+            }
+            setAssignedPaperInfo([
+                ...assignedPaperInfo.slice(0, idx),
+                newInfo,
+                ...assignedPaperInfo.slice(idx + 1)
+
+            ])
+
         })
     }
 
