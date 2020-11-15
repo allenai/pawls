@@ -8,7 +8,6 @@ import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled } from "@a
 
 
 const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
-
     return (
         <PaddedRow>
 
@@ -54,7 +53,7 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
             {papers.length !== 0 ? (
                 <>
                     {papersToShow.map((info) => (
-                        <AssignedPaperRow paper={info}/>
+                        <AssignedPaperRow key={info.sha} paper={info}/>
                     ))}
                 </>
             ) : (

@@ -1,7 +1,7 @@
-import React, { useContext, useState, useEffect} from 'react';
+import React, { useContext, useState} from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
-import { Bounds, TokenId, PDFPageInfo, AnnotationStore } from '../context';
+import { Bounds, TokenId, PDFPageInfo } from '../context';
 import { Label } from '../api'
 import { CloseCircleFilled } from '@ant-design/icons';
 

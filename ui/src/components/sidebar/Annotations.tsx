@@ -1,8 +1,8 @@
 
 import React from 'react';
 import styled from "styled-components"
-import { SidebarItem, SidebarItemTitle } from "./common";
-import { Button, Switch } from '@allenai/varnish';
+import { SidebarItem, SidebarItemTitle, SmallButton} from "./common";
+import { Switch } from '@allenai/varnish';
 import { PdfAnnotations, PDFPageInfo } from "../../context";
 
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
@@ -52,13 +52,11 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages}: Annota
                 ) : (
                     <div>
                         {flatAnnotations.flatMap((annotation, i) => (
-
                             <AnnotationSummary 
+                                key={annotation.id}
                                 annotation={annotation}
                                 pageInfo={pages[annotation.page]}
                             />
-
-
                         ))}
                     </div>
                 )}
@@ -66,14 +64,6 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages}: Annota
         </SidebarItem>
     );
 }
-
-
-const SmallButton = styled(Button)`
-    padding: 2px 4px;
-    height: auto;
-    font-size: 16px;
-    margin-left: 10px;
-`
 
 const Toggle = styled(Switch)`
   margin: 4px;

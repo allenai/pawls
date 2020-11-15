@@ -49,6 +49,7 @@ const SmallTag = styled(Tag)`
     line-height: 1;
 `
 const Overflow = styled.span`
+    line-height: 1;
     font-size: 12px;
     white-space: nowrap;
     text-overflow: ellipsis;

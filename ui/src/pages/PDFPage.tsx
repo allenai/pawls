@@ -7,9 +7,10 @@ import { Result, Progress, notification } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
-import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
+import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, Status } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
+
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -64,6 +65,32 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
+
+    // TODO(Mark): De-dupe these functions, they do basically
+    // the same thing.
+    const onCommentSave = (comment: string) => {
+        console.log(comment)
+        const idx = assignedPaperInfo.findIndex(x => x.sha === sha)
+        const current = assignedPaperInfo[idx]
+        const newStatus = {
+            ...current.status,
+            comments: comment
+        }
+        setPaperStatus(sha, newStatus).then(() => {
+            const newInfo = {
+                metadata: current.metadata,
+                status: newStatus,
+                sha: current.sha
+            }
+            setAssignedPaperInfo([
+                ...assignedPaperInfo.slice(0, idx),
+                newInfo,
+                ...assignedPaperInfo.slice(idx + 1)
+            ])               
+        })
+
+    }
+
     const onStatusChange = (status: Status) => {
         const idx = assignedPaperInfo.findIndex(x => x.sha === sha)
         const current = assignedPaperInfo[idx]
@@ -96,7 +123,6 @@ export const PDFPage = () => {
     const onSave = () => {
 
         if (pdfAnnotations) {
-
             saveAnnotations(sha, pdfAnnotations.flat(), pdfRelations).then(() => {
                 notification.success({message: "Saved Annotations!"})
             }).catch((err) => {
@@ -150,7 +176,7 @@ export const PDFPage = () => {
         const onShiftUp = (e: KeyboardEvent) => {
 
             // Shift key up
-            if (e.keyCode === 16) {
+            if (e.keyCode === 16 && selectedAnnotations.length !== 0) {
                 setRelationModalVisible(true)
             }
         }
@@ -305,6 +331,7 @@ export const PDFPage = () => {
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
+                                    <Labels/>
                                     <AssignedPaperList papers={assignedPaperInfo}/>
                                     <Annotations 
                                         onSave={onSave}
@@ -313,7 +340,7 @@ export const PDFPage = () => {
                                         pages={pages}
                                     />
                                     <Relations relations={pdfRelations}/>
-                                    <Labels/>
+                                    <Comment onSave={onCommentSave}/>
                                 </SidebarContainer>
                                 <PDFContainer>
                                     {activeRelationLabel ? 
