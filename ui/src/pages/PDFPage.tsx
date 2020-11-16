@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, Status } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
 
 
@@ -43,6 +43,7 @@ export const PDFPage = () => {
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
     const [ assignedPaperInfo, setAssignedPaperInfo] = useState<PaperInfo[]>([])
+    const [ activePaperInfo, setActivePaperInfo] = useState<PaperInfo>()
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
     const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
@@ -66,58 +67,25 @@ export const PDFPage = () => {
     const theme = useContext(ThemeContext);
 
 
-    // TODO(Mark): De-dupe these functions, they do basically
-    // the same thing.
-    const onCommentSave = (comment: string) => {
-        console.log(comment)
-        const idx = assignedPaperInfo.findIndex(x => x.sha === sha)
-        const current = assignedPaperInfo[idx]
-        const newStatus = {
-            ...current.status,
-            comments: comment
+    const onStatusChange = (status: PaperStatus, callback: () => void) => {
+        if (activePaperInfo) {
+            const idx = assignedPaperInfo.indexOf(activePaperInfo)
+
+            setPaperStatus(sha, status).then(() => {
+                const newInfo = {
+                    metadata: activePaperInfo.metadata,
+                    status: status,
+                    sha: activePaperInfo.sha
+                }
+                setAssignedPaperInfo([
+                    ...assignedPaperInfo.slice(0, idx),
+                    newInfo,
+                    ...assignedPaperInfo.slice(idx + 1)
+
+                ])
+                callback()
+            })
         }
-        setPaperStatus(sha, newStatus).then(() => {
-            const newInfo = {
-                metadata: current.metadata,
-                status: newStatus,
-                sha: current.sha
-            }
-            setAssignedPaperInfo([
-                ...assignedPaperInfo.slice(0, idx),
-                newInfo,
-                ...assignedPaperInfo.slice(idx + 1)
-            ])               
-        })
-
-    }
-
-    const onStatusChange = (status: Status) => {
-        const idx = assignedPaperInfo.findIndex(x => x.sha === sha)
-        const current = assignedPaperInfo[idx]
-        const newStatus = {
-            ...current.status,
-            status: status
-        }
-        setPaperStatus(sha, newStatus).then(() => {
-            if (status === Status.FINISHED){
-                notification.success({"message": "Marked paper as Finished!"})
-            } else {
-                notification.info({"message":"Marked paper as In Progress."})
-            }
-            
-            const newInfo = {
-                metadata: current.metadata,
-                status: newStatus,
-                sha: current.sha
-            }
-            setAssignedPaperInfo([
-                ...assignedPaperInfo.slice(0, idx),
-                newInfo,
-                ...assignedPaperInfo.slice(idx + 1)
-
-            ])
-
-        })
     }
 
     const onSave = () => {
@@ -192,6 +160,10 @@ export const PDFPage = () => {
     useEffect( () => {
         getAllocatedPaperInfo().then((paperInfo) => {
             setAssignedPaperInfo(paperInfo)
+            setActivePaperInfo(
+                paperInfo.filter(p => p.sha === sha)[0]
+            )
+
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
             console.log(err)
@@ -333,14 +305,22 @@ export const PDFPage = () => {
                                     <Header/>
                                     <Labels/>
                                     <AssignedPaperList papers={assignedPaperInfo}/>
+                                    {activePaperInfo ?
                                     <Annotations 
                                         onSave={onSave}
                                         onStatusChange={onStatusChange}
                                         annotations={pdfAnnotations}
                                         pages={pages}
-                                    />
+                                        paperStatus={activePaperInfo.status}
+                                    /> : null}
                                     <Relations relations={pdfRelations}/>
-                                    <Comment onSave={onCommentSave}/>
+                                    {activePaperInfo ?
+                                        <Comment
+                                            onStatusChange={onStatusChange}
+                                            paperStatus={activePaperInfo.status}
+                                        />
+                                        : null
+                                    }
                                 </SidebarContainer>
                                 <PDFContainer>
                                     {activeRelationLabel ? 

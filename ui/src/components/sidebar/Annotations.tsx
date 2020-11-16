@@ -2,24 +2,44 @@
 import React from 'react';
 import styled from "styled-components"
 import { SidebarItem, SidebarItemTitle, SmallButton} from "./common";
-import { Switch } from '@allenai/varnish';
+import { Switch, notification } from '@allenai/varnish';
 import { PdfAnnotations, PDFPageInfo } from "../../context";
 
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
-import { Status } from '../../api';
+import { PaperStatus, Status } from '../../api';
 
 interface AnnotationsProps {
     onSave: () => void
-    onStatusChange: (s: Status) => void
+    onStatusChange: (s: PaperStatus, c: () => void) => void
     annotations: PdfAnnotations
     pages: PDFPageInfo[]
+    paperStatus: PaperStatus
 }
 
 
-export const Annotations = ({onSave, onStatusChange, annotations, pages}: AnnotationsProps) => {
+export const Annotations = ({onSave, onStatusChange, annotations, pages, paperStatus}: AnnotationsProps) => {
 
     const flatAnnotations = annotations.flat()
+
+    const onChange = (s: Status) => {
+
+        const newPaperStatus = {
+            ...paperStatus,
+            status: s
+        }
+
+        onStatusChange(newPaperStatus, () => {
+            if (s === Status.INPROGRESS) {
+                notification.info({message: "Marked paper as In Progress."})
+            } else {
+                notification.success({message: "Marked paper as Finshed!"})
+            }
+
+        })
+
+    }
+
     return (
         <SidebarItem>
             <SidebarItemTitle>
@@ -38,9 +58,9 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages}: Annota
             <Toggle
                 onChange={e => {
                     if (e) {
-                        onStatusChange(Status.FINISHED)
+                        onChange(Status.FINISHED)
                     } else {
-                        onStatusChange(Status.INPROGRESS)
+                        onChange(Status.INPROGRESS)
                     }
                 }}
                 checkedChildren={<CheckOutlined />}

@@ -80,8 +80,7 @@ const DarkEditIcon = styled(EditFilled)`
 const PaddedRow = styled.div(({ theme }) => `
     padding: 4px 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) min-content min-content min-content;
-
+    grid-template-columns: minmax(0, 1fr) min-content minmax(20px, min-content);
 `);
 
 const SmallTag = styled(Tag)`
