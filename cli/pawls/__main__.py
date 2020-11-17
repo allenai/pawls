@@ -18,6 +18,7 @@ subcommands = [
     commands.fetch,
     commands.preprocess,
     commands.assign,
+    commands.export,
 ]
 
 for subcommand in subcommands:

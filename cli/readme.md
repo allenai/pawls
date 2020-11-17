@@ -19,9 +19,44 @@ pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structu
 
 ### Installation
 
-```
-cd pawls/cli
-python setup.py install
-export GITHUB_ACCESS_TOKEN=<password from 1password>
-pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
-```
+1. Install dependencies
+
+    ```bash
+    cd pawls/cli
+    python setup.py install
+    export GITHUB_ACCESS_TOKEN=<password from 1password>
+    pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
+    ```
+
+2. Install poppler, the PDF renderer if you need to export the annotations into a COCO-format Dataset. Please follow the [instructions here](https://github.com/Belval/pdf2image#windows). 
+
+### Usage
+
+1. Download PDF document and metadata based on <PDF_SHA>s into the <SAVE_PATH> (e.g., `skiff_files/apps/pawls/papers` ):
+    ```bash
+    pawls fetch skiff_files/apps/pawls/papers <PDF_SHA>    
+    ```
+2. Process the token information for each PDF document:
+    ```bash
+    pawls preprocess grobid skiff_files/apps/pawls/papers
+    ```
+3. Assign annotation tasks (<PDF_SHA>s) to specific users <user>:
+    ```bash
+    pawls assign ./skiff_files/apps/pawls/papers <user> <PDF_SHA>
+    ```
+4. Export the annotated dataset to the COCO format:
+
+    1. Export all annotations of a project of the default annotator (development_user):
+        ```bash
+        pawls export <labeling_folder> <labeling_config> <output_path>
+        ```
+
+    2. Export only finished annotations of from a given annotator, e.g. markn:
+        ```bash
+        pawls export <labeling_folder> <labeling_config> <output_path> -u markn
+        ```
+
+    3. Export all annotations of from a given annotator: 
+        ```bash
+        pawls export <labeling_folder> <labeling_config> <output_path> -u markn --all
+        ```

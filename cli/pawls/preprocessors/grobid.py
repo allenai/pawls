@@ -5,7 +5,7 @@ from pdfstructure.client.v1 import models
 from pdfstructure.client.v1.api.default_api import DefaultApi
 from pdfstructure.client.v1.configuration import Configuration
 from pdfstructure.client.v1.api_client import ApiClient
-
+from pdfstructure.client.v1.exceptions import ApiException
 
 def fetch_grobid_structure(
     pdf_file: str, grobid_host: str = "http://localhost:8070"
@@ -205,6 +205,11 @@ def process_grobid(
     )
 
     if existing_annotations.tokens and source in existing_annotations.tokens.sources:
-        return
-
-    client.add_annotations(sha, annotations)
+        return True
+    
+    try:
+        client.add_annotations(sha, annotations)
+        return True
+    except ApiException as e:
+        print(f"{sha} could not be downloaded due to {e}")
+        return False
