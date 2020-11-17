@@ -64,7 +64,7 @@ class AnnotationFiles:
 
     DEVELOPMENT_USER = "development_user"
 
-    def __init__(self, labeling_folder: str, annotator: str = None, enforce_all: bool = True):
+    def __init__(self, labeling_folder: str, annotator: str = None, include_unfinished: bool = True):
         """AnnotationFiles is an iterator for selected annotation files 
         given the selected annotators and configurations. 
 
@@ -76,7 +76,7 @@ class AnnotationFiles:
                 The name of the annotator.
                 If not set, then changed to the default user 
                 `AnnotationFiles.DEVELOPMENT_USER`.
-            enforce_all (bool, optional): 
+            include_unfinished (bool, optional): 
                 Whether output unfinished annotations of the given user. 
                 Defaults to True.
         """
@@ -84,12 +84,12 @@ class AnnotationFiles:
 
         if annotator is None:
             self.annotator = self.DEVELOPMENT_USER
-            self.enforce_all = True
+            self.include_unfinished = True
         else:
             self.annotator = annotator
-            self.enforce_all = enforce_all
+            self.include_unfinished = include_unfinished
 
-        if self.enforce_all:
+        if self.include_unfinished:
             self._files = self.get_all_annotation_files()
         else:
             self._files = self.get_finished_annotation_files()
@@ -307,17 +307,17 @@ class COCOBuilder:
     help="Export annotations of the specified annotator.",
 )
 @click.option(
-    "--all",
-    "-a",
+    "--include-unfinished",
+    "-i",
     is_flag=True,
-    help="A flag to export all annotation by the specified annotator.",
+    help="A flag to export all annotation by the specified annotator including unfinished ones.",
 )
 def export(
     path: click.Path,
     config: click.File,
     output: click.Path,
     annotator: str = None,
-    all: bool = False,
+    include_unfinished: bool = False,
 ):
     """
     Export the COCO annotations for an annotation project.
@@ -329,11 +329,11 @@ def export(
         `pawls export <labeling_folder> <labeling_config> <output_path> -u markn`.
 
     To export all annotations of from a given annotator, use:
-        `pawls export <labeling_folder> <labeling_config> <output_path> -u markn --all`.
+        `pawls export <labeling_folder> <labeling_config> <output_path> -u markn --include-unfinished`.
     """
 
     config = LabelingConfiguration(config)
-    anno_files = AnnotationFiles(path, annotator, all)
+    anno_files = AnnotationFiles(path, annotator, include_unfinished)
     coco_builder = COCOBuilder(config.categories, output)
 
     coco_builder.build_annotations(anno_files)
