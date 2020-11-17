@@ -1,14 +1,13 @@
 import os
-from typing import List
-
+import json
+import re
 import click
 from click import UsageError, BadArgumentUsage
-import json
-import glob
-import re
-from glob import glob
-from tqdm import tqdm
 from collections import OrderedDict
+from glob import glob
+from typing import List
+
+from tqdm import tqdm
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
