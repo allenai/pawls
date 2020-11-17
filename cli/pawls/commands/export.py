@@ -64,7 +64,7 @@ class AnnotationFiles:
 
     DEVELOPMENT_USER = "development_user"
 
-    def __init__(self, labeling_folder: str, annotator: str = None, include_unfinished: bool = True):
+    def __init__(self, labeling_folder: str, annotator: str, include_unfinished: bool = True):
         """AnnotationFiles is an iterator for selected annotation files 
         given the selected annotators and configurations. 
 
@@ -82,12 +82,8 @@ class AnnotationFiles:
         """
         self.labeling_folder = labeling_folder
 
-        if annotator is None:
-            self.annotator = self.DEVELOPMENT_USER
-            self.include_unfinished = True
-        else:
-            self.annotator = annotator
-            self.include_unfinished = include_unfinished
+        self.annotator = annotator
+        self.include_unfinished = include_unfinished
 
         if self.include_unfinished:
             self._files = self.get_all_annotation_files()
@@ -129,6 +125,15 @@ class AnnotationFiles:
     def __len__(self):
 
         return len(self._files)
+
+    @staticmethod
+    def get_all_annotators(labeling_folder: str) -> List[str]:
+        """Fetch all annotators in the labeling folder, 
+        including the default DEVELOPMENT_USER.
+        """
+
+        return [AnnotationFiles.DEVELOPMENT_USER] + \
+             [os.path.splitext(e)[0] for e in os.listdir(f"{labeling_folder}/status")]
 
 
 class COCOBuilder:
@@ -303,7 +308,7 @@ class COCOBuilder:
 @click.option(
     "--annotator",
     "-u",
-    type=str,
+    multiple=True,
     help="Export annotations of the specified annotator.",
 )
 @click.option(
@@ -316,27 +321,40 @@ def export(
     path: click.Path,
     config: click.File,
     output: click.Path,
-    annotator: str = None,
+    annotator: List,
     include_unfinished: bool = False,
 ):
     """
     Export the COCO annotations for an annotation project.
 
-    To export all annotations of a project of the default annotator, use:
+    To export all annotations of a project of all annotators, use:
         `pawls export <labeling_folder> <labeling_config> <output_path>`
 
-    To export only finished annotations of from a given annotator, e.g. markn, use:
-        `pawls export <labeling_folder> <labeling_config> <output_path> -u markn`.
+    To export only finished annotations of from specified annotators, e.g. markn and shannons, use:
+        `pawls export <labeling_folder> <labeling_config> <output_path> -u markn -u shannons`.
 
     To export all annotations of from a given annotator, use:
         `pawls export <labeling_folder> <labeling_config> <output_path> -u markn --include-unfinished`.
     """
 
     config = LabelingConfiguration(config)
-    anno_files = AnnotationFiles(path, annotator, include_unfinished)
-    coco_builder = COCOBuilder(config.categories, output)
+    
+    all_annotators = AnnotationFiles.get_all_annotators(path)
+    
+    if len(annotator) == 0:
+        annotator = all_annotators
+        print(f"Export annotations from all available annotators {all_annotators}")
+    else:
+        print(f"Export annotations from annotators {annotator}")
 
-    coco_builder.build_annotations(anno_files)
-    coco_builder.export()
+    for anno in annotator:
 
-    print(f"Successfully exported {len(anno_files)} annotations to {output}.")
+        output_folder = output if len(annotator) == 1 else f"{output}/{anno}"
+
+        anno_files = AnnotationFiles(path, anno, include_unfinished)
+        coco_builder = COCOBuilder(config.categories, output_folder)
+
+        coco_builder.build_annotations(anno_files)
+        coco_builder.export()
+
+        print(f"Successfully exported {len(anno_files)} annotations of annotator {anno} to {output}.")
