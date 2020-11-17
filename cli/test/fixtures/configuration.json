@@ -1,0 +1,31 @@
+{
+    "output_directory": "/skiff_files/apps/pawls/papers/",
+    "labels": [
+        {
+            "text": "Figure Text",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Section Header",
+            "color": "#FFD45D"
+        },
+        {
+            "text": "Method",
+            "color": "#FF9F9E"
+        },
+        {
+            "text": "Task",
+            "color": "#2F85F7"
+        }
+    ],
+    "relations": [
+        {
+            "text": "Caption Of",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Definition",
+            "color": "#FFD45D"
+        }
+    ]
+}
