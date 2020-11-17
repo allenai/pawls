@@ -7,12 +7,12 @@ import json
 import glob
 import re
 
-from enum import IntEnum
+from enum import IntFlag
 
+class LabelingStatus(IntFlag):
+    INPROGRESS = 0
+    FINISHED   = 1
 
-class LabelingStatus(IntEnum):
-    INPROGRESS = 1
-    FINISHED   = 2
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
