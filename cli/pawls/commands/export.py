@@ -5,7 +5,7 @@ import click
 from click import UsageError, BadArgumentUsage
 from collections import OrderedDict
 from glob import glob
-from typing import List
+from typing import List, NamedTuple, Optional, Union
 
 from tqdm import tqdm
 from pdfminer.pdfparser import PDFParser
@@ -41,18 +41,32 @@ def _get_pdf_pages_and_sizes(filename):
 
 class COCOBuilder:
 
-    CATEGORY_TEMPLATE = staticmethod(lambda id, category, supercategory=None: {
-        "supercategory": supercategory, "id": id, "name": category
-    })
-    PAPER_TEMPLATE = staticmethod(lambda id, paper_sha, year=None, title=None, pages=None: {
-        "id": id, "paper_sha": paper_sha, "year": year, "title": title, "pages": pages
-    })
-    IMAGE_TEMPLATE = staticmethod(lambda id, file_name, height, width, paper_id, page_number: {
-        "id": id, "file_name": file_name, "height": height, "width": width, "paper_id": paper_id, "page_number": page_number
-    })
-    ANNO_TEMPLATE = staticmethod(lambda id, bbox, category_id, image_id, area: {
-        "id": id, "bbox": bbox, "category_id": category_id, "image_id": image_id, "area": area
-    })
+    class CategoryTemplate(NamedTuple):
+        id: int
+        name: str
+        supercategory: str = None
+
+    class PaperTemplate(NamedTuple):
+        id: int
+        paper_sha: str
+        year: Optional[int]
+        title: str
+        pages: int
+
+    class ImageTemplate(NamedTuple):
+        id: int
+        file_name: str
+        height: Union[float, int]
+        width: Union[float, int]
+        paper_id: int
+        page_number: int
+
+    class AnnoTemplate(NamedTuple):
+        id: int
+        bbox: List
+        image_id: int
+        category_id: int
+        area: Union[float, int]
 
     def __init__(self, categories: List, save_path: str):
         """COCOBuilder generates the coco-format dataset based on 
@@ -92,7 +106,7 @@ class COCOBuilder:
 
     def _create_coco_categories(self, categories):
         return [
-            self.CATEGORY_TEMPLATE(idx, category)
+            self.CategoryTemplate(idx, category)._asdict()
             for idx, category in enumerate(categories)
         ]
 
@@ -105,11 +119,11 @@ class COCOBuilder:
 
         # Add paper information
         paper_id = len(self._papers)  # Start from zero
-        paper_info = self.PAPER_TEMPLATE(
+        paper_info = self.PaperTemplate(
             paper_id,
             paper_sha,
             paper_metadata.get("year"),
-            paper_metadata.get("title"),
+            paper_metadata.get("title", ""),
             pages=num_pages
         )
 
@@ -131,14 +145,14 @@ class COCOBuilder:
 
             if page_id not in current_images:
                 current_images[anno['page']] = \
-                    self.IMAGE_TEMPLATE(
+                    self.ImageTemplate(
                         id=previous_image_id + len(current_images),
                         file_name=image_filename,
                         height=height,
                         width=width,
                         paper_id=paper_id,
                         page_number=anno['page'],
-                )
+                    )._asdict()
 
             if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
                 pdf_page_images[anno['page']].resize((width, height)).save(
@@ -148,18 +162,18 @@ class COCOBuilder:
             x, y, w, h = _convert_bounds_to_coco_bbox(anno['bounds'])
 
             current_annotations.append(
-                self.ANNO_TEMPLATE(
+                self.AnnoTemplate(
                     id=previous_anno_id + len(current_annotations),
                     bbox=[x, y, w, h],
                     category_id=self._name2catid[anno['label']['text']],
                     image_id=page_image_id,
                     area=w*h,
-                )
+                )._asdict()
             )
 
         # After all information collection finishes,
         # add the data to the object storage
-        self._papers.append(paper_info)
+        self._papers.append(paper_info._asdict())
         self._images.extend(list(current_images.values()))
         self._annotations.extend(current_annotations)
 
