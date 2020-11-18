@@ -42,7 +42,7 @@ const PaddedRow = styled.div(({ theme }) => `
 
 
 const SmallTag = styled(Tag)`
-    font-size: 10px;
+    font-size: 0.65rem;
     padding: 2px 2px;
     border-radius: 4px;
     color: black;
@@ -50,7 +50,7 @@ const SmallTag = styled(Tag)`
 `
 const Overflow = styled.span`
     line-height: 1;
-    font-size: 12px;
+    font-size: 0.8rem;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;   

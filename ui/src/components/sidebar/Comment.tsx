@@ -6,7 +6,7 @@ import { SidebarItem, SidebarItemTitle, SmallButton } from "./common";
 import { PaperStatus } from "../../api";
 
 interface CommentProps {
-    onStatusChange: (s: PaperStatus, c: () => void) => void
+    onStatusChange: (s: PaperStatus) => Promise<void>
     paperStatus: PaperStatus
 }
 
@@ -19,7 +19,7 @@ export const Comment = ({onStatusChange, paperStatus}: CommentProps) => {
             ...paperStatus,
             comments: comment
         }
-        onStatusChange(newStatus, () => {
+        onStatusChange(newStatus).then(() => {
             notification.info({message: "Comment saved!"})
         })
     }
@@ -49,5 +49,5 @@ const DarkTextArea = styled(Input.TextArea)`
     color: black;
     padding: 2px 2px;
     background: lightgrey;
-    font-size: 14px;
+    font-size: 0.8rem;
 `

@@ -66,25 +66,30 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
-
-    const onStatusChange = (status: PaperStatus, callback: () => void) => {
+   function onStatusChange(status: PaperStatus): Promise<void> {
         if (activePaperInfo) {
             const idx = assignedPaperInfo.indexOf(activePaperInfo)
-
-            setPaperStatus(sha, status).then(() => {
+        
+            return setPaperStatus(sha, status).then(() => {
                 const newInfo = {
                     metadata: activePaperInfo.metadata,
                     status: status,
                     sha: activePaperInfo.sha
                 }
-                setAssignedPaperInfo([
-                    ...assignedPaperInfo.slice(0, idx),
-                    newInfo,
-                    ...assignedPaperInfo.slice(idx + 1)
 
-                ])
-                callback()
+                return new Promise<any>((resolved, rejected) => {
+                    setAssignedPaperInfo([
+                        ...assignedPaperInfo.slice(0, idx),
+                        newInfo,
+                        ...assignedPaperInfo.slice(idx + 1)
+
+                    ])
+                    resolved()
+                })
             })
+        } else {
+            setViewState(ViewState.ERROR)
+            throw new Error("No active Paper!")
         }
     }
 

@@ -8,6 +8,8 @@ import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled } from "@a
 
 
 const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
+
+    const finished = paper.status.status === Status.FINISHED
     return (
         <PaddedRow>
 
@@ -16,12 +18,12 @@ const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
                         {paper.metadata.title}
                 </a>
             </Contrast>
-            <SmallTag color="grey">
+            <SmallTag color={finished? "#1EC28E": "#AEB7C4"}>
                 {paper.status.annotations}
                 <DarkEditIcon/>
             </SmallTag>
             { paper.status.comments === "" ? null : (
-                <CommentOutlined color="black"/>
+                <CommentOutlined/>
             )
             }
         </PaddedRow> 
@@ -67,7 +69,7 @@ const Toggle = styled(Switch)`
   margin: 4px;
 `
 const ToggleDescription = styled.span`
-    font-size: 14px;
+    font-size: 0.85rem;
     color: ${({ theme }) => theme.color.N6};
 
 `
@@ -75,6 +77,9 @@ const ToggleDescription = styled.span`
 // TODO(Mark): ask for help figuring out how to style this icon.
 const DarkEditIcon = styled(EditFilled)`
     margin-left: 4px;
+    &, & * {
+        color: ${({ theme }) => theme.color.N9};
+    }
 `
 
 const PaddedRow = styled.div(({ theme }) => `
@@ -84,10 +89,10 @@ const PaddedRow = styled.div(({ theme }) => `
 `);
 
 const SmallTag = styled(Tag)`
-    font-size: 10px;
+    font-size: 0.70rem;
     padding: 2px 2px;
     margin-left: 4px;
     border-radius: 4px;
-    color: black;
+    color: ${({ theme }) => theme.color.N9};
     line-height: 1;
 `

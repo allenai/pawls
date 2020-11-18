@@ -46,7 +46,7 @@ export const Contrast = styled.div`
     ${Link.contrastLinkColorStyles()};
   }
   line-height: 1;
-  font-size: 14px;
+  font-size: 0.85rem;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -55,6 +55,6 @@ export const Contrast = styled.div`
 export const SmallButton = styled(Button)`
     padding: 2px 4px;
     height: auto;
-    font-size: 16px;
+    font-size: 0.85rem;
     margin-left: 10px;
 `

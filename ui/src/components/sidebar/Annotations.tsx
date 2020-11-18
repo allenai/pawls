@@ -11,7 +11,7 @@ import { PaperStatus, Status } from '../../api';
 
 interface AnnotationsProps {
     onSave: () => void
-    onStatusChange: (s: PaperStatus, c: () => void) => void
+    onStatusChange: (s: PaperStatus) => Promise<void>
     annotations: PdfAnnotations
     pages: PDFPageInfo[]
     paperStatus: PaperStatus
@@ -28,8 +28,7 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
             ...paperStatus,
             status: s
         }
-
-        onStatusChange(newPaperStatus, () => {
+        onStatusChange(newPaperStatus).then(() => {
             if (s === Status.INPROGRESS) {
                 notification.info({message: "Marked paper as In Progress."})
             } else {
@@ -37,7 +36,6 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
             }
 
         })
-
     }
 
     return (
@@ -89,6 +87,6 @@ const Toggle = styled(Switch)`
   margin: 4px;
 `
 const ToggleDescription = styled.span`
-    font-size: 14px;
+    font-size: 0.85rem;
     color: ${({ theme }) => theme.color.N6};
 `
