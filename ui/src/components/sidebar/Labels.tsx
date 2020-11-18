@@ -70,21 +70,25 @@ export const Labels = () => {
                     </LabelTag>           
                 ))}
             </div>
-            <SidebarItemTitle>
-                Relations
-            </SidebarItemTitle>
-            <div>
-                {annotationStore.relationLabels.map(relation => (
-                    <LabelTag
-                        key={relation.text}
-                        onClick={() => {annotationStore.setActiveRelationLabel(relation)}}
-                        checked={relation === annotationStore.activeRelationLabel}
-                        style={{color: relation.color}}
-                    >
-                        {relation.text}
-                    </LabelTag>           
-                ))}
-            </div>
+            {annotationStore.relationLabels.length !== 0 ? (
+                <>
+                    <SidebarItemTitle>
+                        Relations
+                    </SidebarItemTitle>
+                    <div>
+                        {annotationStore.relationLabels.map(relation => (
+                            <LabelTag
+                                key={relation.text}
+                                onClick={() => {annotationStore.setActiveRelationLabel(relation)}}
+                                checked={relation === annotationStore.activeRelationLabel}
+                                style={{color: relation.color}}
+                            >
+                                {relation.text}
+                            </LabelTag>           
+                        ))}
+                    </div>
+                </>
+            ) : null }
 
             <div>
                 Free Form Annotations
