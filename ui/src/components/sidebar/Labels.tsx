@@ -60,13 +60,14 @@ export const Labels = () => {
           <Container>
             <div>
                 {annotationStore.labels.map(label => (
-                    <CheckableTag
+                    <LabelTag
                         key={label.text}
                         onClick={() => {annotationStore.setActiveLabel(label)}}
                         checked={label === annotationStore.activeLabel}
+                        style={{color: label.color}}
                     >
                         {label.text}
-                    </CheckableTag>           
+                    </LabelTag>           
                 ))}
             </div>
             <SidebarItemTitle>
@@ -74,13 +75,14 @@ export const Labels = () => {
             </SidebarItemTitle>
             <div>
                 {annotationStore.relationLabels.map(relation => (
-                    <CheckableTag
+                    <LabelTag
                         key={relation.text}
                         onClick={() => {annotationStore.setActiveRelationLabel(relation)}}
                         checked={relation === annotationStore.activeRelationLabel}
+                        style={{color: relation.color}}
                     >
                         {relation.text}
-                    </CheckableTag>           
+                    </LabelTag>           
                 ))}
             </div>
 
@@ -97,6 +99,12 @@ export const Labels = () => {
     )
 }
 
+const LabelTag = styled(CheckableTag)`
+
+    &.ant-tag-checkable-checked {
+    background-color: #303030;
+}
+`
 
 const Toggle = styled(Switch)`
   margin: 4px;
