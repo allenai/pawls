@@ -1,6 +1,6 @@
 
 import styled from "styled-components"
-import { Link } from '@allenai/varnish';
+import { Link, Button } from '@allenai/varnish';
 
 interface HasWidth {
     width: string;
@@ -45,7 +45,16 @@ export const Contrast = styled.div`
   a[href] {
     ${Link.contrastLinkColorStyles()};
   }
+  line-height: 1;
+  font-size: 0.85rem;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 `;
+
+export const SmallButton = styled(Button)`
+    padding: 2px 4px;
+    height: auto;
+    font-size: 0.85rem;
+    margin-left: 10px;
+`

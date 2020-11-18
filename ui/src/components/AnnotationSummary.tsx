@@ -17,22 +17,22 @@ export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps
             .join(" ")
 
     return (
-        <Hoverable>
+        <PaddedRow>
             <Overflow>
                 {text}
             </Overflow>
-                <SmallTag color={annotation.label.color}>
-                    {annotation.label.text}
-                </SmallTag>
-                <SmallTag color="grey">
-                    Page {pageInfo.page.pageNumber}
-                </SmallTag>
-        </Hoverable>
+            <SmallTag color={annotation.label.color}>
+                {annotation.label.text}
+            </SmallTag>
+            <SmallTag color="grey">
+                Page {pageInfo.page.pageNumber}
+            </SmallTag>
+        </PaddedRow>
     );
 
 }
 
-export const Hoverable = styled.div(({ theme }) => `
+const PaddedRow = styled.div(({ theme }) => `
     padding: 4px 0;
     border-radius: 2px;
     display: grid;
@@ -42,14 +42,15 @@ export const Hoverable = styled.div(({ theme }) => `
 
 
 const SmallTag = styled(Tag)`
-    font-size: 10px;
+    font-size: 0.65rem;
     padding: 2px 2px;
     border-radius: 4px;
     color: black;
     line-height: 1;
 `
 const Overflow = styled.span`
-    font-size: 12px;
+    line-height: 1;
+    font-size: 0.8rem;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;   

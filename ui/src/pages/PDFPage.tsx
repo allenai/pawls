@@ -7,9 +7,10 @@ import { Result, Progress, notification } from '@allenai/varnish';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
-import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
+import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
+
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -42,6 +43,7 @@ export const PDFPage = () => {
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
     const [ assignedPaperInfo, setAssignedPaperInfo] = useState<PaperInfo[]>([])
+    const [ activePaperInfo, setActivePaperInfo] = useState<PaperInfo>()
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
     const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
@@ -64,10 +66,36 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
+   function onStatusChange(status: PaperStatus): Promise<void> {
+        if (activePaperInfo) {
+            const idx = assignedPaperInfo.indexOf(activePaperInfo)
+        
+            return setPaperStatus(sha, status).then(() => {
+                const newInfo = {
+                    metadata: activePaperInfo.metadata,
+                    status: status,
+                    sha: activePaperInfo.sha
+                }
+
+                return new Promise<any>((resolved, rejected) => {
+                    setAssignedPaperInfo([
+                        ...assignedPaperInfo.slice(0, idx),
+                        newInfo,
+                        ...assignedPaperInfo.slice(idx + 1)
+
+                    ])
+                    resolved()
+                })
+            })
+        } else {
+            setViewState(ViewState.ERROR)
+            throw new Error("No active Paper!")
+        }
+    }
+
     const onSave = () => {
 
         if (pdfAnnotations) {
-
             saveAnnotations(sha, pdfAnnotations.flat(), pdfRelations).then(() => {
                 notification.success({message: "Saved Annotations!"})
             }).catch((err) => {
@@ -121,7 +149,7 @@ export const PDFPage = () => {
         const onShiftUp = (e: KeyboardEvent) => {
 
             // Shift key up
-            if (e.keyCode === 16) {
+            if (e.keyCode === 16 && selectedAnnotations.length !== 0) {
                 setRelationModalVisible(true)
             }
         }
@@ -137,6 +165,10 @@ export const PDFPage = () => {
     useEffect( () => {
         getAllocatedPaperInfo().then((paperInfo) => {
             setAssignedPaperInfo(paperInfo)
+            setActivePaperInfo(
+                paperInfo.filter(p => p.sha === sha)[0]
+            )
+
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
             console.log(err)
@@ -276,10 +308,24 @@ export const PDFPage = () => {
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
-                                    <AssignedPaperList papers={assignedPaperInfo}/>
-                                    <Annotations onSave={onSave} annotations={pdfAnnotations} pages={pages}/>
-                                    <Relations relations={pdfRelations}/>
                                     <Labels/>
+                                    <AssignedPaperList papers={assignedPaperInfo}/>
+                                    {activePaperInfo ?
+                                    <Annotations 
+                                        onSave={onSave}
+                                        onStatusChange={onStatusChange}
+                                        annotations={pdfAnnotations}
+                                        pages={pages}
+                                        paperStatus={activePaperInfo.status}
+                                    /> : null}
+                                    <Relations relations={pdfRelations}/>
+                                    {activePaperInfo ?
+                                        <Comment
+                                            onStatusChange={onStatusChange}
+                                            paperStatus={activePaperInfo.status}
+                                        />
+                                        : null
+                                    }
                                 </SidebarContainer>
                                 <PDFContainer>
                                     {activeRelationLabel ? 

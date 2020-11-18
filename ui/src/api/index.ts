@@ -111,7 +111,7 @@ export interface PaperInfo {
     sha: string
 }
 
-export async function setPaperStatus(sha: string, status: PaperStatus): Promise<any> {
+export async function setPaperStatus(sha: string, status: PaperStatus) {
     return axios.post(`/api/doc/${sha}/status`, status)
 }
 
