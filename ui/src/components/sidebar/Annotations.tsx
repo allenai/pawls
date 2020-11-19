@@ -22,7 +22,7 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
 
     const flatAnnotations = annotations.flat()
 
-    const onChange = (isFinished: boolean) => {
+    const onFinishToggle = (isFinished: boolean) => {
 
         const newPaperStatus = {
             ...paperStatus,
@@ -30,13 +30,32 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
         }
         onStatusChange(newPaperStatus).then(() => {
             if (isFinished) {
-                notification.success({message: "Marked paper as Finshed!"})
+                notification.success({message: "Marked paper as Finished!"})
             } else {
                 notification.info({message: "Marked paper as In Progress."})
             }
 
         })
     }
+
+    const onJunkToggle = (isJunk: boolean) => {
+
+        const newPaperStatus = {
+            ...paperStatus,
+            junk: isJunk,
+            // Hide junk papers in UI by default.
+            finished: isJunk
+        }
+        onStatusChange(newPaperStatus).then(() => {
+            if (isJunk) {
+                notification.warning({message: "Marked paper as Junk!"})
+            } else {
+                notification.info({message: "Marked paper as In Progress."})
+            }
+
+        })
+    }
+
 
     return (
         <SidebarItem>
@@ -50,14 +69,28 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
                     Save
                 </SmallButton>
             </SidebarItemTitle>
-            <ToggleDescription>
-                Mark as Finished:
-            </ToggleDescription>
-            <Toggle
-                onChange={e => onChange(e)}
-                checkedChildren={<CheckOutlined />}
-                unCheckedChildren={<CloseOutlined />}
-            />
+            <span>
+                <ToggleDescription>
+                    Finished?
+                </ToggleDescription>
+                <Toggle
+                    size="small"
+                    onChange={e => onFinishToggle(e)}
+                    checkedChildren={<CheckOutlined />}
+                    unCheckedChildren={<CloseOutlined />}
+                />
+            </span>
+            <span>
+                <ToggleDescription>
+                    Junk
+                </ToggleDescription>
+                <Toggle
+                    size="small"
+                    onChange={e => onJunkToggle(e)}
+                    checkedChildren={<CheckOutlined />}
+                    unCheckedChildren={<CloseOutlined />}
+                />
+            </span>
             <div>
                 {flatAnnotations.length === 0 ? (
                     <>No Annotations Yet :(</>
@@ -78,7 +111,7 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
 }
 
 const Toggle = styled(Switch)`
-  margin: 4px;
+  margin: 8px 8px;
 `
 const ToggleDescription = styled.span`
     font-size: 0.85rem;

@@ -93,6 +93,7 @@ export const Labels = () => {
             <div>
                 Free Form Annotations
                 <Toggle 
+                    size="small"
                     onChange={onToggle}
                     checkedChildren={<CheckOutlined />}
                     unCheckedChildren={<CloseOutlined />}

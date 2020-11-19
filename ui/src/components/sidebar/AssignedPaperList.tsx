@@ -1,15 +1,36 @@
 import React, { useState } from 'react';
 import styled from "styled-components";
 import { SidebarItem, SidebarItemTitle, Contrast } from "./common";
-import { PaperInfo, Status } from "../../api";
+import { PaperInfo, PaperStatus } from "../../api";
 import { Switch, Tag } from "@allenai/varnish";
 
-import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled } from "@ant-design/icons";
+import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled, DeleteFilled } from "@ant-design/icons";
 
 
 const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
 
-    const finished = paper.status.status === Status.FINISHED
+    const getIcon = (status: PaperStatus) => {
+        if (status.junk) {
+            return <DeleteFilled/>
+        }
+        else if (status.comments) {
+            return <CommentOutlined/>
+        } else {
+            return null
+        }
+    }
+
+    const getStatusColour = (status: PaperStatus) => {
+        if (status.junk) {
+            return  "#d5a03a"
+        }
+        if (status.finished) {
+            return "#1EC28E"
+        }
+
+        return "#AEB7C4"
+    }
+
     return (
         <PaddedRow>
 
@@ -18,14 +39,12 @@ const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
                         {paper.metadata.title}
                 </a>
             </Contrast>
-            <SmallTag color={finished? "#1EC28E": "#AEB7C4"}>
+            <SmallTag color={getStatusColour(paper.status)}>
                 {paper.status.annotations}
                 <DarkEditIcon/>
             </SmallTag>
-            { paper.status.comments === "" ? null : (
-                <CommentOutlined/>
-            )
-            }
+            {getIcon(paper.status)}
+
         </PaddedRow> 
     )
 }
@@ -34,8 +53,8 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
 
     const [showFinished, setShowFinished] = useState<boolean>(false)
 
-    const unfinished = papers.filter(p => p.status.status !== Status.FINISHED)
-    const finished = papers.filter(p => p.status.status === Status.FINISHED)
+    const unfinished = papers.filter(p => !p.status.finished)
+    const finished = papers.filter(p => p.status.finished)
     const ordered = unfinished.concat(finished)
     const papersToShow = showFinished ? ordered: unfinished
 
@@ -48,6 +67,7 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
                 Show Finished Papers:
             </ToggleDescription>
             <Toggle
+                size="small"
                 onChange={() => setShowFinished(!showFinished)}
                 checkedChildren={<FileDoneOutlined />}
                 unCheckedChildren={<CloseOutlined />}
