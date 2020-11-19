@@ -140,7 +140,9 @@ export const PDFPage = () => {
     useEffect(() => {
         getRelations().then(relations => {
             setRelationLabels(relations)
-            setActiveRelationLabel(relations[0])
+            setActiveRelationLabel(
+                relations.length === 0 ? undefined : relations[0]
+                )
         })
     }, []) 
     
@@ -318,7 +320,10 @@ export const PDFPage = () => {
                                         pages={pages}
                                         paperStatus={activePaperInfo.status}
                                     /> : null}
+                                    {activeRelationLabel ? 
                                     <Relations relations={pdfRelations}/>
+                                    : null
+                                    }
                                     {activePaperInfo ?
                                         <Comment
                                             onStatusChange={onStatusChange}
