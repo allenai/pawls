@@ -7,7 +7,7 @@ import { PdfAnnotations, PDFPageInfo } from "../../context";
 
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
-import { PaperStatus, Status } from '../../api';
+import { PaperStatus } from '../../api';
 
 interface AnnotationsProps {
     onSave: () => void
@@ -22,17 +22,17 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
 
     const flatAnnotations = annotations.flat()
 
-    const onChange = (s: Status) => {
+    const onChange = (isFinished: boolean) => {
 
         const newPaperStatus = {
             ...paperStatus,
-            status: s
+            finished: isFinished
         }
         onStatusChange(newPaperStatus).then(() => {
-            if (s === Status.INPROGRESS) {
-                notification.info({message: "Marked paper as In Progress."})
-            } else {
+            if (isFinished) {
                 notification.success({message: "Marked paper as Finshed!"})
+            } else {
+                notification.info({message: "Marked paper as In Progress."})
             }
 
         })
@@ -54,13 +54,7 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
                 Mark as Finished:
             </ToggleDescription>
             <Toggle
-                onChange={e => {
-                    if (e) {
-                        onChange(Status.FINISHED)
-                    } else {
-                        onChange(Status.INPROGRESS)
-                    }
-                }}
+                onChange={e => onChange(e)}
                 checkedChildren={<CheckOutlined />}
                 unCheckedChildren={<CloseOutlined />}
             />

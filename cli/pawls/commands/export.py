@@ -1,8 +1,6 @@
 import os
 import json
-import re
 import click
-from click import UsageError, BadArgumentUsage
 from collections import OrderedDict
 from glob import glob
 from typing import List, NamedTuple, Optional, Union, Dict, Iterable, Any
@@ -14,7 +12,6 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import resolve1
 from pdf2image import convert_from_path
 
-from pawls.commands.assign import LabelingStatus
 
 
 def _load_json(filename: str):
@@ -105,7 +102,7 @@ class AnnotationFiles:
         return [
             f"{self.labeling_folder}/{pdf_sha}/{self.annotator}_annotations.json"
             for pdf_sha, assignment in user_assignment.items()
-            if assignment['status'] == LabelingStatus.FINISHED
+            if assignment['finished']
         ]
 
     def __iter__(self) -> Iterable[Dict]:

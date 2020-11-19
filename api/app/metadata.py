@@ -15,7 +15,8 @@ class PaperMetadata(BaseModel):
 class PaperStatus(BaseModel):
     annotations: int
     relations: int
-    status: str
+    finished: bool
+    junk: bool
     comments: str
     completedAt: Optional[str]
 
@@ -24,7 +25,8 @@ class PaperStatus(BaseModel):
         return PaperStatus(
             annotations=0,
             relations=0,
-            status="INPROGRESS",
+            finished=False,
+            junk=False,
             comments="",
             completedAt=None,
         )

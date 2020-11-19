@@ -28,7 +28,8 @@ pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structu
     pip install git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
     ```
 
-2. Install poppler, the PDF renderer if you need to export the annotations into a COCO-format Dataset. Please follow the [instructions here](https://github.com/Belval/pdf2image#windows). 
+2. Install poppler, the PDF renderer, which is used to export the annotations into a COCO-format Dataset by converting the PDF pages to images.
+Please follow the [instructions here](https://github.com/Belval/pdf2image#windows). 
 
 ### Usage
 

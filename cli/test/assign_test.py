@@ -53,8 +53,9 @@ class TestAssign(unittest.TestCase):
                 sha: {
                     "annotations": 0,
                     "relations": 0,
-                    "status": "INPROGRESS",
+                    "finished": False,
+                    "junk": False,
                     "comments": "",
-                    "completed_at": None,
+                    "completedAt": None,
                 }
             }
