@@ -10,12 +10,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { createGlobalStyle } from 'styled-components';
+import { Spin } from "@allenai/varnish";
 import { BrowserRouter, Route, Redirect} from 'react-router-dom';
 
 import { PDFPage } from './pages';
+import { CenterOnPage } from "./components"
 import { getAllocatedPaperInfo } from "./api"
 
-const App = () => {
+
+const RedirectToFirstPaper = () => {
     const [sha, setSha] = useState<string>();
     useEffect(() => {
         getAllocatedPaperInfo().then((papers) => {
@@ -24,15 +27,19 @@ const App = () => {
         })
     },[])
 
+    return sha ? <Redirect to={`/pdf/${sha}`} /> : (
+        <CenterOnPage>
+            <Spin size="large"/>
+        </CenterOnPage>
+    )
+}
+
+
+const App = () => {
     return (
         <>
             <BrowserRouter>
-                <Route path="/" exact>
-                    {sha ?
-                    <Redirect to={`/pdf/${sha}`} />
-                    : null
-                    }
-                </Route>
+                <Route path="/" exact component={RedirectToFirstPaper}/>
                 <Route path="/pdf/:sha" component={PDFPage} />
             </BrowserRouter>
             <GlobalStyles />
