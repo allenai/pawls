@@ -81,7 +81,7 @@ interface TokenSpanProps {
 
 const TokenSpan = styled.span<TokenSpanProps>(({ theme, isSelected }) =>`
     position: absolute;
-    background: ${isSelected ? theme.color.B6 : 'none'};
+    background: ${isSelected ? theme.color.B3 : 'none'};
     opacity: 0.2;
     border-radius: 3px;
 `);
@@ -196,9 +196,10 @@ const SelectionInfo = styled.div<SelectionInfoProps>(({ border, color }) => `
     border: ${border} solid  ${color};
     background: ${color};
     font-weight: bold;
+    font-size: 12px;
     user-select: none;
     * {
         margin: 2px;
-        vertical-align: text-bottom;
+        vertical-align: middle;
     }
 `);
