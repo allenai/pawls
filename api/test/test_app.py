@@ -57,7 +57,8 @@ class TestApp(TestCase):
         status = {
             "annotations": 3,
             "relations": 2,
-            "status": "DONE",
+            "finished": True,
+            "junk": False,
             "comments": "",
             "completedAt": None,
         }
@@ -101,7 +102,8 @@ class TestApp(TestCase):
                 "status": {
                     "annotations": 0,
                     "relations": 0,
-                    "status": "INPROGRESS",
+                    "finished": False,
+                    "junk": False,
                     "comments": "",
                     "completedAt": None,
                 },
@@ -112,8 +114,6 @@ class TestApp(TestCase):
 
         # No header, should return all pdfs.
         response = self.client.get("/api/annotation/allocation/info")
-        print(response.json())
-        print(gold)
         assert response.json() == gold
 
     def test_get_annotations(self):
