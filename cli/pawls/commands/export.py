@@ -102,7 +102,7 @@ class AnnotationFiles:
         return [
             f"{self.labeling_folder}/{pdf_sha}/{self.annotator}_annotations.json"
             for pdf_sha, assignment in user_assignment.items()
-            if assignment['finished']
+            if (assignment['finished'] and not assignment["junk"])
         ]
 
     def __iter__(self) -> Iterable[Dict]:
