@@ -7,6 +7,7 @@ from pdfstructure.client.v1.configuration import Configuration
 from pdfstructure.client.v1.api_client import ApiClient
 from pdfstructure.client.v1.exceptions import ApiException
 
+
 def fetch_grobid_structure(
     pdf_file: str, grobid_host: str = "http://localhost:8070"
 ) -> models.PdfAnnotations:
@@ -206,7 +207,7 @@ def process_grobid(
 
     if existing_annotations.tokens and source in existing_annotations.tokens.sources:
         return True
-    
+
     try:
         client.add_annotations(sha, annotations)
         return True

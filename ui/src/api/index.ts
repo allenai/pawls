@@ -89,18 +89,11 @@ export interface PaperMetadata {
     authors: string[]
 }
 
-export enum Status {
-
-    INPROGRESS = "INPROGRESS",
-    FINISHED = "FINISHED",
-    BLANK = "BLANK"
-
-}
-
 export interface PaperStatus {
     annotations: number,
     relations: number,
-    status: Status,
+    finished: boolean,
+    junk: boolean,
     comments: string,
     completedAt?: Date
 }
