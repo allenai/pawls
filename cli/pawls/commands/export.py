@@ -13,31 +13,31 @@ from pdfminer.pdfinterp import resolve1
 from pdf2image import convert_from_path
 
 
-
 def _load_json(filename: str):
-    with open(filename, 'r') as fp:
+    with open(filename, "r") as fp:
         return json.load(fp)
 
 
 def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
     x1, y1, x2, y2 = bounds["left"], bounds["top"], bounds["right"], bounds["bottom"]
-    return x1, y1, x2-x1, y2-y1
+    return x1, y1, x2 - x1, y2 - y1
 
 
 def _get_pdf_pages_and_sizes(filename: str):
     """Ref https://stackoverflow.com/a/47686921
     """
-    with open(filename, 'rb') as fp:
+    with open(filename, "rb") as fp:
         parser = PDFParser(fp)
         document = PDFDocument(parser)
-        num_pages = resolve1(document.catalog['Pages'])['Count']
-        page_sizes = [(int(page.mediabox[2]), int(page.mediabox[3]))
-                      for page in PDFPage.create_pages(document)]
+        num_pages = resolve1(document.catalog["Pages"])["Count"]
+        page_sizes = [
+            (int(page.mediabox[2]), int(page.mediabox[3]))
+            for page in PDFPage.create_pages(document)
+        ]
         return num_pages, page_sizes
 
 
 class LabelingConfiguration:
-
     def __init__(self, config: click.File):
         """LabelingConfiguration handles parsing the configuration file.
 
@@ -50,7 +50,7 @@ class LabelingConfiguration:
     def categories(self) -> List[str]:
         """Returns all labeling category names in the config file."
         """
-        return [l['text'] for l in self.config['labels']]
+        return [l["text"] for l in self.config["labels"]]
 
     @property
     def relations(self):
@@ -61,7 +61,9 @@ class AnnotationFiles:
 
     DEVELOPMENT_USER = "development_user"
 
-    def __init__(self, labeling_folder: str, annotator: str, include_unfinished: bool = True):
+    def __init__(
+        self, labeling_folder: str, annotator: str, include_unfinished: bool = True
+    ):
         """AnnotationFiles is an iterator for selected annotation files 
         given the selected annotators and configurations. 
 
@@ -88,27 +90,31 @@ class AnnotationFiles:
             self._files = self.get_finished_annotation_files()
 
     def get_all_annotation_files(self) -> List[str]:
-        return glob(os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json"))
+        return glob(
+            os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
+        )
 
     def get_finished_annotation_files(self) -> List[str]:
 
         user_assignment_file = f"{self.labeling_folder}/status/{self.annotator}.json"
         if not os.path.exists(user_assignment_file):
-            print("Warning:",
-                  f"The user annotation file does not exist: {user_assignment_file}")
+            print(
+                "Warning:",
+                f"The user annotation file does not exist: {user_assignment_file}",
+            )
             return self.get_all_annotation_files()
 
         user_assignment = _load_json(user_assignment_file)
         return [
             f"{self.labeling_folder}/{pdf_sha}/{self.annotator}_annotations.json"
             for pdf_sha, assignment in user_assignment.items()
-            if (assignment['finished'] and not assignment["junk"])
+            if (assignment["finished"] and not assignment["junk"])
         ]
 
     def __iter__(self) -> Iterable[Dict]:
 
         for _file in self._files:
-            paper_sha = _file.split('/')[-2]
+            paper_sha = _file.split("/")[-2]
             pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
             metadata_path = f"{self.labeling_folder}/{paper_sha}/metadata.json"
 
@@ -116,7 +122,7 @@ class AnnotationFiles:
                 paper_sha=paper_sha,
                 pdf_path=pdf_path,
                 metadata_path=metadata_path,
-                annotation_path=_file
+                annotation_path=_file,
             )
 
     def __len__(self):
@@ -129,12 +135,12 @@ class AnnotationFiles:
         including the default DEVELOPMENT_USER.
         """
 
-        return [AnnotationFiles.DEVELOPMENT_USER] + \
-             [os.path.splitext(e)[0] for e in os.listdir(f"{labeling_folder}/status")]
+        return [AnnotationFiles.DEVELOPMENT_USER] + [
+            os.path.splitext(e)[0] for e in os.listdir(f"{labeling_folder}/status")
+        ]
 
 
 class COCOBuilder:
-
     class CategoryTemplate(NamedTuple):
         id: int
         name: str
@@ -204,10 +210,9 @@ class COCOBuilder:
             for idx, category in enumerate(categories)
         ]
 
-    def add_paper(self, paper_sha: str, 
-                        pdf_path: str, 
-                        metadata_path: str, 
-                        annotation_path: str) -> None:
+    def add_paper(
+        self, paper_sha: str, pdf_path: str, metadata_path: str, annotation_path: str
+    ) -> None:
         """Create the annotation for each paper. 
         """
         paper_metadata = _load_json(metadata_path)
@@ -222,7 +227,7 @@ class COCOBuilder:
             paper_sha,
             paper_metadata.get("year"),
             paper_metadata.get("title", ""),
-            pages=num_pages
+            pages=num_pages,
         )
 
         # Add individual page images and annotations
@@ -233,39 +238,38 @@ class COCOBuilder:
 
         pdf_page_images = convert_from_path(pdf_path)
         pawls_annotations = _load_json(annotation_path)
-        pawls_annotations = pawls_annotations['annotations']
+        pawls_annotations = pawls_annotations["annotations"]
         for anno in pawls_annotations:
-            page_id = anno['page']
+            page_id = anno["page"]
 
-            image_filename = self._create_pdf_page_image_filename(
-                paper_sha, page_id)
-            width, height = page_sizes[anno['page']]
+            image_filename = self._create_pdf_page_image_filename(paper_sha, page_id)
+            width, height = page_sizes[anno["page"]]
 
             if page_id not in current_images:
-                current_images[anno['page']] = \
-                    self.ImageTemplate(
-                        id=previous_image_id + len(current_images),
-                        file_name=image_filename,
-                        height=height,
-                        width=width,
-                        paper_id=paper_id,
-                        page_number=anno['page'],
-                    )._asdict()
+                current_images[anno["page"]] = self.ImageTemplate(
+                    id=previous_image_id + len(current_images),
+                    file_name=image_filename,
+                    height=height,
+                    width=width,
+                    paper_id=paper_id,
+                    page_number=anno["page"],
+                )._asdict()
 
             if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
-                pdf_page_images[anno['page']].resize((width, height)).save(
-                    f"{self.save_path_image}/{image_filename}")
+                pdf_page_images[anno["page"]].resize((width, height)).save(
+                    f"{self.save_path_image}/{image_filename}"
+                )
 
-            page_image_id = current_images[anno['page']]['id']
-            x, y, w, h = _convert_bounds_to_coco_bbox(anno['bounds'])
+            page_image_id = current_images[anno["page"]]["id"]
+            x, y, w, h = _convert_bounds_to_coco_bbox(anno["bounds"])
 
             current_annotations.append(
                 self.AnnoTemplate(
                     id=previous_anno_id + len(current_annotations),
                     bbox=[x, y, w, h],
-                    category_id=self._name2catid[anno['label']['text']],
+                    category_id=self._name2catid[anno["label"]["text"]],
                     image_id=page_image_id,
-                    area=w*h,
+                    area=w * h,
                 )._asdict()
             )
 
@@ -287,8 +291,7 @@ class COCOBuilder:
 
         pbar = tqdm(anno_files)
         for anno_file in pbar:
-            pbar.set_description(
-                f"Working on {anno_file['paper_sha'][:10]}...")
+            pbar.set_description(f"Working on {anno_file['paper_sha'][:10]}...")
             self.add_paper(**anno_file)
 
     def export(self, annotation_name="annotations.json") -> None:
@@ -300,7 +303,7 @@ class COCOBuilder:
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
-@click.argument("config", type=click.File('r'))
+@click.argument("config", type=click.File("r"))
 @click.argument("output", type=click.Path(file_okay=False))
 @click.option(
     "--annotator",
@@ -335,9 +338,9 @@ def export(
     """
 
     config = LabelingConfiguration(config)
-    
+
     all_annotators = AnnotationFiles.get_all_annotators(path)
-    
+
     if len(annotator) == 0:
         annotator = all_annotators
         print(f"Export annotations from all available annotators {all_annotators}")
@@ -354,4 +357,6 @@ def export(
         coco_builder.build_annotations(anno_files)
         coco_builder.export()
 
-        print(f"Successfully exported {len(anno_files)} annotations of annotator {anno} to {output}.")
+        print(
+            f"Successfully exported {len(anno_files)} annotations of annotator {anno} to {output}."
+        )
