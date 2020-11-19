@@ -84,6 +84,7 @@ export const PDFPage = () => {
                         ...assignedPaperInfo.slice(idx + 1)
 
                     ])
+                    setActivePaperInfo(newInfo)
                     resolved()
                 })
             })
