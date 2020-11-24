@@ -271,7 +271,8 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     if user is None:
         raise HTTPException(403, "Invalid user email header.")
 
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    status_dir = os.path.join(configuration.output_directory, "status")
+    status_path = os.path.join(status_dir, f"{user}.json")
     exists = os.path.exists(status_path)
 
     # HACK: This if statement deals with the fact that it's annoying to
@@ -279,6 +280,7 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     # Instead we just create it on the fly if it's not there,
     # meaning this will get run once only.
     if not exists and IN_PRODUCTION == "dev":
+        os.makedirs(status_dir, exist_ok=True)
         with open(status_path, "w+") as new:
             blob = {sha: PaperStatus.empty() for sha in all_pdf_shas()}
             json.dump(jsonable_encoder(blob), new)
