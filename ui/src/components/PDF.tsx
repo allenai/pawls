@@ -212,7 +212,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                             annotationStore.activeLabel,
                             annotationStore.freeFormAnnotations
                         )
-                        console.log(updatedAnnotations)
                         annotationStore.setPdfAnnotations(updatedAnnotations)
                     }
                     setSelection(undefined);
