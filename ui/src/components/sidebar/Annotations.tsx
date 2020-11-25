@@ -3,7 +3,7 @@ import React from 'react';
 import styled from "styled-components"
 import { SidebarItem, SidebarItemTitle, SmallButton} from "./common";
 import { Switch, notification } from '@allenai/varnish';
-import { PDFPageInfo, Annotation } from "../../context";
+import { Annotation } from "../../context";
 
 import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
@@ -13,12 +13,11 @@ interface AnnotationsProps {
     onSave: () => void
     onStatusChange: (s: PaperStatus) => Promise<void>
     annotations: Annotation[]
-    pages: PDFPageInfo[]
     paperStatus: PaperStatus
 }
 
 
-export const Annotations = ({onSave, onStatusChange, annotations, pages, paperStatus}: AnnotationsProps) => {
+export const Annotations = ({onSave, onStatusChange, annotations, paperStatus}: AnnotationsProps) => {
 
     const onFinishToggle = (isFinished: boolean) => {
 
@@ -102,7 +101,6 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
                             <AnnotationSummary 
                                 key={annotation.id}
                                 annotation={annotation}
-                                pageInfo={pages[annotation.page]}
                             />
                         ))}
                     </div>

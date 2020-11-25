@@ -327,7 +327,6 @@ export const PDFPage = () => {
                                         onSave={onSave}
                                         onStatusChange={onStatusChange}
                                         annotations={pdfAnnotations}
-                                        pages={pages}
                                         paperStatus={activePaperInfo.status}
                                     /> : null}
                                     {activeRelationLabel ? 
@@ -350,7 +349,6 @@ export const PDFPage = () => {
                                             onCancel={onRelationModalCancel}
                                             source={selectedAnnotations}
                                             label={activeRelationLabel}
-                                            pages={pages}
                                             />
                                         : null}
                                     <PDF />
