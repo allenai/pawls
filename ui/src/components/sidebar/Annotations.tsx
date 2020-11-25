@@ -3,24 +3,22 @@ import React from 'react';
 import styled from "styled-components"
 import { SidebarItem, SidebarItemTitle, SmallButton} from "./common";
 import { Switch, notification } from '@allenai/varnish';
-import { PdfAnnotations, PDFPageInfo } from "../../context";
+import { PDFPageInfo, Annotation } from "../../context";
 
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
 import { PaperStatus } from '../../api';
 
 interface AnnotationsProps {
     onSave: () => void
     onStatusChange: (s: PaperStatus) => Promise<void>
-    annotations: PdfAnnotations
+    annotations: Annotation[]
     pages: PDFPageInfo[]
     paperStatus: PaperStatus
 }
 
 
 export const Annotations = ({onSave, onStatusChange, annotations, pages, paperStatus}: AnnotationsProps) => {
-
-    const flatAnnotations = annotations.flat()
 
     const onFinishToggle = (isFinished: boolean) => {
 
@@ -69,6 +67,10 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
                     Save
                 </SmallButton>
             </SidebarItemTitle>
+            <ExplainerText>
+                <InfoCircleOutlined style={{marginRight: "3px"}}/>
+                Use CMD + z to undo the last annotation. 
+            </ExplainerText>
             <span>
                 <ToggleDescription>
                     Finished?
@@ -92,11 +94,11 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
                 />
             </span>
             <div>
-                {flatAnnotations.length === 0 ? (
+                {annotations.length === 0 ? (
                     <>No Annotations Yet :(</>
                 ) : (
                     <div>
-                        {flatAnnotations.flatMap((annotation, i) => (
+                        {annotations.map((annotation, i) => (
                             <AnnotationSummary 
                                 key={annotation.id}
                                 annotation={annotation}
@@ -109,6 +111,15 @@ export const Annotations = ({onSave, onStatusChange, annotations, pages, paperSt
         </SidebarItem>
     );
 }
+
+const ExplainerText = styled.div`
+    font-size: ${({ theme }) => theme.spacing.sm};
+
+    &, & * {
+        color: ${({ theme }) => theme.color.N6};
+    }
+`
+
 
 const Toggle = styled(Switch)`
   margin: 8px 8px;

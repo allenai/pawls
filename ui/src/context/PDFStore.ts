@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import pdfjs from 'pdfjs-dist';
 
 import { Token, Label } from '../api';
-import { TokenId, Annotation, PdfAnnotations } from './AnnotationStore';
+import { TokenId, Annotation } from './AnnotationStore';
 
 
 export type Optional<T> = T | undefined;
@@ -97,15 +97,14 @@ function doOverlap(a: Bounds, b: Bounds): boolean {
 export function handleNewAnnotations(
     page: PDFPageInfo,
     selection: Bounds,
-    existingAnnotations: PdfAnnotations,
+    existingAnnotations: Annotation[],
     activeLabel: Label,
     freeform: boolean,
-    ): PdfAnnotations {
+    ): Annotation[] {
 
     const updatedAnnotations = existingAnnotations.slice(0)
     let annotation: Optional<Annotation> = undefined
     
-    const pageIndex = page.page.pageNumber - 1
     const normalized = normalizeBounds(selection)
     if (freeform){
         annotation = page.getFreeFormAnnotationForBounds(normalized, activeLabel)
@@ -114,7 +113,7 @@ export function handleNewAnnotations(
     }
     if (annotation !== undefined) {
         // First annotation we have seen.
-        updatedAnnotations[pageIndex].push(annotation)
+        updatedAnnotations.push(annotation)
     }
     return updatedAnnotations
 }

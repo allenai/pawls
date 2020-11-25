@@ -83,7 +83,6 @@ export class Annotation {
 
 
 
-export type PdfAnnotations = Annotation[][]
 
 interface _AnnotationStore {
     labels: Label[]
@@ -97,10 +96,12 @@ interface _AnnotationStore {
     pdfRelations: RelationGroup[],
     setPdfRelations: (t: RelationGroup[]) => void,
 
-    pdfAnnotations: PdfAnnotations;
+    pdfAnnotations: Annotation[];
+    setPdfAnnotations: (t: Annotation[]) => void;
+
     selectedAnnotations: Annotation[]
     setSelectedAnnotations: (t: Annotation[]) => void;
-    setPdfAnnotations: (t: PdfAnnotations) => void;
+
     freeFormAnnotations: boolean;
     toggleFreeFormAnnotations: (state: boolean) => void;
 }
@@ -125,8 +126,7 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     setSelectedAnnotations: (_?: Annotation[]) => {
         throw new Error('Unimplemented');
     },
-
-    setPdfAnnotations: (_: PdfAnnotations) => {
+    setPdfAnnotations: (_: Annotation[]) => {
         throw new Error('Unimplemented');
     },
     freeFormAnnotations: false,

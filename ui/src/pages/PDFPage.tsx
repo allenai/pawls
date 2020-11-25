@@ -9,7 +9,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
-import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, PdfAnnotations, RelationGroup } from '../context';
+import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup } from '../context';
 
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -37,7 +37,7 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>();
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<Annotation[]>([]);
     const [ pdfRelations, setPdfRelations ] = useState<RelationGroup[]>([]);
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
@@ -95,26 +95,23 @@ export const PDFPage = () => {
     }
 
     const onSave = () => {
+        saveAnnotations(sha, pdfAnnotations, pdfRelations).then(() => {
+            notification.success({message: "Saved Annotations!"})
+        }).catch((err) => {
 
-        if (pdfAnnotations) {
-            saveAnnotations(sha, pdfAnnotations.flat(), pdfRelations).then(() => {
-                notification.success({message: "Saved Annotations!"})
-            }).catch((err) => {
-
-                notification.error({
-                    message: "Sorry, something went wrong!",
-                    description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
-                })
-                console.log("Failed to save annotations: ", err)
+            notification.error({
+                message: "Sorry, something went wrong!",
+                description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
             })
-            const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-            setPaperStatus(sha, {
-                ...current.status,
-                annotations: pdfAnnotations.flat().length,
-                relations: pdfRelations.length
-            })
-        }
-    }
+            console.log("Failed to save annotations: ", err)
+        })
+        const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
+        setPaperStatus(sha, {
+            ...current.status,
+            annotations: pdfAnnotations.length,
+            relations: pdfRelations.length
+        })
+}
 
     const onRelationModalOk = (group: RelationGroup) => {
 
@@ -162,6 +159,26 @@ export const PDFPage = () => {
             window.removeEventListener("keyup", onShiftUp)
         })
     }, [])
+
+
+    useEffect(() => {
+        const handleUndo = (e: KeyboardEvent) => {
+
+            if (e.metaKey && e.keyCode === 90) {
+                if (pdfAnnotations.length !== 0) {
+                    const dropped = pdfAnnotations.slice(0)
+                    dropped.pop()
+                    setPdfAnnotations(dropped)
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleUndo);
+        return () => {
+            window.removeEventListener('keydown', handleUndo)
+        };
+    }, [pdfAnnotations, setPdfAnnotations])
+
 
 
 
@@ -218,18 +235,10 @@ export const PDFPage = () => {
             return Promise.all(loadPages);
         }).then(pages => {
             setPages(pages);
-            // Initialize the store for keeping our per-page annotations.
-            const initialPageAnnotations: PdfAnnotations = []
-            pages.forEach((p) => {
-                initialPageAnnotations.push([])
-            })
             // Get any existing annotations for this pdf.
             getAnnotations(sha).then(paperAnnotations => {
-                paperAnnotations.annotations.forEach((annotation) => {
-                    initialPageAnnotations[annotation.page].push(annotation)
-                })
                 setPdfRelations(paperAnnotations.relations)
-                setPdfAnnotations(initialPageAnnotations)
+                setPdfAnnotations(paperAnnotations.annotations)
 
             }).catch((err: any) => {
                 console.error(`Error Fetching Existing Annotations: `, err);
@@ -283,7 +292,7 @@ export const PDFPage = () => {
                 </WithSidebar>
             );
         case ViewState.LOADED:
-            if (doc && pdfAnnotations && pages) {
+            if (doc && pages) {
                 return (
                     <PDFStore.Provider value={{
                         doc,
