@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import styled from "styled-components";
-import { Input, notification} from "@allenai/varnish";
+import { Input} from "@allenai/varnish";
 
-import { SidebarItem, SidebarItemTitle, SmallButton } from "./common";
+import { SidebarItem, SidebarItemTitle } from "./common";
 import { PaperStatus } from "../../api";
 
 interface CommentProps {
@@ -19,30 +19,22 @@ export const Comment = ({onStatusChange, paperStatus}: CommentProps) => {
             ...paperStatus,
             comments: comment
         }
-        onStatusChange(newStatus).then(() => {
-            notification.info({message: "Comment saved!"})
-        })
+        onStatusChange(newStatus)
     }
 
     return (
         <SidebarItem>
             <SidebarItemTitle>
                 Comments
-                <SmallButton
-                    type="primary"
-                    size="small"
-                    onClick={onCommentSave}
-                >
-                    Save
-                </SmallButton>
             </SidebarItemTitle>
             <DarkTextArea
                 defaultValue={paperStatus.comments}
                 onChange={(e) => setComment(e.target.value)}
+                onBlur={onCommentSave}
+                autoSize={{minRows: 6}}
             />
         </SidebarItem>
     );
-
 };
 
 const DarkTextArea = styled(Input.TextArea)`
