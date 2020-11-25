@@ -165,9 +165,6 @@ export const PDFPage = () => {
         const handleUndo = (e: KeyboardEvent) => {
 
             if (e.metaKey && e.keyCode === 90) {
-                if (!pdfAnnotations) {
-                    return
-                }
                 if (pdfAnnotations.length !== 0) {
                     const dropped = pdfAnnotations.slice(0)
                     dropped.pop()
