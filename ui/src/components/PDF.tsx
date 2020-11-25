@@ -95,7 +95,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
 
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
-        const store = annotationStore.pdfAnnotations.slice(0)
         const annotationId = annotation.toString()
         const dropped = annotationStore.pdfAnnotations.filter(a => a.toString()!== annotationId)
         const relations = annotationStore.pdfRelations
