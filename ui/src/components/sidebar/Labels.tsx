@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Tag, Switch} from "@allenai/varnish";
 
 import { AnnotationStore } from "../../context";
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import { SidebarItem, SidebarItemTitle } from "./common";
 
@@ -30,16 +30,17 @@ export const Labels = () => {
                     annotationStore.setActiveLabel(annotationStore.labels[index])
                 }
             }
-            // Tab key
-            if (e.keyCode === 9) {
+            // Left/Right Arrow keys
+            if (e.keyCode === 37 || e.keyCode === 39) {
                 if (!annotationStore.activeLabel) {
                     annotationStore.setActiveLabel(annotationStore.labels[0])
                     return;
                 }
                 const currentIndex = annotationStore.labels.indexOf(annotationStore.activeLabel)
+                // Right goes forward
                 let next = currentIndex === annotationStore.labels.length - 1 ? 0 : currentIndex + 1
-                // Shift + Tab is the other way.
-                if (e.shiftKey) {
+                // Left goes backward
+                if (e.keyCode === 37) {
                     next = currentIndex === 0 ? annotationStore.labels.length - 1 : currentIndex - 1
                 }
                 annotationStore.setActiveLabel(annotationStore.labels[next])
@@ -57,6 +58,10 @@ export const Labels = () => {
           <SidebarItemTitle>
               Labels
           </SidebarItemTitle>
+            <ExplainerText>
+                <InfoCircleOutlined style={{marginRight: "3px"}}/>
+                Use arrow keys to select labels to annotate.
+            </ExplainerText>
           <Container>
             <div>
                 {annotationStore.labels.map(label => (
@@ -104,6 +109,15 @@ export const Labels = () => {
     )
 }
 
+
+const ExplainerText = styled.div`
+    font-size: ${({ theme }) => theme.spacing.sm};
+
+    &, & * {
+        color: ${({ theme }) => theme.color.N6};
+    }
+`
+
 const LabelTag = styled(CheckableTag)`
 
     &.ant-tag-checkable-checked {
@@ -116,7 +130,7 @@ const Toggle = styled(Switch)`
 `
 
 const Container = styled.div(({ theme }) => `
-   margin-top: ${theme.spacing.md};
+   margin-top: ${theme.spacing.sm};
    div + div {
        margin-top: ${theme.spacing.md};
    }
