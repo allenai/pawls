@@ -91,20 +91,18 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [ selection, setSelection ] = useState<Bounds>();
 
-    const annotations = annotationStore.pdfAnnotations[pageInfo.page.pageNumber - 1]
+    const annotations = annotationStore.pdfAnnotations.filter(a => a.page === pageInfo.page.pageNumber - 1)
 
     const removeAnnotation = (annotation: Annotation, page: number): void => {
         // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
         const store = annotationStore.pdfAnnotations.slice(0)
         const annotationId = annotation.toString()
-        const dropped = annotationStore.pdfAnnotations[page].filter(a => a.toString()!== annotationId)
-        store[page] = dropped
-
+        const dropped = annotationStore.pdfAnnotations.filter(a => a.toString()!== annotationId)
         const relations = annotationStore.pdfRelations
 
         const updatedRelations = relations.map((r) => r.updateForAnnotationDeletion(annotation))
 
-        annotationStore.setPdfAnnotations(store)
+        annotationStore.setPdfAnnotations(dropped)
         // TODO(Mark): Why can't typescript infer the type here? This seems basic.
         annotationStore.setPdfRelations(updatedRelations.filter(r => r !== undefined) as RelationGroup[])
     }
@@ -123,7 +121,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
         }
     }
 
-
     useEffect(() => {
         try {
             const determinePageVisiblity = () => {
@@ -132,8 +129,11 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                     const windowBottom = window.innerHeight;
                     const rect = canvasRef.current.getBoundingClientRect();
                     setIsVisible(
-                        (rect.top > windowTop && rect.top < windowBottom) ||
-                        (rect.bottom > windowTop && rect.bottom < windowBottom) ||
+                        // Top is in within window
+                        (windowTop < rect.top && rect.top < windowBottom) ||
+                        // Bottom is in within window
+                        (windowTop < rect.bottom && rect.bottom < windowBottom) ||
+                        // top is negative and bottom is +ve
                         (rect.top < windowTop && rect.bottom > windowTop)
                     );
                 }
@@ -212,6 +212,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                             annotationStore.activeLabel,
                             annotationStore.freeFormAnnotations
                         )
+                        console.log(updatedAnnotations)
                         annotationStore.setPdfAnnotations(updatedAnnotations)
                     }
                     setSelection(undefined);
