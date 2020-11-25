@@ -1,15 +1,31 @@
-import React from 'react';
-import { Annotation, PDFPageInfo } from '../context';
+import React, {useContext} from 'react';
+import { Annotation } from '../context';
 import { Tag } from "@allenai/varnish";
 import styled from 'styled-components';
-
+import { DeleteFilled } from "@ant-design/icons"
+import { PDFStore, AnnotationStore } from "../context"
 
 interface AnnotationSummaryProps {
     annotation: Annotation
-    pageInfo: PDFPageInfo;
 }
 
-export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps) => {
+export const AnnotationSummary = ({annotation}: AnnotationSummaryProps) => {
+
+    const pdfStore = useContext(PDFStore)
+    const annotationStore = useContext(AnnotationStore)
+
+    const onDelete = () => {
+        const filtered = annotationStore.pdfAnnotations
+            .filter((a) => a.id !== annotation.id)
+
+        annotationStore.setPdfAnnotations(filtered)
+    }
+
+    if (!pdfStore.pages) {
+        return null
+    }
+
+    const pageInfo = pdfStore.pages[annotation.page]
 
     const text = annotation.tokens === null ? "Freeform" : 
             annotation.tokens
@@ -27,6 +43,7 @@ export const AnnotationSummary = ({annotation, pageInfo}: AnnotationSummaryProps
             <SmallTag color="grey">
                 Page {pageInfo.page.pageNumber}
             </SmallTag>
+            <DeleteFilled onClick={onDelete}/>
         </PaddedRow>
     );
 
@@ -36,7 +53,7 @@ const PaddedRow = styled.div(({ theme }) => `
     padding: 4px 0;
     border-radius: 2px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) min-content min-content;
+    grid-template-columns: minmax(0, 1fr) min-content min-content min-content;
 
 `);
 

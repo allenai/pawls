@@ -1,6 +1,6 @@
 import React, { useState, useContext} from 'react';
 import { Modal, Tag, Transfer } from '@allenai/varnish';
-import { Annotation, RelationGroup, AnnotationStore, PDFPageInfo } from '../context';
+import { Annotation, RelationGroup, AnnotationStore } from '../context';
 import { Label } from '../api';
 import { AnnotationSummary } from "./AnnotationSummary";
 
@@ -12,11 +12,10 @@ interface RelationModalProps {
     onCancel: () => void
     source: Annotation[]
     label: Label,
-    pages: PDFPageInfo[]
 }
 
 
-export const RelationModal = ({visible, onClick, onCancel, source, label, pages}: RelationModalProps) => {
+export const RelationModal = ({visible, onClick, onCancel, source, label}: RelationModalProps) => {
  
     const annotationStore = useContext(AnnotationStore)
     const [targetKeys, setTargetKeys] = useState<string[]>([])
@@ -62,7 +61,6 @@ export const RelationModal = ({visible, onClick, onCancel, source, label, pages}
             render={item => (
                 <AnnotationSummary
                     annotation={item.annotation}
-                    pageInfo={pages[item.annotation.page]}
                 />
             )}
         />
