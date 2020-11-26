@@ -82,9 +82,8 @@ def user_is_allowed(user_email: str) -> bool:
                 if user_email == entry:
                     return True
                 # entries like "@allenai.org" mean anyone in that domain @allenai.org is granted access
-                if entry.startswith("@"):
-                    if user_email.endswith(entry):
-                        return True
+                if entry.startswith("@") and user_email.endswith(entry):
+                    return True
     except FileNotFoundError:
         pass
 
