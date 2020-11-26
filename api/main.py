@@ -139,8 +139,6 @@ def set_pdf_status(
     sha: str, status: PaperStatus, x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
 
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
@@ -160,8 +158,6 @@ def get_annotations(
     sha: str, x_auth_request_email: str = Header(None)
 ) -> PdfAnnotation:
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
     annotations = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
     )
@@ -194,8 +190,6 @@ def save_annotations(
     """
 
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
     annotations_path = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
     )
@@ -304,8 +298,6 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     # we always return all pdfs, essentially short-circuiting the allocation
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
 
     status_dir = os.path.join(configuration.output_directory, "status")
     status_path = os.path.join(status_dir, f"{user}.json")
