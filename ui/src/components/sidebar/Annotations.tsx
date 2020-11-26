@@ -1,7 +1,7 @@
 
 import React from 'react';
 import styled from "styled-components"
-import { SidebarItem, SidebarItemTitle, SmallButton} from "./common";
+import { SidebarItem, SidebarItemTitle } from "./common";
 import { Switch, notification } from '@allenai/varnish';
 import { Annotation } from "../../context";
 
@@ -10,14 +10,13 @@ import { AnnotationSummary } from "../AnnotationSummary";
 import { PaperStatus } from '../../api';
 
 interface AnnotationsProps {
-    onSave: () => void
     onStatusChange: (s: PaperStatus) => Promise<void>
     annotations: Annotation[]
     paperStatus: PaperStatus
 }
 
 
-export const Annotations = ({onSave, onStatusChange, annotations, paperStatus}: AnnotationsProps) => {
+export const Annotations = ({ onStatusChange, annotations, paperStatus}: AnnotationsProps) => {
 
     const onFinishToggle = (isFinished: boolean) => {
 
@@ -58,13 +57,6 @@ export const Annotations = ({onSave, onStatusChange, annotations, paperStatus}: 
         <SidebarItem>
             <SidebarItemTitle>
                 Annotations
-                <SmallButton
-                    type="primary"
-                    size="small"
-                    onClick={onSave}
-                >
-                    Save
-                </SmallButton>
             </SidebarItemTitle>
             <ExplainerText>
                 <InfoCircleOutlined style={{marginRight: "3px"}}/>

@@ -93,25 +93,27 @@ export const PDFPage = () => {
             throw new Error("No active Paper!")
         }
     }
-
-    const onSave = () => {
-        saveAnnotations(sha, pdfAnnotations, pdfRelations).then(() => {
-            notification.success({message: "Saved Annotations!"})
-        }).catch((err) => {
-
-            notification.error({
-                message: "Sorry, something went wrong!",
-                description: "Try saving your annotations again in a second, or contact someone on the Semantic Scholar team."
+    useEffect(() => {
+        // We only save annotations once the annotations have
+        // been fetched, because otherwise we save when the
+        // annotations and relations are empty.
+        if (viewState === ViewState.LOADED) {
+            saveAnnotations(sha, pdfAnnotations, pdfRelations).catch((err) => {
+    
+                notification.error({
+                    message: "Sorry, something went wrong!",
+                    description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
+                })
+                console.log("Failed to save annotations: ", err)
             })
-            console.log("Failed to save annotations: ", err)
-        })
-        const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-        setPaperStatus(sha, {
-            ...current.status,
-            annotations: pdfAnnotations.length,
-            relations: pdfRelations.length
-        })
-}
+            const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
+            setPaperStatus(sha, {
+                ...current.status,
+                annotations: pdfAnnotations.length,
+                relations: pdfRelations.length
+            })
+        }
+    }, [sha, pdfAnnotations, pdfRelations])
 
     const onRelationModalOk = (group: RelationGroup) => {
 
@@ -324,7 +326,6 @@ export const PDFPage = () => {
                                     <AssignedPaperList papers={assignedPaperInfo}/>
                                     {activePaperInfo ?
                                     <Annotations 
-                                        onSave={onSave}
                                         onStatusChange={onStatusChange}
                                         annotations={pdfAnnotations}
                                         paperStatus={activePaperInfo.status}
