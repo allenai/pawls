@@ -23,7 +23,7 @@ CONFIGURATION_FILE = os.getenv(
 
 ALLOWED_USERS_FILENAME = os.getenv("PAWLS_ALLOWED_USERS_FILENAME")
 if not ALLOWED_USERS_FILENAME:
-    print("Missing env var ALLOWED_USERS_FILENAME")
+    print("Missing env var PAWLS_ALLOWED_USERS_FILENAME")
     sys.exit(1)
 
 handlers = None
