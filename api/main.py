@@ -91,8 +91,6 @@ def user_is_allowed(user_email: str) -> bool:
     return False
 
 
-
-
 def all_pdf_shas() -> List[str]:
     pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
     return [p.split("/")[-2] for p in pdfs]
@@ -226,7 +224,10 @@ def get_tokens(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(sha, token_sources=sources,)
+    response = pdf_structure.get_annotations(
+        sha,
+        token_sources=sources,
+    )
     if pages is not None:
         response = pdf_structure.filter_token_source_for_pages(response, pages)
 
@@ -270,7 +271,10 @@ def get_regions(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(sha, region_sources=sources,)
+    response = pdf_structure.get_annotations(
+        sha,
+        region_sources=sources,
+    )
     if pages is not None:
         response = pdf_structure.filter_regions_for_pages(response, pages)
     return response
