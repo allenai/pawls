@@ -113,6 +113,15 @@ export const PDFPage = () => {
         })
 }
 
+    useEffect(() => {
+        // We only save annotations once the annotations have
+        // been fetched, because otherwise we save when the
+        // annotations and relations are empty.
+        if (viewState === ViewState.LOADED) {
+            saveAnnotations(sha, pdfAnnotations, pdfRelations)
+        }
+    }, [sha, pdfAnnotations, pdfRelations])
+
     const onRelationModalOk = (group: RelationGroup) => {
 
         pdfRelations.push(group)
