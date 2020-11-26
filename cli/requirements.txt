@@ -1,4 +1,8 @@
 click>=6.7
+tqdm
+pdfminer
+pdf2image
+
 # S3 access
 boto3
 

@@ -198,6 +198,12 @@ function(
                             persistentVolumeClaim: {
                                 claimName: 'skiff-files-server-pawls'
                             }
+                        },
+                        {
+                            name: "users",
+                            secret: {
+                                secretName: "users"
+                            }
                         }
                     ],
                     containers: [
@@ -205,12 +211,18 @@ function(
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
                             env: [ { name: "IN_PRODUCTION", value: "prod" }],
+                            env: [ { name: "PAWLS_ALLOWED_USERS_FILENAME", value: "/users/allowed.txt" }],
                             envFrom: [ { secretRef: { name: "aws-pdf-iam" } } ],
                             volumeMounts: [
                                 {
                                     mountPath: '/skiff_files/apps/pawls',
                                     name: 'skiff-files',
                                     readOnly: false
+                                },
+                                {
+                                    name: 'users',
+                                    mountPath: '/users/allowed.txt',
+                                    readOnly: true
                                 }
                             ],
                             # The "probes" below allow Kubernetes to determine

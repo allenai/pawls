@@ -3,6 +3,7 @@ import logging
 import os
 import json
 import glob
+import sys
 
 from fastapi import FastAPI, Query, HTTPException, Header
 from fastapi.responses import FileResponse
@@ -15,11 +16,15 @@ from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
-DEVELOPMENT_USER = "development_user"
 
 CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
 )
+
+ALLOWED_USERS_FILENAME = os.getenv("PAWLS_ALLOWED_USERS_FILENAME")
+if not ALLOWED_USERS_FILENAME:
+    print("Missing env var ALLOWED_USERS_FILENAME")
+    sys.exit(1)
 
 handlers = None
 
@@ -45,20 +50,47 @@ configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
 app = FastAPI()
 
 
-def get_user_from_header(header: Optional[str]) -> Optional[str]:
+def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     """
-    In development (i.e locally, when not deployed to the skiff cluster)
-    the X-Auth-Request-Email header is not present. In development,
-    we use the `development_user` role instead. If we are in production
-    and there is no header, we return None so calling functions can
-    handle the web response appropriately.
+    Call this function with the X-Auth-Request-Email header value. This must
+    include an "@" in its value.
+
+    * In production, this is provided by Skiff after the user authenticates.
+    * In development, it is provided in the NGINX proxy configuration file local.conf.
+
+    If the value isn't well formed, or the user isn't allowed, an exception is
+    thrown.
     """
-    if header is None and IN_PRODUCTION == "dev":
-        return DEVELOPMENT_USER
-    elif header is None:
-        return None
-    else:
-        return header.split("@")[0]
+    if "@" not in user_email:
+        raise HTTPException(403, "Forbidden")
+
+    if not user_is_allowed(user_email):
+        raise HTTPException(403, "Forbidden")
+
+    # This returns the "username" portion of the email address.
+    return user_email.split("@")[0]
+
+
+def user_is_allowed(user_email: str) -> bool:
+    """
+    Return True if the user_email is in the file ALLOWED_USERS_FILENAME, False otherwise.
+    """
+    try:
+        with open(ALLOWED_USERS_FILENAME) as file:
+            for line in file:
+                entry = line.strip()
+                if user_email == entry:
+                    return True
+                # entries like "@allenai.org" mean anyone in that domain @allenai.org is granted access
+                if entry.startswith("@"):
+                    if user_email.endswith(entry):
+                        return True
+    except FileNotFoundError:
+        pass
+
+    return False
+
+
 
 
 def all_pdf_shas() -> List[str]:
