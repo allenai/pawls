@@ -221,7 +221,7 @@ function(
                                 },
                                 {
                                     name: 'users',
-                                    mountPath: '/users/allowed.txt',
+                                    mountPath: '/users',
                                     readOnly: true
                                 }
                             ],
