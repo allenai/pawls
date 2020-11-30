@@ -29,6 +29,43 @@ For instance, you can run this command to download the specified PDF:
     pawls preprocess grobid skiff_files/apps/pawls/papers
 ```
 
+### Authentication
+
+All requests must be authenticated.
+
+* The production deployment of PAWLS uses [Skiff
+  Login](https://skiff.allenai.org/login.html) to authenticate requests. New
+  users are bounced to a Google login workflow, and redirected back to the site
+  if they authenticate with Google. Authenticated requests carry an HTTP header
+  that identifies the user.
+* For local development, there is no login workflow. Instead, all requests are
+  supplemented with a hard-coded authentication header in
+  [proxy/local.conf](proxy/local.conf) specifying that the user is
+  `development_user@example.com`.
+
+Look at the function `get_user_from_header` in [main.py](api/main.py) for
+details.
+
+### Authorization
+
+Authorization is enforced by the PAWLS app. A file of allowed user email
+addresses is consulted on every request.
+
+* In production, this file is sourced from [the secret named
+  "users"](http://marina.apps.allenai.org/a/pawls/s/users) in Marina, which is
+  projected to `/users/allowed.txt` in the container.
+* For local development, this file is sourced from
+  [allowed_users_local_development.txt](api/config/allowed_users_local_development.txt),
+  and also projected to `/users/allowed.txt` in the Docker container.
+
+The format of the file is simply a list of allowed email addresses.
+
+There's a special case when an allowed email address in this file starts with
+"@", meaning all users in that domain are allowed. That is, an entry
+"@allenai.org" will grant access to all AI2 people.
+
+Look at the function `user_is_allowed` in [main.py](api/main.py) for details.
+
 ### Python Development
 
 The Python service and Python cli are formatted using `black` and `flake8`. Currently this is run in a local environment
