@@ -215,6 +215,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                             <SelectionBoundary
                                 color={annotationStore.activeLabel.color}
                                 bounds={selection}
+                                selected={false}
                                 />
                             <SelectionTokens pageInfo={pageInfo} tokens={tokens}/>
                         </>

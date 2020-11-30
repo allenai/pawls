@@ -21,12 +21,13 @@ import { CloseCircleFilled } from '@ant-design/icons';
 interface SelectionBoundaryProps {
     color: string
     bounds: Bounds
+    selected: boolean
     children?: React.ReactNode
     annotationId?: string
     onClick?: () => void
 }
 
-export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionBoundaryProps) => {
+export const SelectionBoundary = ({color, bounds, children, onClick, selected}: SelectionBoundaryProps) => {
 
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
@@ -35,8 +36,6 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
     const border = 3
     const rgbColor = hexToRgb(color)
 
-    const [localSelected, setLocalSelected] = useState<boolean>(false)
-    
     return (
         <span
           onClick={(e) => {
@@ -64,7 +63,7 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
             transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
             transformOrigin: 'top left',
             border: `${border}px solid ${color}`,
-            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${localSelected ? 0.3: 0.1})`,
+            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${selected ? 0.3: 0.1})`,
         }}
         >
             {children ? children: null}
@@ -173,6 +172,7 @@ export const Selection = ({
             color={color}
             bounds={bounds}
             onClick={onShiftClick}
+            selected={isSelected}
             >
             {showInfo ? (
                 <SelectionInfo border={border} color={color}>
