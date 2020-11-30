@@ -21,11 +21,6 @@ CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
 )
 
-ALLOWED_USERS_FILENAME = os.getenv("PAWLS_ALLOWED_USERS_FILENAME")
-if not ALLOWED_USERS_FILENAME:
-    print("Missing env var PAWLS_ALLOWED_USERS_FILENAME")
-    sys.exit(1)
-
 handlers = None
 
 if IN_PRODUCTION == "prod":
@@ -73,10 +68,10 @@ def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
 
 def user_is_allowed(user_email: str) -> bool:
     """
-    Return True if the user_email is in the file ALLOWED_USERS_FILENAME, False otherwise.
+    Return True if the user_email is in the users file, False otherwise.
     """
     try:
-        with open(ALLOWED_USERS_FILENAME) as file:
+        with open(configuration.users_file) as file:
             for line in file:
                 entry = line.strip()
                 if user_email == entry:
@@ -85,6 +80,7 @@ def user_is_allowed(user_email: str) -> bool:
                 if entry.startswith("@") and user_email.endswith(entry):
                     return True
     except FileNotFoundError:
+        logger.warning("file not found: %s", configuration.users_file)
         pass
 
     return False

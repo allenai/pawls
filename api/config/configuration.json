@@ -82,5 +82,6 @@
             "color": "#34626C"
         }
     ],
-    "relations": []
+    "relations": [],
+    "users_file": "/users/allowed.txt"
 }

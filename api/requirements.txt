@@ -11,6 +11,7 @@ pytest
 pytest-env
 flake8
 black
+requests
 
 # used for form parsing
 python-multipart
