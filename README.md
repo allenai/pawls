@@ -29,7 +29,14 @@ For instance, you can run this command to download the specified PDF:
     pawls preprocess grobid skiff_files/apps/pawls/papers
 ```
 
-### Authentication
+### Authentication and Authorization
+
+*Authentication* is simply checking that users are who they say they are. Whether
+or not these users' requests are allowed (e.g., to view a PDFs) is considerd
+*authorization*. See more about this distinction at [Skiff
+Login](https://skiff.allenai.org/login.html).
+
+#### Authentication
 
 All requests must be authenticated.
 
@@ -46,7 +53,7 @@ All requests must be authenticated.
 Look at the function `get_user_from_header` in [main.py](api/main.py) for
 details.
 
-### Authorization
+#### Authorization
 
 Authorization is enforced by the PAWLS app. A file of allowed user email
 addresses is consulted on every request.
