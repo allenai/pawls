@@ -44,6 +44,7 @@ class TestAssign(unittest.TestCase):
         sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
         with tempfile.TemporaryDirectory() as tempdir:
             result = runner.invoke(fetch, [tempdir, sha])
+            assert result.exit_code == 0
             result = runner.invoke(assign, [tempdir, "mark", sha])
             assert result.exit_code == 0
             status_path = os.path.join(tempdir, "status", "mark.json")
