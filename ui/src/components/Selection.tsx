@@ -1,7 +1,7 @@
 import React, { useContext, useState} from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
-import { Bounds, TokenId, PDFPageInfo } from '../context';
+import { Bounds, TokenId, PDFPageInfo, Annotation, RelationGroup, AnnotationStore } from '../context';
 import { Label } from '../api'
 import { CloseCircleFilled } from '@ant-design/icons';
 
@@ -34,10 +34,9 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
     const rotateX = height < 0 ? -180 : 0;
     const border = 3
     const rgbColor = hexToRgb(color)
-    // TODO(Mark): This should be stateless, currently it
-    // doesn't drop the darker background after relations are done.
-    const [selected, setSelected] = useState(false)
 
+    const [localSelected, setLocalSelected] = useState<boolean>(false)
+    
     return (
         <span
           onClick={(e) => {
@@ -48,7 +47,6 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
               if (e.shiftKey && onClick) {
                 e.stopPropagation();
                 onClick()
-                setSelected(!selected)
                 
             }
           }}
@@ -66,7 +64,7 @@ export const SelectionBoundary = ({color, bounds, children, onClick}: SelectionB
             transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
             transformOrigin: 'top left',
             border: `${border}px solid ${color}`,
-            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${selected ? 0.3: 0.1})`,
+            background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${localSelected ? 0.3: 0.1})`,
         }}
         >
             {children ? children: null}
@@ -88,7 +86,7 @@ const TokenSpan = styled.span<TokenSpanProps>(({ theme, isSelected }) =>`
 
 interface SelectionTokenProps {
     pageInfo: PDFPageInfo
-    tokens: TokenId[]
+    tokens: TokenId[] | null
 }
 export const SelectionTokens = ({pageInfo, tokens}: SelectionTokenProps) => {
 
@@ -119,26 +117,19 @@ export const SelectionTokens = ({pageInfo, tokens}: SelectionTokenProps) => {
 
 interface SelectionProps {
     pageInfo: PDFPageInfo
-    bounds: Bounds
-    tokens?: TokenId[]
-    label: Label
-    onClickDelete?: () => void
-    onClick?: () => void
+    annotation: Annotation
     showInfo?: boolean
-    isSelected?: boolean
  }
 
 export const Selection = ({
-    pageInfo, 
-    tokens,
-    bounds,
-    label,
-    onClickDelete,
-    onClick,
+    pageInfo,
+    annotation,
     showInfo = true,
-    isSelected = false
 }: SelectionProps) => {
+
+    const label = annotation.label
     const theme = useContext(ThemeContext)
+    const annotationStore = useContext(AnnotationStore)
     let color;
     if (!label) {
         color = theme.color.N4.hex // grey as the default.
@@ -147,9 +138,42 @@ export const Selection = ({
     }
     const border = 3
 
+    const bounds = pageInfo.getScaledBounds(annotation.bounds)
+
+
+    const removeAnnotation = () => {
+        // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
+        const annotationId = annotation.toString()
+        const dropped = annotationStore.pdfAnnotations.filter(a => a.toString()!== annotationId)
+        const relations = annotationStore.pdfRelations
+
+        const updatedRelations = relations.map((r) => r.updateForAnnotationDeletion(annotation))
+
+        annotationStore.setPdfAnnotations(dropped)
+        // TODO(Mark): Why can't typescript infer the type here? This seems basic.
+        annotationStore.setPdfRelations(updatedRelations.filter(r => r !== undefined) as RelationGroup[])
+    }
+
+    const onShiftClick = () => {
+        const current = annotationStore.selectedAnnotations
+
+        if (current.some((other) => other.id === annotation.id)) {
+            const next = current.filter((other) => other.id !== annotation.id)
+            annotationStore.setSelectedAnnotations(next)
+        } else {
+            current.push(annotation)
+            annotationStore.setSelectedAnnotations(current)
+        }
+    }
+
+    const isSelected = annotationStore.selectedAnnotations.includes(annotation)
     return (
         <>
-          <SelectionBoundary color={color} bounds={bounds} onClick={onClick}>
+          <SelectionBoundary 
+            color={color}
+            bounds={bounds}
+            onClick={onShiftClick}
+            >
             {showInfo ? (
                 <SelectionInfo border={border} color={color}>
                 <span>
@@ -158,9 +182,7 @@ export const Selection = ({
                 <CloseCircleFilled
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (onClickDelete){
-                            onClickDelete()
-                        }
+                        removeAnnotation()
                     }}
                     // We have to prevent the default behaviour for
                     // the pdf canvas here, in order to be able to capture
@@ -176,7 +198,7 @@ export const Selection = ({
             // to be relative to that and not another absolute/relatively
             // positioned element. This is why SelectionTokens are not inside
             // SelectionBoundary.
-            tokens ? <SelectionTokens pageInfo={pageInfo} tokens={tokens}/>: null
+            annotation.tokens ? <SelectionTokens pageInfo={pageInfo} tokens={annotation.tokens}/>: null
           }
         </>
      );

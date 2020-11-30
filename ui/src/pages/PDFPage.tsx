@@ -150,9 +150,17 @@ export const PDFPage = () => {
 
         const onShiftUp = (e: KeyboardEvent) => {
 
+            const shift = e.keyCode === 16
+            const somethingSelected = selectedAnnotations.length !== 0
+            const hasRelations = activeRelationLabel !== undefined
+            console.log("shift up!")
             // Shift key up
-            if (e.keyCode === 16 && selectedAnnotations.length !== 0) {
+            if (shift && somethingSelected && hasRelations) {
                 setRelationModalVisible(true)
+            }
+            else if (shift && somethingSelected) {
+                console.log("shift and selected but no relations!")
+                setSelectedAnnotations([])
             }
         }
 
