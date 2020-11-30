@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import List, Callable, Set, Dict, Tuple, NamedTuple, Optional
 
 import click
@@ -52,6 +53,7 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         f"Successfully saved {len(result['success']) - len(metadata_failed)} pdfs and metadata to {str(path)}"
     )
 
+    okay = True
     if metadata_failed:
         print(
             f"Successfully saved {len(metadata_failed)} pdfs, but failed to find metadata for:"
@@ -59,6 +61,7 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         for sha in metadata_failed:
             print(sha)
         print()
+        okay = False
 
     not_found = result["not_found"]
     if not_found:
@@ -66,6 +69,7 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         for sha in not_found:
             print(sha)
         print()
+        okay = False
 
     error = result["error"]
     if error:
@@ -73,6 +77,10 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         for sha in error:
             print(sha)
         print()
+        okay = False
+
+    if not okay:
+        sys.exit(1)
 
 
 # settings for S3 buckets

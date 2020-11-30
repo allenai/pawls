@@ -16,6 +16,7 @@ services:
         volumes:
             - ./api:/usr/local/src/skiff/app/api
             - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
+            - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
@@ -38,3 +39,6 @@ services:
         build: ./proxy
         ports:
             - 8080:80
+        depends_on:
+            - api
+            - ui

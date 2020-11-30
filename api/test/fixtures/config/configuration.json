@@ -19,5 +19,6 @@
             "text": "Definition",
             "color": "#FFD45D"
         }
-    ]
+    ],
+    "users_file": "test/fixtures/users/allowed.txt"
 }

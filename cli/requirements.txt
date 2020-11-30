@@ -1,4 +1,8 @@
 click>=6.7
+tqdm
+pdfminer
+pdf2image
+
 # S3 access
 boto3
 
@@ -7,3 +11,7 @@ requests
 
 # pdf-structure service client.
 git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#subdirectory=clients/python
+
+# used for testing
+pytest
+

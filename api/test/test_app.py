@@ -1,5 +1,5 @@
-import shutil
 import os
+import shutil
 from unittest import TestCase
 
 from fastapi.testclient import TestClient
@@ -112,14 +112,17 @@ class TestApp(TestCase):
         ]
         assert response.json() == gold
 
-        # No header, should return all pdfs.
-        response = self.client.get("/api/annotation/allocation/info")
-        assert response.json() == gold
-
     def test_get_annotations(self):
-        # Empty
-        response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
+        # All requests in this test are authenticated as this user.
+        headers = {"X-Auth-Request-Email": "example@gmail.com"}
+
+        # Initially there are no annotations
+        response = self.client.get(
+            f"/api/doc/{self.pdf_sha}/annotations", headers=headers
+        )
         assert response.json() == {"annotations": [], "relations": []}
+
+        # Now, post an annotation
         annotation = {
             "id": "this-is-an-id",
             "page": 1,
@@ -127,11 +130,14 @@ class TestApp(TestCase):
             "bounds": {"left": 1.0, "top": 4.3, "right": 5.1, "bottom": 2.5},
             "tokens": None,
         }
-
-        response = self.client.post(
+        self.client.post(
             f"/api/doc/{self.pdf_sha}/annotations",
             json={"annotations": [annotation], "relations": []},
+            headers=headers,
         )
-        # Annotation should be there.
-        response = self.client.get(f"/api/doc/{self.pdf_sha}/annotations")
+
+        # And now, the annotation should be there
+        response = self.client.get(
+            f"/api/doc/{self.pdf_sha}/annotations", headers=headers
+        )
         assert response.json() == {"annotations": [annotation], "relations": []}

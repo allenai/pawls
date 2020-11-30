@@ -198,6 +198,12 @@ function(
                             persistentVolumeClaim: {
                                 claimName: 'skiff-files-server-pawls'
                             }
+                        },
+                        {
+                            name: "users",
+                            secret: {
+                                secretName: "users"
+                            }
                         }
                     ],
                     containers: [
@@ -211,6 +217,11 @@ function(
                                     mountPath: '/skiff_files/apps/pawls',
                                     name: 'skiff-files',
                                     readOnly: false
+                                },
+                                {
+                                    name: 'users',
+                                    mountPath: '/users',
+                                    readOnly: true
                                 }
                             ],
                             # The "probes" below allow Kubernetes to determine

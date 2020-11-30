@@ -3,6 +3,7 @@ import logging
 import os
 import json
 import glob
+import sys
 
 from fastapi import FastAPI, Query, HTTPException, Header
 from fastapi.responses import FileResponse
@@ -15,7 +16,6 @@ from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
-DEVELOPMENT_USER = "development_user"
 
 CONFIGURATION_FILE = os.getenv(
     "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
@@ -45,20 +45,45 @@ configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
 app = FastAPI()
 
 
-def get_user_from_header(header: Optional[str]) -> Optional[str]:
+def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     """
-    In development (i.e locally, when not deployed to the skiff cluster)
-    the X-Auth-Request-Email header is not present. In development,
-    we use the `development_user` role instead. If we are in production
-    and there is no header, we return None so calling functions can
-    handle the web response appropriately.
+    Call this function with the X-Auth-Request-Email header value. This must
+    include an "@" in its value.
+
+    * In production, this is provided by Skiff after the user authenticates.
+    * In development, it is provided in the NGINX proxy configuration file local.conf.
+
+    If the value isn't well formed, or the user isn't allowed, an exception is
+    thrown.
     """
-    if header is None and IN_PRODUCTION == "dev":
-        return DEVELOPMENT_USER
-    elif header is None:
-        return None
-    else:
-        return header.split("@")[0]
+    if "@" not in user_email:
+        raise HTTPException(403, "Forbidden")
+
+    if not user_is_allowed(user_email):
+        raise HTTPException(403, "Forbidden")
+
+    # This returns the "username" portion of the email address.
+    return user_email.split("@")[0]
+
+
+def user_is_allowed(user_email: str) -> bool:
+    """
+    Return True if the user_email is in the users file, False otherwise.
+    """
+    try:
+        with open(configuration.users_file) as file:
+            for line in file:
+                entry = line.strip()
+                if user_email == entry:
+                    return True
+                # entries like "@allenai.org" mean anyone in that domain @allenai.org is granted access
+                if entry.startswith("@") and user_email.endswith(entry):
+                    return True
+    except FileNotFoundError:
+        logger.warning("file not found: %s", configuration.users_file)
+        pass
+
+    return False
 
 
 def all_pdf_shas() -> List[str]:
@@ -109,8 +134,6 @@ def set_pdf_status(
     sha: str, status: PaperStatus, x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
 
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
@@ -130,8 +153,6 @@ def get_annotations(
     sha: str, x_auth_request_email: str = Header(None)
 ) -> PdfAnnotation:
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
     annotations = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
     )
@@ -164,8 +185,6 @@ def save_annotations(
     """
 
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
     annotations_path = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
     )
@@ -194,7 +213,10 @@ def get_tokens(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(sha, token_sources=sources,)
+    response = pdf_structure.get_annotations(
+        sha,
+        token_sources=sources,
+    )
     if pages is not None:
         response = pdf_structure.filter_token_source_for_pages(response, pages)
 
@@ -238,7 +260,10 @@ def get_regions(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(sha, region_sources=sources,)
+    response = pdf_structure.get_annotations(
+        sha,
+        region_sources=sources,
+    )
     if pages is not None:
         response = pdf_structure.filter_regions_for_pages(response, pages)
     return response
@@ -268,8 +293,6 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     # we always return all pdfs, essentially short-circuiting the allocation
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
-    if user is None:
-        raise HTTPException(403, "Invalid user email header.")
 
     status_dir = os.path.join(configuration.output_directory, "status")
     status_path = os.path.join(status_dir, f"{user}.json")
