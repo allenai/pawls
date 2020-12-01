@@ -1,6 +1,7 @@
 <div align="center">
     <br>
     <img src="./ui/src/components/sidebar/pawlsLogo.png" width="400"/>
+
     PDF Annotations with Labels and Structure is software that makes it easy
     to collect a series of annotations associated with a PDF document. It was written
     specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org) corpus, but can be used with any collection of PDF documents.
