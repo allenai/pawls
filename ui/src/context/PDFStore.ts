@@ -29,7 +29,7 @@ function scaled(bounds: Bounds, scale: number): Bounds {
 /**
  * Computes a bound which contains all of the bounds passed as arguments.
  */
-function spanningBound(bounds: Bounds[], padding: number = 5): Bounds{
+function spanningBound(bounds: Bounds[], padding: number = 3): Bounds{
 
     // Start with a bounding box for which any bound would be
     // contained within, meaning we immediately update maxBound.
@@ -127,7 +127,7 @@ export class PDFPageInfo {
         public bounds?: Bounds
     ) {}
 
-    getFreeFormAnnotationForBounds(selection: Bounds, label: Label): Optional<Annotation> {
+    getFreeFormAnnotationForBounds(selection: Bounds, label: Label): Annotation {
 
         if (this.bounds === undefined) {
             throw new Error('Unknown Page Bounds');

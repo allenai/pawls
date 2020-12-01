@@ -2,8 +2,9 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { Annotation, PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations, RelationGroup } from '../context';
+import { PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations } from '../context';
 import { Selection} from '../components'
+import { SelectionBoundary, SelectionTokens } from './Selection';
 
 class PDFPageRenderer {
     private currentRenderTask?: PDFRenderTask;
@@ -92,33 +93,6 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const [ selection, setSelection ] = useState<Bounds>();
 
     const annotations = annotationStore.pdfAnnotations.filter(a => a.page === pageInfo.page.pageNumber - 1)
-
-    const removeAnnotation = (annotation: Annotation, page: number): void => {
-        // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
-        const annotationId = annotation.toString()
-        const dropped = annotationStore.pdfAnnotations.filter(a => a.toString()!== annotationId)
-        const relations = annotationStore.pdfRelations
-
-        const updatedRelations = relations.map((r) => r.updateForAnnotationDeletion(annotation))
-
-        annotationStore.setPdfAnnotations(dropped)
-        // TODO(Mark): Why can't typescript infer the type here? This seems basic.
-        annotationStore.setPdfRelations(updatedRelations.filter(r => r !== undefined) as RelationGroup[])
-    }
-
-    const onShiftClick = (annotation: Annotation): () => void => {
-        return () => {
-            const current = annotationStore.selectedAnnotations
-
-            if (current.some((other) => other.id === annotation.id)) {
-                const next = current.filter((other) => other.id !== annotation.id)
-                annotationStore.setSelectedAnnotations(next)
-            } else {
-                current.push(annotation)
-                annotationStore.setSelectedAnnotations(current)
-            }
-        }
-    }
 
     useEffect(() => {
         try {
@@ -225,12 +199,8 @@ const Page = ({ pageInfo, onError }: PageProps) => {
                 scale && isVisible && annotations.map((annotation) => (
                         <Selection
                             pageInfo={pageInfo}
-                            tokens={annotation.tokens || undefined}
+                            annotation={annotation}
                             key={annotation.toString()}
-                            label={annotation.label}
-                            onClick={onShiftClick(annotation)}
-                            bounds={pageInfo.getScaledBounds(annotation.bounds)}
-                            onClickDelete={() => removeAnnotation(annotation, pageInfo.page.pageNumber - 1)}
                         />
                     )
                 )
@@ -238,15 +208,17 @@ const Page = ({ pageInfo, onError }: PageProps) => {
             {selection && annotationStore.activeLabel ? (() => {
                 if (selection && annotationStore.activeLabel){
                     const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-                    const hasTokens = annotation && !annotationStore.freeFormAnnotations
+                    const tokens = annotation && annotation.tokens && !annotationStore.freeFormAnnotations ? annotation.tokens : null
+
                     return(
-                        <Selection
-                            pageInfo={pageInfo}
-                            tokens={hasTokens && annotation ? annotation.tokens || undefined: undefined}
-                            bounds={selection}
-                            label={annotationStore.activeLabel}
-                            showInfo={false}
-                        />
+                        <>
+                            <SelectionBoundary
+                                color={annotationStore.activeLabel.color}
+                                bounds={selection}
+                                selected={false}
+                                />
+                            <SelectionTokens pageInfo={pageInfo} tokens={tokens}/>
+                        </>
                     )
             }
         })() : null}
