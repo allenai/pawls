@@ -208,7 +208,7 @@ const Page = ({ pageInfo, onError }: PageProps) => {
             {selection && annotationStore.activeLabel ? (() => {
                 if (selection && annotationStore.activeLabel){
                     const annotation = pageInfo.getAnnotationForBounds(normalizeBounds(selection), annotationStore.activeLabel)
-                    const tokens = annotation && annotation.tokens && !annotationStore.freeFormAnnotations ? annotation.tokens: null
+                    const tokens = annotation && annotation.tokens && !annotationStore.freeFormAnnotations ? annotation.tokens : null
 
                     return(
                         <>
