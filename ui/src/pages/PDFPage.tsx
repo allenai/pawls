@@ -113,7 +113,7 @@ export const PDFPage = () => {
                 relations: pdfRelations.length
             })
         }
-    }, [sha, pdfAnnotations, pdfRelations])
+    }, [sha, pdfAnnotations, pdfRelations, viewState, assignedPaperInfo])
 
     const onRelationModalOk = (group: RelationGroup) => {
 
@@ -140,11 +140,9 @@ export const PDFPage = () => {
     useEffect(() => {
         getRelations().then(relations => {
             setRelationLabels(relations)
-            setActiveRelationLabel(
-                relations.length === 0 ? undefined : relations[0]
-                )
+            setActiveRelationLabel(relations[0])
         })
-    }, []) 
+    }, [sha]) 
     
     useEffect(() => {
 
@@ -153,13 +151,11 @@ export const PDFPage = () => {
             const shift = e.keyCode === 16
             const somethingSelected = selectedAnnotations.length !== 0
             const hasRelations = activeRelationLabel !== undefined
-            console.log("shift up!")
             // Shift key up
             if (shift && somethingSelected && hasRelations) {
                 setRelationModalVisible(true)
             }
             else if (shift && somethingSelected) {
-                console.log("shift and selected but no relations!")
                 setSelectedAnnotations([])
             }
         }
@@ -168,7 +164,7 @@ export const PDFPage = () => {
         return (() => {
             window.removeEventListener("keyup", onShiftUp)
         })
-    }, [])
+    }, [activeRelationLabel, selectedAnnotations, setRelationModalVisible])
 
 
     useEffect(() => {

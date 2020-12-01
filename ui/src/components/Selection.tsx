@@ -1,8 +1,7 @@
-import React, { useContext, useState} from 'react';
+import React, { useContext } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
 import { Bounds, TokenId, PDFPageInfo, Annotation, RelationGroup, AnnotationStore } from '../context';
-import { Label } from '../api'
 import { CloseCircleFilled } from '@ant-design/icons';
 
  function hexToRgb(hex: string) {
@@ -50,7 +49,7 @@ export const SelectionBoundary = ({color, bounds, children, onClick, selected}: 
             }
           }}
           onMouseDown={(e) => {
-            if (e.shiftKey) {
+              if (e.shiftKey && onClick) {
                 e.stopPropagation()
             }
         }}    
@@ -108,7 +107,6 @@ export const SelectionTokens = ({pageInfo, tokens}: SelectionTokenProps) => {
                         pointerEvents: 'none'
                     }} />
                 )
-
           })}
         </>
     )
@@ -154,25 +152,28 @@ export const Selection = ({
     }
 
     const onShiftClick = () => {
-        const current = annotationStore.selectedAnnotations
+        const current = annotationStore.selectedAnnotations.slice(0)
 
+        // Current contains this annotation, so we remove it.
         if (current.some((other) => other.id === annotation.id)) {
             const next = current.filter((other) => other.id !== annotation.id)
             annotationStore.setSelectedAnnotations(next)
+        // Otherwise we add it.
         } else {
             current.push(annotation)
             annotationStore.setSelectedAnnotations(current)
         }
     }
 
-    const isSelected = annotationStore.selectedAnnotations.includes(annotation)
+    const selected = annotationStore.selectedAnnotations.includes(annotation)
+
     return (
         <>
           <SelectionBoundary 
             color={color}
             bounds={bounds}
             onClick={onShiftClick}
-            selected={isSelected}
+            selected={selected}
             >
             {showInfo ? (
                 <SelectionInfo border={border} color={color}>
