@@ -33,7 +33,6 @@ enum ViewState {
 export const PDFPage = () => {
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
-    const [ dataFetched, setDataFetched ] = useState<boolean>(false);
 
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
@@ -94,6 +93,7 @@ export const PDFPage = () => {
             throw new Error("No active Paper!")
         }
     }
+
     useEffect(() => {
         // We only save annotations once the annotations have
         // been fetched, because otherwise we save when the
@@ -108,20 +108,24 @@ export const PDFPage = () => {
         console.log("end")
         if (viewState === ViewState.LOADED) {
 
-            saveAnnotations(sha, pdfAnnotations, pdfRelations).catch((err) => {
-    
-                notification.error({
-                    message: "Sorry, something went wrong!",
-                    description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
+            const currentTimeout = setTimeout(() => {
+                console.log("actually saving")
+                saveAnnotations(sha, pdfAnnotations, pdfRelations).catch((err) => {
+        
+                    notification.error({
+                        message: "Sorry, something went wrong!",
+                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
+                    })
+                    console.log("Failed to save annotations: ", err)
                 })
-                console.log("Failed to save annotations: ", err)
-            })
-            const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-            setPaperStatus(sha, {
-                ...current.status,
-                annotations: pdfAnnotations.length,
-                relations: pdfRelations.length
-            })
+                const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
+                setPaperStatus(sha, {
+                    ...current.status,
+                    annotations: pdfAnnotations.length,
+                    relations: pdfRelations.length
+                })
+            }, 5000)
+            return () => clearTimeout(currentTimeout)
         }
     }, [sha, pdfAnnotations, pdfRelations, viewState, assignedPaperInfo])
 
