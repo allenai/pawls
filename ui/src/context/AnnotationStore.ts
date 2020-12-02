@@ -85,21 +85,33 @@ export class PdfAnnotations {
 
     constructor(
         public readonly annotations: Annotation[],
-        public readonly relations: RelationGroup[]
-    ) {}
+        public readonly relations: RelationGroup[],
+        public readonly unsavedChanges: boolean = false
+    ) {
+    }
+
+    saved(): PdfAnnotations {
+        return new PdfAnnotations(
+            this.annotations,
+            this.relations,
+            false
+        )
+    }
 
     withNewAnnotation(a: Annotation): PdfAnnotations {
 
         return new PdfAnnotations(
             this.annotations.concat([a]),
-            this.relations
+            this.relations,
+            true
         )
     }
     withNewRelation(r: RelationGroup): PdfAnnotations {
 
         return new PdfAnnotations(
             this.annotations,
-            this.relations.concat([r])
+            this.relations.concat([r]),
+            true
         )
     }
 
@@ -111,7 +123,8 @@ export class PdfAnnotations {
             .filter(r => r !== undefined)
         return new PdfAnnotations(
             newAnnotations,
-            newRelations as RelationGroup[]
+            newRelations as RelationGroup[],
+            true
         )
     }
 
@@ -128,7 +141,8 @@ export class PdfAnnotations {
 
         return new PdfAnnotations(
             this.annotations,
-            newRelations as RelationGroup[]
+            newRelations as RelationGroup[],
+            true
         )
     }
 }

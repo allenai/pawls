@@ -99,10 +99,14 @@ export const PDFPage = () => {
         // We only save annotations once the annotations have
         // been fetched, because otherwise we save when the
         // annotations and relations are empty.
-        if (viewState === ViewState.LOADED) {
+        if (pdfAnnotations.unsavedChanges) {
 
             const currentTimeout = setTimeout(() => {
-                saveAnnotations(sha, pdfAnnotations).catch((err) => {
+                saveAnnotations(sha, pdfAnnotations).then(() => {
+                    setPdfAnnotations(
+                        pdfAnnotations.saved()
+                    )
+                }).catch((err) => {
         
                     notification.error({
                         message: "Sorry, something went wrong!",
@@ -116,10 +120,10 @@ export const PDFPage = () => {
                     annotations: pdfAnnotations.annotations.length,
                     relations: pdfAnnotations.relations.length
                 })
-            }, 5000)
+            }, 2000)
             return () => clearTimeout(currentTimeout)
         }
-    }, [sha, pdfAnnotations, viewState, assignedPaperInfo])
+    }, [sha, pdfAnnotations.unsavedChanges, assignedPaperInfo])
 
     const onRelationModalOk = (group: RelationGroup) => {
         setPdfAnnotations(pdfAnnotations.withNewRelation(group))
