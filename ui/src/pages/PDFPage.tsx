@@ -33,6 +33,7 @@ enum ViewState {
 export const PDFPage = () => {
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
+    const [ dataFetched, setDataFetched ] = useState<boolean>(false);
 
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
@@ -97,7 +98,16 @@ export const PDFPage = () => {
         // We only save annotations once the annotations have
         // been fetched, because otherwise we save when the
         // annotations and relations are empty.
+
+        console.log("called!")
+        console.log("view state: ", viewState)
+        console.log("sha: ", sha)
+        console.log("pdf annotations", pdfAnnotations)
+        console.log("pdf relations", pdfRelations)
+        console.log("assigned paper info", assignedPaperInfo)
+        console.log("end")
         if (viewState === ViewState.LOADED) {
+
             saveAnnotations(sha, pdfAnnotations, pdfRelations).catch((err) => {
     
                 notification.error({
@@ -199,10 +209,11 @@ export const PDFPage = () => {
             setViewState(ViewState.ERROR);
             console.log(err)
         })
-    }, [])
+    }, [sha])
 
     useEffect(() => {
         setDocument(undefined);
+        setViewState(ViewState.LOADING)
         const loadingTask: PDFLoadingTask = pdfjs.getDocument(pdfURL(sha))
         loadingTask.onProgress = (p: pdfjs.PDFProgressData) => {
             setProgress(Math.round(p.loaded / p.total * 100));
@@ -246,12 +257,12 @@ export const PDFPage = () => {
                 setPdfRelations(paperAnnotations.relations)
                 setPdfAnnotations(paperAnnotations.annotations)
 
+                setViewState(ViewState.LOADED);
             }).catch((err: any) => {
                 console.error(`Error Fetching Existing Annotations: `, err);
                 setViewState(ViewState.ERROR);
             })
 
-            setViewState(ViewState.LOADED);
         }).catch((err: any) => {
             if (err instanceof Error) {
                 // We have to use the message because minification in production obfuscates
