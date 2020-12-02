@@ -1,5 +1,5 @@
 import {useEffect, useContext} from "react";
-import { AnnotationStore, PdfAnnotations } from "../context";
+import { AnnotationStore } from "../context";
 import { saveAnnotations, setPaperStatus, PaperInfo } from "../api";
 import { notification } from "@allenai/varnish";
 
@@ -148,7 +148,7 @@ export const SaveBeforeUnload = ({sha, assignedPaperInfo}: SaveBeforeUnloadProps
         return (() => {
             window.removeEventListener("beforeunload", beforeUnload)
         })
-    }, [pdfAnnotations.unsavedChanges])
+    }, [sha, pdfAnnotations, assignedPaperInfo])
 
     return null
 }
