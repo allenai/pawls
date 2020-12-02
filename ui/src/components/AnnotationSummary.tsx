@@ -15,10 +15,9 @@ export const AnnotationSummary = ({annotation}: AnnotationSummaryProps) => {
     const annotationStore = useContext(AnnotationStore)
 
     const onDelete = () => {
-        const filtered = annotationStore.pdfAnnotations
-            .filter((a) => a.id !== annotation.id)
-
-        annotationStore.setPdfAnnotations(filtered)
+        annotationStore.setPdfAnnotations(
+            annotationStore.pdfAnnotations.deleteAnnotation(annotation)
+        )
     }
 
     if (!pdfStore.pages) {

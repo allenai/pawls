@@ -2,7 +2,7 @@ import React, { useContext, useRef, useEffect, useState }  from 'react';
 import styled from 'styled-components';
 import { PDFPageProxy, PDFRenderTask } from 'pdfjs-dist';
 
-import { PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, handleNewAnnotations } from '../context';
+import { PDFPageInfo, AnnotationStore, PDFStore, Bounds, normalizeBounds, getNewAnnotation } from '../context';
 import { Selection} from '../components'
 import { SelectionBoundary, SelectionTokens } from './Selection';
 
@@ -92,7 +92,8 @@ const Page = ({ pageInfo, onError }: PageProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [ selection, setSelection ] = useState<Bounds>();
 
-    const annotations = annotationStore.pdfAnnotations.filter(a => a.page === pageInfo.page.pageNumber - 1)
+    const annotations = annotationStore.pdfAnnotations.annotations
+                            .filter(a => a.page === pageInfo.page.pageNumber - 1)
 
     useEffect(() => {
         try {
@@ -177,15 +178,19 @@ const Page = ({ pageInfo, onError }: PageProps) => {
             onMouseUp={selection ? (
                 () => {
                     if (annotationStore.activeLabel) {
-                        const updatedAnnotations = handleNewAnnotations(
+                        const newAnnotation = getNewAnnotation(
                             //TODO(Mark): Change
                             pageInfo,
                             selection,
-                            annotationStore.pdfAnnotations,
                             annotationStore.activeLabel,
                             annotationStore.freeFormAnnotations
                         )
-                        annotationStore.setPdfAnnotations(updatedAnnotations)
+                        if (newAnnotation) {
+
+                            annotationStore.setPdfAnnotations(
+                                annotationStore.pdfAnnotations.withNewAnnotation(newAnnotation)
+                            )
+                        }
                     }
                     setSelection(undefined);
 

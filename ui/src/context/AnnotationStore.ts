@@ -81,7 +81,57 @@ export class Annotation {
     }
 };
 
+export class PdfAnnotations {
 
+    constructor(
+        public readonly annotations: Annotation[],
+        public readonly relations: RelationGroup[]
+    ) {}
+
+    withNewAnnotation(a: Annotation): PdfAnnotations {
+
+        return new PdfAnnotations(
+            this.annotations.concat([a]),
+            this.relations
+        )
+    }
+    withNewRelation(r: RelationGroup): PdfAnnotations {
+
+        return new PdfAnnotations(
+            this.annotations,
+            this.relations.concat([r])
+        )
+    }
+
+    deleteAnnotation(a: Annotation): PdfAnnotations {
+
+        const newAnnotations = this.annotations.filter((ann) => ann.id !== a.id)
+        const newRelations = this.relations
+            .map((r) => r.updateForAnnotationDeletion(a))
+            .filter(r => r !== undefined)
+        return new PdfAnnotations(
+            newAnnotations,
+            newRelations as RelationGroup[]
+        )
+    }
+
+    undoAnnotation(): PdfAnnotations {
+
+        const popped = this.annotations.pop()
+        if (!popped) {
+            // No annotations, nothing to update
+            return this
+        }
+        const newRelations = this.relations
+            .map((r) => r.updateForAnnotationDeletion(popped))
+            .filter(r => r !== undefined)
+
+        return new PdfAnnotations(
+            this.annotations,
+            newRelations as RelationGroup[]
+        )
+    }
+}
 
 
 interface _AnnotationStore {
@@ -93,11 +143,8 @@ interface _AnnotationStore {
     activeRelationLabel?: Label
     setActiveRelationLabel: (label: Label) => void;
 
-    pdfRelations: RelationGroup[],
-    setPdfRelations: (t: RelationGroup[]) => void,
-
-    pdfAnnotations: Annotation[];
-    setPdfAnnotations: (t: Annotation[]) => void;
+    pdfAnnotations: PdfAnnotations;
+    setPdfAnnotations: (t: PdfAnnotations) => void;
 
     selectedAnnotations: Annotation[]
     setSelectedAnnotations: (t: Annotation[]) => void;
@@ -107,7 +154,7 @@ interface _AnnotationStore {
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
-    pdfAnnotations: [],
+    pdfAnnotations: new PdfAnnotations([],[]),
     labels: [],
     activeLabel: undefined,
     setActiveLabel:(_?: Label) => {
@@ -118,15 +165,11 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     setActiveRelationLabel:(_?: Label) => {
         throw new Error("Unimplemented")
     },
-    pdfRelations: [],
-    setPdfRelations: (_?: RelationGroup[]) => {
-        throw new Error('Unimplemented');
-    },
     selectedAnnotations: [],
     setSelectedAnnotations: (_?: Annotation[]) => {
         throw new Error('Unimplemented');
     },
-    setPdfAnnotations: (_: Annotation[]) => {
+    setPdfAnnotations: (_: PdfAnnotations) => {
         throw new Error('Unimplemented');
     },
     freeFormAnnotations: false,

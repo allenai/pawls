@@ -94,15 +94,13 @@ function doOverlap(a: Bounds, b: Bounds): boolean {
     return true;
 }
 
-export function handleNewAnnotations(
+export function getNewAnnotation(
     page: PDFPageInfo,
     selection: Bounds,
-    existingAnnotations: Annotation[],
     activeLabel: Label,
     freeform: boolean,
-    ): Annotation[] {
+    ): Optional<Annotation> {
 
-    const updatedAnnotations = existingAnnotations.slice(0)
     let annotation: Optional<Annotation> = undefined
     
     const normalized = normalizeBounds(selection)
@@ -111,11 +109,7 @@ export function handleNewAnnotations(
     } else {
         annotation = page.getAnnotationForBounds(normalized, activeLabel)
     }
-    if (annotation !== undefined) {
-        // First annotation we have seen.
-        updatedAnnotations.push(annotation)
-    }
-    return updatedAnnotations
+    return annotation
 }
 
 

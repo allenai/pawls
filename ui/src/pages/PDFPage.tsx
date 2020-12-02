@@ -9,7 +9,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
 import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
-import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup } from '../context';
+import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
@@ -37,8 +37,9 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ pdfAnnotations, setPdfAnnotations ] = useState<Annotation[]>([]);
-    const [ pdfRelations, setPdfRelations ] = useState<RelationGroup[]>([]);
+    const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>(
+        new PdfAnnotations([], [])
+    );
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
@@ -98,19 +99,10 @@ export const PDFPage = () => {
         // We only save annotations once the annotations have
         // been fetched, because otherwise we save when the
         // annotations and relations are empty.
-
-        console.log("called!")
-        console.log("view state: ", viewState)
-        console.log("sha: ", sha)
-        console.log("pdf annotations", pdfAnnotations)
-        console.log("pdf relations", pdfRelations)
-        console.log("assigned paper info", assignedPaperInfo)
-        console.log("end")
         if (viewState === ViewState.LOADED) {
 
             const currentTimeout = setTimeout(() => {
-                console.log("actually saving")
-                saveAnnotations(sha, pdfAnnotations, pdfRelations).catch((err) => {
+                saveAnnotations(sha, pdfAnnotations).catch((err) => {
         
                     notification.error({
                         message: "Sorry, something went wrong!",
@@ -121,18 +113,16 @@ export const PDFPage = () => {
                 const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
                 setPaperStatus(sha, {
                     ...current.status,
-                    annotations: pdfAnnotations.length,
-                    relations: pdfRelations.length
+                    annotations: pdfAnnotations.annotations.length,
+                    relations: pdfAnnotations.relations.length
                 })
             }, 5000)
             return () => clearTimeout(currentTimeout)
         }
-    }, [sha, pdfAnnotations, pdfRelations, viewState, assignedPaperInfo])
+    }, [sha, pdfAnnotations, viewState, assignedPaperInfo])
 
     const onRelationModalOk = (group: RelationGroup) => {
-
-        pdfRelations.push(group)
-        setPdfRelations(pdfRelations)
+        setPdfAnnotations(pdfAnnotations.withNewRelation(group))
         setRelationModalVisible(false)
         setSelectedAnnotations([])
     }
@@ -185,12 +175,8 @@ export const PDFPage = () => {
         const handleUndo = (e: KeyboardEvent) => {
 
             if (e.metaKey && e.keyCode === 90) {
-                if (pdfAnnotations.length !== 0) {
-                    const dropped = pdfAnnotations.slice(0)
-                    dropped.pop()
-                    setPdfAnnotations(dropped)
+                    setPdfAnnotations(pdfAnnotations.undoAnnotation())
                 }
-            }
         }
 
         window.addEventListener('keydown', handleUndo);
@@ -258,8 +244,7 @@ export const PDFPage = () => {
             setPages(pages);
             // Get any existing annotations for this pdf.
             getAnnotations(sha).then(paperAnnotations => {
-                setPdfRelations(paperAnnotations.relations)
-                setPdfAnnotations(paperAnnotations.annotations)
+                setPdfAnnotations(paperAnnotations)
 
                 setViewState(ViewState.LOADED);
             }).catch((err: any) => {
@@ -313,7 +298,7 @@ export const PDFPage = () => {
                 </WithSidebar>
             );
         case ViewState.LOADED:
-            if (doc && pages) {
+            if (doc && pages && pdfAnnotations) {
                 return (
                     <PDFStore.Provider value={{
                         doc,
@@ -328,8 +313,6 @@ export const PDFPage = () => {
                                 relationLabels,
                                 activeRelationLabel,
                                 setActiveRelationLabel,
-                                pdfRelations,
-                                setPdfRelations,
                                 pdfAnnotations,
                                 setPdfAnnotations,
                                 selectedAnnotations,
@@ -346,11 +329,11 @@ export const PDFPage = () => {
                                     {activePaperInfo ?
                                     <Annotations 
                                         onStatusChange={onStatusChange}
-                                        annotations={pdfAnnotations}
+                                        annotations={pdfAnnotations.annotations}
                                         paperStatus={activePaperInfo.status}
                                     /> : null}
                                     {activeRelationLabel ? 
-                                    <Relations relations={pdfRelations}/>
+                                    <Relations relations={pdfAnnotations.relations}/>
                                     : null
                                     }
                                     {activePaperInfo ?
