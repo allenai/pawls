@@ -3,9 +3,8 @@ import logging
 import os
 import json
 import glob
-import sys
 
-from fastapi import FastAPI, Query, HTTPException, Header
+from fastapi import FastAPI, Query, HTTPException, Header, Response
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -98,7 +97,7 @@ def read_root():
     that the server returns a 2XX response from it's
     root URL, so it can tell the service is ready for requests.
     """
-    return {}
+    return Response(status_code=204)
 
 
 @app.get("/api/doc/{sha}")
@@ -159,7 +158,11 @@ def get_annotations(
     exists = os.path.exists(annotations)
 
     if exists:
-        return json.load(open(annotations))
+        with open(annotations) as f:
+            blob = json.load(f)
+
+        return blob
+
     else:
         return {"annotations": [], "relations": []}
 
@@ -191,10 +194,11 @@ def save_annotations(
     json_annotations = [jsonable_encoder(a) for a in annotations]
     json_relations = [jsonable_encoder(r) for r in relations]
 
-    json.dump(
-        {"annotations": json_annotations, "relations": json_relations},
-        open(annotations_path, "w+"),
-    )
+    with open(annotations_path, "w+") as f:
+        json.dump(
+            {"annotations": json_annotations, "relations": json_relations},
+            f
+        )
     return {}
 
 
@@ -311,7 +315,8 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     elif not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    status_json = json.load(open(status_path))
+    with open(status_path) as f:
+        status_json = json.load(f)
 
     response = []
 

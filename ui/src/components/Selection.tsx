@@ -139,16 +139,9 @@ export const Selection = ({
 
 
     const removeAnnotation = () => {
-        // TODO(Mark): guarantee uniqueness in tokenSpanAnnotations.
-        const annotationId = annotation.toString()
-        const dropped = annotationStore.pdfAnnotations.filter(a => a.toString()!== annotationId)
-        const relations = annotationStore.pdfRelations
-
-        const updatedRelations = relations.map((r) => r.updateForAnnotationDeletion(annotation))
-
-        annotationStore.setPdfAnnotations(dropped)
-        // TODO(Mark): Why can't typescript infer the type here? This seems basic.
-        annotationStore.setPdfRelations(updatedRelations.filter(r => r !== undefined) as RelationGroup[])
+        annotationStore.setPdfAnnotations(
+            annotationStore.pdfAnnotations.deleteAnnotation(annotation)   
+        )
     }
 
     const onShiftClick = () => {
