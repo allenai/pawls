@@ -4,7 +4,7 @@ import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException, Header
+from fastapi import FastAPI, Query, HTTPException, Header, Response
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -97,7 +97,7 @@ def read_root():
     that the server returns a 2XX response from it's
     root URL, so it can tell the service is ready for requests.
     """
-    return {}
+    return Response(status_code=204)
 
 
 @app.get("/api/doc/{sha}")
