@@ -7,8 +7,7 @@ import { notification } from "@allenai/varnish";
 export const UndoAnnotation = () => {
 
     const annotationStore = useContext(AnnotationStore)
-    const pdfAnnotations = annotationStore.pdfAnnotations
-    const setPdfAnnotations = annotationStore.setPdfAnnotations
+    const {pdfAnnotations, setPdfAnnotations } = annotationStore
     useEffect(() => {
         const handleUndo = (e: KeyboardEvent) => {
 
@@ -34,9 +33,7 @@ interface HandleAnnotationSelectionProps {
 export const HandleAnnotationSelection = ({setModalVisible}: HandleAnnotationSelectionProps) => {
 
     const annotationStore = useContext(AnnotationStore)
-    const selectedAnnotations = annotationStore.selectedAnnotations
-    const setSelectedAnnotations = annotationStore.setSelectedAnnotations
-    const activeRelationLabel = annotationStore.activeRelationLabel
+    const {selectedAnnotations, setSelectedAnnotations, activeRelationLabel} = annotationStore
     useEffect(() => {
 
         const onShiftUp = (e: KeyboardEvent) => {
@@ -44,10 +41,14 @@ export const HandleAnnotationSelection = ({setModalVisible}: HandleAnnotationSel
             const shift = e.keyCode === 16
             const somethingSelected = selectedAnnotations.length !== 0
             const hasRelations = activeRelationLabel !== undefined
-            // Shift key up
+            // Shift key up, the user has selected something,
+            // and this annotation project has relation labels.
             if (shift && somethingSelected && hasRelations) {
                 setModalVisible(true)
             }
+            // Otherwise we just clear the selection,
+            // if there is something selected, because
+            // there are no relations to annotate.
             else if (shift && somethingSelected) {
                 setSelectedAnnotations([])
             }
@@ -64,16 +65,15 @@ export const HandleAnnotationSelection = ({setModalVisible}: HandleAnnotationSel
 
 
 
-interface SaveWithTimeoutProps {
+interface WithAssignment {
     sha: string,
     assignedPaperInfo: PaperInfo[]
 }
 
-export const SaveWithTimeout = ({sha, assignedPaperInfo}: SaveWithTimeoutProps) => {
+export const SaveWithTimeout = ({sha, assignedPaperInfo}: WithAssignment) => {
 
     const annotationStore = useContext(AnnotationStore)
-    const pdfAnnotations = annotationStore.pdfAnnotations
-    const setPdfAnnotations = annotationStore.setPdfAnnotations
+    const {pdfAnnotations, setPdfAnnotations } = annotationStore
 
     useEffect(() => {
         // We only save annotations once the annotations have
@@ -110,40 +110,41 @@ export const SaveWithTimeout = ({sha, assignedPaperInfo}: SaveWithTimeoutProps) 
 
 // TODO(Mark): There is a lot of duplication between these two listeners,
 // deduplicate if I need to save at another time as well.
-interface SaveBeforeUnloadProps {
-    sha: string,
-    assignedPaperInfo: PaperInfo[]
-}
 
-export const SaveBeforeUnload = ({sha, assignedPaperInfo}: SaveBeforeUnloadProps) => {
+export const SaveBeforeUnload = ({sha, assignedPaperInfo}: WithAssignment) => {
 
     const annotationStore = useContext(AnnotationStore)
-    const pdfAnnotations = annotationStore.pdfAnnotations
-    const setPdfAnnotations = annotationStore.setPdfAnnotations
-
+    const {pdfAnnotations, setPdfAnnotations } = annotationStore
     useEffect(() => {
 
         const beforeUnload = (e: BeforeUnloadEvent) => {
-            console.log("hi")
-            saveAnnotations(sha, pdfAnnotations).then(() => {
-                setPdfAnnotations(
-                    pdfAnnotations.saved()
-                )
-            }).catch((err) => {
-    
-                notification.error({
-                    message: "Sorry, something went wrong!",
-                    description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
-                })
-                console.log("Failed to save annotations: ", err)
-            })
+
             const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-            setPaperStatus(sha, {
-                ...current.status,
-                annotations: pdfAnnotations.annotations.length,
-                relations: pdfAnnotations.relations.length
-            })
+            e.preventDefault()
+
+            Promise.all([
+                saveAnnotations(sha, pdfAnnotations).then(() => {
+                    setPdfAnnotations(
+                        pdfAnnotations.saved()
+                    )
+                }).catch((err) => {
+        
+                    notification.error({
+                        message: "Sorry, something went wrong!",
+                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
+                    })
+                    console.log("Failed to save annotations: ", err)
+                }),
+                setPaperStatus(sha, {
+                    ...current.status,
+                    annotations: pdfAnnotations.annotations.length,
+                    relations: pdfAnnotations.relations.length
+                })
+            ]).then(() => window.close())
+
+
         }
+        
         window.addEventListener("beforeunload", beforeUnload)
         return (() => {
             window.removeEventListener("beforeunload", beforeUnload)
