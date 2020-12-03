@@ -31,7 +31,6 @@ class TestApp(TestCase):
     def test_root(self):
         response = self.client.get("/")
         assert response.status_code == 204
-        assert response.json() == {}
 
     def test_get_bad_pdf(self):
 

@@ -61,8 +61,7 @@ def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     if not user_is_allowed(user_email):
         raise HTTPException(403, "Forbidden")
 
-    # This returns the "username" portion of the email address.
-    return user_email.split("@")[0]
+    return user_email
 
 
 def user_is_allowed(user_email: str) -> bool:

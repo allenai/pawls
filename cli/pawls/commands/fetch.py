@@ -49,10 +49,6 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
             with open(metadata_path, "w+") as out:
                 json.dump(metadata._asdict(), out)
 
-    print(
-        f"Successfully saved {len(result['success']) - len(metadata_failed)} pdfs and metadata to {str(path)}"
-    )
-
     okay = True
     if metadata_failed:
         print(
@@ -81,6 +77,10 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
 
     if not okay:
         sys.exit(1)
+
+    print(
+        f"Successfully saved {len(result['success']) - len(metadata_failed)} pdfs and metadata to {str(path)}"
+    )
 
 
 # settings for S3 buckets
