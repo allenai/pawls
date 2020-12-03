@@ -75,9 +75,7 @@ def assign(
     result = re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", annotator)
 
     if not result or result.group(0) != annotator:
-        raise BadArgumentUsage(
-            "Provided annotator was not a valid email."
-        )
+        raise BadArgumentUsage("Provided annotator was not a valid email.")
 
     status_dir = os.path.join(path, "status")
     os.makedirs(status_dir, exist_ok=True)

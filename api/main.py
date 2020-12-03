@@ -194,10 +194,7 @@ def save_annotations(
     json_relations = [jsonable_encoder(r) for r in relations]
 
     with open(annotations_path, "w+") as f:
-        json.dump(
-            {"annotations": json_annotations, "relations": json_relations},
-            f
-        )
+        json.dump({"annotations": json_annotations, "relations": json_relations}, f)
     return {}
 
 
@@ -216,10 +213,7 @@ def get_tokens(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(
-        sha,
-        token_sources=sources,
-    )
+    response = pdf_structure.get_annotations(sha, token_sources=sources,)
     if pages is not None:
         response = pdf_structure.filter_token_source_for_pages(response, pages)
 
@@ -263,10 +257,7 @@ def get_regions(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(
-        sha,
-        region_sources=sources,
-    )
+    response = pdf_structure.get_annotations(sha, region_sources=sources,)
     if pages is not None:
         response = pdf_structure.filter_regions_for_pages(response, pages)
     return response
