@@ -2,15 +2,16 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, notification } from '@allenai/varnish';
+import { Result, Progress } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, getRelations, PaperStatus } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
+import * as listeners from "../listeners";
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -94,37 +95,6 @@ export const PDFPage = () => {
             throw new Error("No active Paper!")
         }
     }
-
-    useEffect(() => {
-        // We only save annotations once the annotations have
-        // been fetched, because otherwise we save when the
-        // annotations and relations are empty.
-        if (pdfAnnotations.unsavedChanges) {
-
-            const currentTimeout = setTimeout(() => {
-                saveAnnotations(sha, pdfAnnotations).then(() => {
-                    setPdfAnnotations(
-                        pdfAnnotations.saved()
-                    )
-                }).catch((err) => {
-        
-                    notification.error({
-                        message: "Sorry, something went wrong!",
-                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
-                    })
-                    console.log("Failed to save annotations: ", err)
-                })
-                const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-                setPaperStatus(sha, {
-                    ...current.status,
-                    annotations: pdfAnnotations.annotations.length,
-                    relations: pdfAnnotations.relations.length
-                })
-            }, 2000)
-            return () => clearTimeout(currentTimeout)
-        }
-    }, [sha, pdfAnnotations.unsavedChanges, assignedPaperInfo])
-
     const onRelationModalOk = (group: RelationGroup) => {
         setPdfAnnotations(pdfAnnotations.withNewRelation(group))
         setRelationModalVisible(false)
@@ -152,46 +122,6 @@ export const PDFPage = () => {
         })
     }, [sha]) 
     
-    useEffect(() => {
-
-        const onShiftUp = (e: KeyboardEvent) => {
-
-            const shift = e.keyCode === 16
-            const somethingSelected = selectedAnnotations.length !== 0
-            const hasRelations = activeRelationLabel !== undefined
-            // Shift key up
-            if (shift && somethingSelected && hasRelations) {
-                setRelationModalVisible(true)
-            }
-            else if (shift && somethingSelected) {
-                setSelectedAnnotations([])
-            }
-        }
-
-        window.addEventListener("keyup", onShiftUp)
-        return (() => {
-            window.removeEventListener("keyup", onShiftUp)
-        })
-    }, [activeRelationLabel, selectedAnnotations, setRelationModalVisible])
-
-
-    useEffect(() => {
-        const handleUndo = (e: KeyboardEvent) => {
-
-            if (e.metaKey && e.keyCode === 90) {
-                    setPdfAnnotations(pdfAnnotations.undoAnnotation())
-                }
-        }
-
-        window.addEventListener('keydown', handleUndo);
-        return () => {
-            window.removeEventListener('keydown', handleUndo)
-        };
-    }, [pdfAnnotations, setPdfAnnotations])
-
-
-
-
     useEffect( () => {
         getAllocatedPaperInfo().then((paperInfo) => {
             setAssignedPaperInfo(paperInfo)
@@ -325,6 +255,10 @@ export const PDFPage = () => {
                                 toggleFreeFormAnnotations
                             }}
                         >
+                            <listeners.UndoAnnotation/>
+                            <listeners.HandleAnnotationSelection setModalVisible={setRelationModalVisible}/>
+                            <listeners.SaveWithTimeout sha={sha} assignedPaperInfo={assignedPaperInfo}/>
+                            <listeners.SaveBeforeUnload sha={sha} assignedPaperInfo={assignedPaperInfo}/>
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
