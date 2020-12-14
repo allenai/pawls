@@ -2,6 +2,8 @@ click>=6.7
 tqdm
 pdfminer
 pdf2image
+pandas 
+tabulate
 
 # S3 access
 boto3
