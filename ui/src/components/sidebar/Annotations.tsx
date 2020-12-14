@@ -7,16 +7,15 @@ import { Annotation } from "../../context";
 
 import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
-import { PaperStatus, setPdfJunk, setPdfFinished } from '../../api';
+import { setPdfJunk, setPdfFinished } from '../../api';
 
 interface AnnotationsProps {
     sha: string
     annotations: Annotation[]
-    paperStatus: PaperStatus
 }
 
 
-export const Annotations = ({sha, annotations, paperStatus}: AnnotationsProps) => {
+export const Annotations = ({sha, annotations}: AnnotationsProps) => {
 
     const onFinishToggle = (isFinished: boolean) => {
 

@@ -68,30 +68,6 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
-    useEffect(() => {
-        // We only save annotations once the annotations have
-        // been fetched, because otherwise we save when the
-        // annotations and relations are empty.
-        if (pdfAnnotations.unsavedChanges) {
-
-            const currentTimeout = setTimeout(() => {
-                saveAnnotations(sha, pdfAnnotations).then(() => {
-                    setPdfAnnotations(
-                        pdfAnnotations.saved()
-                    )
-                }).catch((err) => {
-        
-                    notification.error({
-                        message: "Sorry, something went wrong!",
-                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
-                    })
-                    console.log("Failed to save annotations: ", err)
-                })
-            }, 2000)
-            return () => clearTimeout(currentTimeout)
-        }
-    }, [sha, pdfAnnotations.unsavedChanges, assignedPaperInfo])
-
     const onRelationModalOk = (group: RelationGroup) => {
         setPdfAnnotations(pdfAnnotations.withNewRelation(group))
         setRelationModalVisible(false)
@@ -265,7 +241,6 @@ export const PDFPage = () => {
                                     <Annotations 
                                         sha={sha}
                                         annotations={pdfAnnotations.annotations}
-                                        paperStatus={activePaperInfo.status}
                                     /> : null}
                                     {activeRelationLabel ? 
                                     <Relations relations={pdfAnnotations.relations}/>
