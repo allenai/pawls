@@ -65,23 +65,36 @@ def get_labeling_status(target_dir: str):
 
     display_status.loc["AGGREGATION", :] = display_status.sum()
     display_status.loc["AGGREGATION", "avg_anno_per_page"] = \
-        display_status.loc["AGGREGATION", "anno_sum"] / \
-        display_status.loc["AGGREGATION", "page_num"]
+        (display_status.loc["AGGREGATION", "anno_sum"] /
+         display_status.loc["AGGREGATION", "page_num"])
 
-    return display_status.fillna(0.)
+    return display_status.fillna(0.), all_record.rename(columns={"index": "sha"})
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
+@click.option(
+    "--output",
+    help="Path to save the export data",
+    type=click.Path()
+)
 def status(
     path: click.Path,
+    output: click.Path,
 ):
     """
     Checking the labeling status for some annotation project
 
     To check the labeling status for some PAWLS annotation folder, use:
         `pawls status <labeling_folder>`
+
+    To save the labeling record table for some PAWLS annotation folder, use:
+        `pawls status <labeling_folder> --output record.csv`
     """
 
-    labeling_status = get_labeling_status(path)
+    labeling_status, all_record = get_labeling_status(path)
     print(tabulate(labeling_status, headers='keys', tablefmt='psql'))
+
+    if output is not None:
+        all_record.to_csv(output, index=None)
+        print(f"Saved the annotation record table to {output}")

@@ -49,5 +49,12 @@ class TestStatus(unittest.TestCase):
                 status, [self.TEST_ANNO_DIR])
             assert result.exit_code == 0
 
+    def test_save(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            result = runner.invoke(
+                status, [self.TEST_ANNO_DIR, "--output", f"{tempdir}/test.csv"])
+            assert result.exit_code == 0
+            
 if __name__ == "__main__":
     unittest.main()
