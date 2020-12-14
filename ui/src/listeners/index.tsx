@@ -1,6 +1,6 @@
 import {useEffect, useContext} from "react";
 import { AnnotationStore } from "../context";
-import { saveAnnotations, setPaperStatus, PaperInfo } from "../api";
+import { saveAnnotations, PaperInfo } from "../api";
 import { notification } from "@allenai/varnish";
 
 
@@ -94,12 +94,6 @@ export const SaveWithTimeout = ({sha, assignedPaperInfo}: WithAssignment) => {
                     })
                     console.log("Failed to save annotations: ", err)
                 })
-                const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-                setPaperStatus(sha, {
-                    ...current.status,
-                    annotations: pdfAnnotations.annotations.length,
-                    relations: pdfAnnotations.relations.length
-                })
             }, 2000)
             return () => clearTimeout(currentTimeout)
         }
@@ -119,30 +113,19 @@ export const SaveBeforeUnload = ({sha, assignedPaperInfo}: WithAssignment) => {
 
         const beforeUnload = (e: BeforeUnloadEvent) => {
 
-            const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
             e.preventDefault()
-
-            Promise.all([
-                saveAnnotations(sha, pdfAnnotations).then(() => {
-                    setPdfAnnotations(
-                        pdfAnnotations.saved()
-                    )
-                }).catch((err) => {
-        
-                    notification.error({
-                        message: "Sorry, something went wrong!",
-                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
-                    })
-                    console.log("Failed to save annotations: ", err)
-                }),
-                setPaperStatus(sha, {
-                    ...current.status,
-                    annotations: pdfAnnotations.annotations.length,
-                    relations: pdfAnnotations.relations.length
+            saveAnnotations(sha, pdfAnnotations).then(() => {
+                setPdfAnnotations(
+                    pdfAnnotations.saved()
+                )
+            }).catch((err) => {
+    
+                notification.error({
+                    message: "Sorry, something went wrong!",
+                    description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
                 })
-            ]).then(() => window.close())
-
-
+                console.log("Failed to save annotations: ", err)
+            }).then(() => window.close())
         }
         
         window.addEventListener("beforeunload", beforeUnload)

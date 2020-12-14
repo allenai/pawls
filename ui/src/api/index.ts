@@ -104,8 +104,16 @@ export interface PaperInfo {
     sha: string
 }
 
-export async function setPaperStatus(sha: string, status: PaperStatus) {
-    return axios.post(`/api/doc/${sha}/status`, status)
+export async function setPdfComment(sha: string, comments: string) {
+    return axios.post(`/api/doc/${sha}/comments`, comments)
+}
+
+export async function setPdfFinished(sha: string, finished: boolean) {
+    return axios.post(`/api/doc/${sha}/finished`, finished)
+}
+
+export async function setPdfJunk(sha: string, junk: boolean) {
+    return axios.post(`/api/doc/${sha}/junk`, junk)
 }
 
 export async function getAllocatedPaperInfo(): Promise<PaperInfo[]> {

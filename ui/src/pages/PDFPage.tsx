@@ -2,13 +2,13 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, getRelations, PaperStatus } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, getLabels, Label, getAnnotations, saveAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
 import * as listeners from "../listeners";
@@ -68,33 +68,6 @@ export const PDFPage = () => {
 
     const theme = useContext(ThemeContext);
 
-   function onStatusChange(status: PaperStatus): Promise<void> {
-        if (activePaperInfo) {
-            const idx = assignedPaperInfo.indexOf(activePaperInfo)
-        
-            return setPaperStatus(sha, status).then(() => {
-                const newInfo = {
-                    metadata: activePaperInfo.metadata,
-                    status: status,
-                    sha: activePaperInfo.sha
-                }
-
-                return new Promise<any>((resolved, rejected) => {
-                    setAssignedPaperInfo([
-                        ...assignedPaperInfo.slice(0, idx),
-                        newInfo,
-                        ...assignedPaperInfo.slice(idx + 1)
-
-                    ])
-                    setActivePaperInfo(newInfo)
-                    resolved()
-                })
-            })
-        } else {
-            setViewState(ViewState.ERROR)
-            throw new Error("No active Paper!")
-        }
-    }
     const onRelationModalOk = (group: RelationGroup) => {
         setPdfAnnotations(pdfAnnotations.withNewRelation(group))
         setRelationModalVisible(false)
@@ -266,9 +239,8 @@ export const PDFPage = () => {
                                     <AssignedPaperList papers={assignedPaperInfo}/>
                                     {activePaperInfo ?
                                     <Annotations 
-                                        onStatusChange={onStatusChange}
+                                        sha={sha}
                                         annotations={pdfAnnotations.annotations}
-                                        paperStatus={activePaperInfo.status}
                                     /> : null}
                                     {activeRelationLabel ? 
                                     <Relations relations={pdfAnnotations.relations}/>
@@ -276,7 +248,7 @@ export const PDFPage = () => {
                                     }
                                     {activePaperInfo ?
                                         <Comment
-                                            onStatusChange={onStatusChange}
+                                            sha={sha}
                                             paperStatus={activePaperInfo.status}
                                         />
                                         : null

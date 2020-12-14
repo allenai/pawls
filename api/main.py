@@ -1,10 +1,10 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import logging
 import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException, Header, Response
+from fastapi import FastAPI, Query, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -90,6 +90,16 @@ def all_pdf_shas() -> List[str]:
     return [p.split("/")[-2] for p in pdfs]
 
 
+def update_status_json(status_path: str, sha: str, data: Dict[str, Any]):
+
+    with open(status_path, "r+") as st:
+        status_json = json.load(st)
+        status_json[sha] = {**status_json[sha], **data}
+        st.seek(0)
+        json.dump(status_json, st)
+        st.truncate()
+
+
 @app.get("/", status_code=204)
 def read_root():
     """
@@ -128,23 +138,47 @@ async def get_pdf(sha: str):
     return FileResponse(pdf, media_type="application/pdf")
 
 
-@app.post("/api/doc/{sha}/status")
-def set_pdf_status(
-    sha: str, status: PaperStatus, x_auth_request_email: str = Header(None)
+@app.post("/api/doc/{sha}/comments")
+def set_pdf_comments(
+    sha: str, comments: str = Body(...), x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
 
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(status_path, sha, {"comments": comments})
+    return {}
+
+
+@app.post("/api/doc/{sha}/junk")
+def set_pdf_junk(
+    sha: str, junk: bool = Body(...), x_auth_request_email: str = Header(None)
+):
+    user = get_user_from_header(x_auth_request_email)
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    with open(status_path, "r+") as st:
-        status_json = json.load(st)
-        status_json[sha] = jsonable_encoder(status)
-        st.seek(0)
-        json.dump(status_json, st)
-        st.truncate()
+    update_status_json(status_path, sha, {"junk": junk})
+    return {}
+
+
+@app.post("/api/doc/{sha}/finished")
+def set_pdf_finished(
+    sha: str, finished: bool = Body(...), x_auth_request_email: str = Header(None)
+):
+    user = get_user_from_header(x_auth_request_email)
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(status_path, sha, {"finished": finished})
+    return {}
 
 
 @app.get("/api/doc/{sha}/annotations")
@@ -186,7 +220,7 @@ def save_annotations(
         For local development, this will be None, because the authentication
         is controlled by the Skiff Kubernetes cluster.
     """
-
+    # Update the annotations in the annotation json file.
     user = get_user_from_header(x_auth_request_email)
     annotations_path = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
@@ -195,10 +229,18 @@ def save_annotations(
     json_relations = [jsonable_encoder(r) for r in relations]
 
     with open(annotations_path, "w+") as f:
-        json.dump(
-            {"annotations": json_annotations, "relations": json_relations},
-            f
-        )
+        json.dump({"annotations": json_annotations, "relations": json_relations}, f)
+
+    # Update the annotation counts in the status file.
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(
+        status_path, sha, {"annotations": len(annotations), "relations": len(relations)}
+    )
+
     return {}
 
 
