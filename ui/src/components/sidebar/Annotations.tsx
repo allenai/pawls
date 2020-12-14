@@ -7,24 +7,20 @@ import { Annotation } from "../../context";
 
 import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from "../AnnotationSummary";
-import { PaperStatus } from '../../api';
+import { PaperStatus, setPdfJunk, setPdfFinished } from '../../api';
 
 interface AnnotationsProps {
-    onStatusChange: (s: PaperStatus) => Promise<void>
+    sha: string
     annotations: Annotation[]
     paperStatus: PaperStatus
 }
 
 
-export const Annotations = ({ onStatusChange, annotations, paperStatus}: AnnotationsProps) => {
+export const Annotations = ({sha, annotations, paperStatus}: AnnotationsProps) => {
 
     const onFinishToggle = (isFinished: boolean) => {
 
-        const newPaperStatus = {
-            ...paperStatus,
-            finished: isFinished
-        }
-        onStatusChange(newPaperStatus).then(() => {
+        setPdfFinished(sha, isFinished).then(() => {
             if (isFinished) {
                 notification.success({message: "Marked paper as Finished!"})
             } else {
@@ -36,13 +32,7 @@ export const Annotations = ({ onStatusChange, annotations, paperStatus}: Annotat
 
     const onJunkToggle = (isJunk: boolean) => {
 
-        const newPaperStatus = {
-            ...paperStatus,
-            junk: isJunk,
-            // Hide junk papers in UI by default.
-            finished: isJunk
-        }
-        onStatusChange(newPaperStatus).then(() => {
+        setPdfJunk(sha, isJunk).then(() => {
             if (isJunk) {
                 notification.warning({message: "Marked paper as Junk!"})
             } else {
