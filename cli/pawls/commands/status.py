@@ -1,6 +1,7 @@
 import os
 from glob import glob
 import click
+from typing import Tuple
 
 import pandas as pd
 from tabulate import tabulate
@@ -8,7 +9,7 @@ from tabulate import tabulate
 from pawls.commands.utils import load_json, get_pdf_pages_and_sizes
 
 
-def get_labeling_status(target_dir: str):
+def get_labeling_status(target_dir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     all_json_records = glob(f"{target_dir}/status/*.json")
 
@@ -55,7 +56,7 @@ def get_labeling_status(target_dir: str):
                                     "valid_annotations_sum": "anno_sum",
                                     "valid_annotations_max": "anno_max"})
 
-    status['total_unfinshed'] = \
+    status['total_unfinished'] = \
         status['total_tasks'] - status['junk_or_finished']
 
     status["avg_anno_per_page"] = \
