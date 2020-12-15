@@ -6,35 +6,14 @@ from glob import glob
 from typing import List, NamedTuple, Optional, Union, Dict, Iterable, Any
 
 from tqdm import tqdm
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfinterp import resolve1
 from pdf2image import convert_from_path
 
-
-def _load_json(filename: str):
-    with open(filename, "r") as fp:
-        return json.load(fp)
+from pawls.commands.utils import load_json, get_pdf_pages_and_sizes
 
 
 def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
     x1, y1, x2, y2 = bounds["left"], bounds["top"], bounds["right"], bounds["bottom"]
     return x1, y1, x2 - x1, y2 - y1
-
-
-def _get_pdf_pages_and_sizes(filename: str):
-    """Ref https://stackoverflow.com/a/47686921
-    """
-    with open(filename, "rb") as fp:
-        parser = PDFParser(fp)
-        document = PDFDocument(parser)
-        num_pages = resolve1(document.catalog["Pages"])["Count"]
-        page_sizes = [
-            (int(page.mediabox[2]), int(page.mediabox[3]))
-            for page in PDFPage.create_pages(document)
-        ]
-        return num_pages, page_sizes
 
 
 class LabelingConfiguration:
@@ -91,7 +70,8 @@ class AnnotationFiles:
 
     def get_all_annotation_files(self) -> List[str]:
         return glob(
-            os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
+            os.path.join(
+                f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
         )
 
     def get_finished_annotation_files(self) -> List[str]:
@@ -104,7 +84,7 @@ class AnnotationFiles:
             )
             return self.get_all_annotation_files()
 
-        user_assignment = _load_json(user_assignment_file)
+        user_assignment = load_json(user_assignment_file)
         return [
             f"{self.labeling_folder}/{pdf_sha}/{self.annotator}_annotations.json"
             for pdf_sha, assignment in user_assignment.items()
@@ -215,10 +195,10 @@ class COCOBuilder:
     ) -> None:
         """Create the annotation for each paper. 
         """
-        paper_metadata = _load_json(metadata_path)
+        paper_metadata = load_json(metadata_path)
         assert paper_metadata["sha"] == paper_sha
 
-        num_pages, page_sizes = _get_pdf_pages_and_sizes(pdf_path)
+        num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
 
         # Add paper information
         paper_id = len(self._papers)  # Start from zero
@@ -237,12 +217,13 @@ class COCOBuilder:
         previous_anno_id = len(self._annotations)  # Start from zero
 
         pdf_page_images = convert_from_path(pdf_path)
-        pawls_annotations = _load_json(annotation_path)
+        pawls_annotations = load_json(annotation_path)
         pawls_annotations = pawls_annotations["annotations"]
         for anno in pawls_annotations:
             page_id = anno["page"]
 
-            image_filename = self._create_pdf_page_image_filename(paper_sha, page_id)
+            image_filename = self._create_pdf_page_image_filename(
+                paper_sha, page_id)
             width, height = page_sizes[anno["page"]]
 
             if page_id not in current_images:
@@ -291,7 +272,8 @@ class COCOBuilder:
 
         pbar = tqdm(anno_files)
         for anno_file in pbar:
-            pbar.set_description(f"Working on {anno_file['paper_sha'][:10]}...")
+            pbar.set_description(
+                f"Working on {anno_file['paper_sha'][:10]}...")
             self.add_paper(**anno_file)
 
     def export(self, annotation_name="annotations.json") -> None:
@@ -343,7 +325,8 @@ def export(
 
     if len(annotator) == 0:
         annotator = all_annotators
-        print(f"Export annotations from all available annotators {all_annotators}")
+        print(
+            f"Export annotations from all available annotators {all_annotators}")
     else:
         print(f"Export annotations from annotators {annotator}")
 
