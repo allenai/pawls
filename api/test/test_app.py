@@ -100,6 +100,7 @@ class TestApp(TestCase):
         gold = [
              {
                 "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                "name": "3febb2bed8865945e7fddc99efd791887bb7e14f",
                 "annotations": 0,
                 "relations": 0,
                 "finished": False,

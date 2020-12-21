@@ -56,6 +56,35 @@ class TestAssign(unittest.TestCase):
             assert annotator_json == {
                 sha: {
                     "sha": sha,
+                    "name": sha,
+                    "annotations": 0,
+                    "relations": 0,
+                    "finished": False,
+                    "junk": False,
+                    "comments": "",
+                    "completedAt": None,
+                }
+            }
+
+    def test_assign_pdfs_with_name_file(self):
+        runner = CliRunner()
+        sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
+        with tempfile.TemporaryDirectory() as tempdir:
+
+            # Copy the fixture in, as though it was there already.
+            sub_temp_dir = os.path.join(tempdir, "pdfs")
+            shutil.copytree(f"test/fixtures/pawls/", sub_temp_dir)
+            # This time we pass a file containing the name mapping,
+            # so we should find the name in the resulting status.
+            result = runner.invoke(assign, [sub_temp_dir, "mark", sha, "--name-file", "test/fixtures/pawls/name_mapping.json"])
+            assert result.exit_code == 0
+            status_path = os.path.join(sub_temp_dir, "status", "mark.json")
+
+            annotator_json = json.load(open(status_path))
+            assert annotator_json == {
+                sha: {
+                    "sha": sha,
+                    "name": "Dropout: a simple way to prevent neural networks from overfitting",
                     "annotations": 0,
                     "relations": 0,
                     "finished": False,
