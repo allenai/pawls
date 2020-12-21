@@ -5,7 +5,7 @@ import json
 
 from click.testing import CliRunner
 
-from pawls.commands import assign, fetch
+from pawls.commands import assign
 
 
 class TestAssign(unittest.TestCase):
@@ -43,8 +43,6 @@ class TestAssign(unittest.TestCase):
         runner = CliRunner()
         sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
         with tempfile.TemporaryDirectory() as tempdir:
-            result = runner.invoke(fetch, [tempdir, sha])
-            assert result.exit_code == 0
             result = runner.invoke(assign, [tempdir, "mark", sha])
             assert result.exit_code == 0
             status_path = os.path.join(tempdir, "status", "mark.json")
@@ -52,6 +50,7 @@ class TestAssign(unittest.TestCase):
             annotator_json = json.load(open(status_path))
             assert annotator_json == {
                 sha: {
+                    "sha": sha,
                     "annotations": 0,
                     "relations": 0,
                     "finished": False,

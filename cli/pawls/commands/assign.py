@@ -93,6 +93,7 @@ def assign(
             continue
         else:
             pdf_status[sha] = {
+                "sha": sha,
                 "annotations": 0,
                 "relations": 0,
                 "finished": False,

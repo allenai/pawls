@@ -1,18 +1,10 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
 
-class PaperMetadata(BaseModel):
-    sha: str
-    title: str
-    venue: str
-    year: int
-    cited_by: int
-    authors: List[str]
-
-
 class PaperStatus(BaseModel):
+    sha: str
     annotations: int
     relations: int
     finished: bool
@@ -21,8 +13,9 @@ class PaperStatus(BaseModel):
     completedAt: Optional[str]
 
     @staticmethod
-    def empty():
+    def empty(sha: str):
         return PaperStatus(
+            sha=sha,
             annotations=0,
             relations=0,
             finished=False,
@@ -30,9 +23,3 @@ class PaperStatus(BaseModel):
             comments="",
             completedAt=None,
         )
-
-
-class PaperInfo(BaseModel):
-    metadata: PaperMetadata
-    status: PaperStatus
-    sha: str
