@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import styled from "styled-components";
 import { SidebarItem, SidebarItemTitle, Contrast } from "./common";
-import { PaperInfo, PaperStatus } from "../../api";
+import { PaperStatus } from "../../api";
 import { Switch, Tag } from "@allenai/varnish";
 
 import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled, DeleteFilled } from "@ant-design/icons";
 
 
-const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
+const AssignedPaperRow = ({status}: {status: PaperStatus}) => {
 
     const getIcon = (status: PaperStatus) => {
         if (status.junk) {
@@ -34,27 +34,27 @@ const AssignedPaperRow = ({paper}: {paper: PaperInfo}) => {
     return (
         <PaddedRow>
 
-            <Contrast key={paper.metadata.sha}>
-                <a href={`/pdf/${paper.metadata.sha}`}>
-                        {paper.metadata.title}
+            <Contrast key={status.sha}>
+                <a href={`/pdf/${status.sha}`}>
+                        Title goes here!
                 </a>
             </Contrast>
-            <SmallTag color={getStatusColour(paper.status)}>
-                {paper.status.annotations}
+            <SmallTag color={getStatusColour(status)}>
+                {status.annotations}
                 <DarkEditIcon/>
             </SmallTag>
-            {getIcon(paper.status)}
+            {getIcon(status)}
 
         </PaddedRow> 
     )
 }
 
-export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
+export const AssignedPaperList = ({papers}: {papers: PaperStatus[]}) => {
 
     const [showFinished, setShowFinished] = useState<boolean>(false)
 
-    const unfinished = papers.filter(p => !p.status.finished)
-    const finished = papers.filter(p => p.status.finished)
+    const unfinished = papers.filter(p => !p.finished)
+    const finished = papers.filter(p => p.finished)
     const ordered = unfinished.concat(finished)
     const papersToShow = showFinished ? ordered: unfinished
 
@@ -75,7 +75,7 @@ export const AssignedPaperList = ({papers}: {papers: PaperInfo[]}) => {
             {papers.length !== 0 ? (
                 <>
                     {papersToShow.map((info) => (
-                        <AssignedPaperRow key={info.sha} paper={info}/>
+                        <AssignedPaperRow key={info.sha} status={info}/>
                     ))}
                 </>
             ) : (
