@@ -2,6 +2,7 @@ import os
 import unittest
 import tempfile
 import json
+import shutil
 
 from click.testing import CliRunner
 
@@ -43,9 +44,13 @@ class TestAssign(unittest.TestCase):
         runner = CliRunner()
         sha = "34f25a8704614163c4095b3ee2fc969b60de4698"
         with tempfile.TemporaryDirectory() as tempdir:
-            result = runner.invoke(assign, [tempdir, "mark", sha])
+
+            # Copy the fixture in, as though it was there already.
+            sub_temp_dir = os.path.join(tempdir, "pdfs")
+            shutil.copytree(f"test/fixtures/pawls/", sub_temp_dir)
+            result = runner.invoke(assign, [sub_temp_dir, "mark", sha])
             assert result.exit_code == 0
-            status_path = os.path.join(tempdir, "status", "mark.json")
+            status_path = os.path.join(sub_temp_dir, "status", "mark.json")
 
             annotator_json = json.load(open(status_path))
             assert annotator_json == {
