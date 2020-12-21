@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from "styled-components";
 import { SidebarItem, SidebarItemTitle, Contrast } from "./common";
 import { PaperStatus } from "../../api";
-import { Switch, Tag } from "@allenai/varnish";
+import { Switch, Tag, Statistic } from "@allenai/varnish";
 
 import { FileDoneOutlined, CloseOutlined, CommentOutlined, EditFilled, DeleteFilled } from "@ant-design/icons";
 
@@ -36,7 +36,7 @@ const AssignedPaperRow = ({status}: {status: PaperStatus}) => {
 
             <Contrast key={status.sha}>
                 <a href={`/pdf/${status.sha}`}>
-                        Title goes here!
+                        {status.name}
                 </a>
             </Contrast>
             <SmallTag color={getStatusColour(status)}>

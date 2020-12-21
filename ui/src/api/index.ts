@@ -81,6 +81,7 @@ export async function getRelations(): Promise<Label[]> {
 
 export interface PaperStatus {
     sha: string,
+    name: string,
     annotations: number,
     relations: number,
     finished: boolean,

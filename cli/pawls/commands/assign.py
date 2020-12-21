@@ -19,8 +19,15 @@ import re
     help="A path to a file containing pdf shas.",
 )
 @click.option(
+    "--name-file",
+    "-f",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="A path to a file containing a json blob mapping shas to file names.",
+)
+@click.option(
     "--all",
     "-a",
+    is_flag=True,
     type=bool,
     default=False,
     help="A flag to assign all current pdfs in a pawls project to an annotator.",
@@ -30,6 +37,7 @@ def assign(
     annotator: str,
     shas: Tuple[str],
     sha_file: click.Path = None,
+    name_file: click.Path = None,
     all: bool = False,
 ):
     """
@@ -52,7 +60,15 @@ def assign(
     shas = set(shas)
 
     pdfs = glob.glob(os.path.join(path, "*/*.pdf"))
-    project_shas = {p.split("/")[-1].replace(".pdf", "") for p in pdfs}
+    project_shas = {p.split("/")[-2] for p in pdfs}
+    if all:
+        # If --all flag, we use all pdfs in the current project.
+        shas.update(project_shas)
+
+    if sha_file is not None:
+        extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
+        shas.extend(extra_ids)
+
     diff = shas.difference(project_shas)
     if diff:
         error = f"Found shas which are not present in path {path} .\n"
@@ -63,14 +79,6 @@ def assign(
         for sha in diff:
             error = error + f"{sha}\n"
         raise UsageError(error)
-
-    if all:
-        # If --all flag, we use all pdfs in the current project.
-        shas.update(project_shas)
-
-    if sha_file is not None:
-        extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
-        shas.extend(extra_ids)
 
     result = re.match(r"^[a-zA-Z0-9_.+-]+", annotator)
 
@@ -88,12 +96,24 @@ def assign(
     if os.path.exists(status_path):
         pdf_status = json.load(open(status_path))
 
+    name_mapping = {}
+    if name_file is not None:
+        name_mapping = json.load(open(name_file))
+    else:
+        print("Warning: --name-file was not provided, using shas as pdf names.")
+
     for sha in shas:
         if sha in pdf_status:
             continue
         else:
+
+            name = name_mapping.get(sha, None)
+            if name is None:
+                name = sha
+
             pdf_status[sha] = {
                 "sha": sha,
+                "name": name,
                 "annotations": 0,
                 "relations": 0,
                 "finished": False,

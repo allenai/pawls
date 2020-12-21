@@ -311,10 +311,12 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperS
     # have to explicitly assign development_user annotators.
     # Instead we just create it on the fly if it's not there,
     # meaning this will get run once only.
+
+    pdf_paths = glob.glob(f"{configuration.output_directory}/*/*.pdf")
     if not exists and IN_PRODUCTION == "dev":
         os.makedirs(status_dir, exist_ok=True)
         with open(status_path, "w+") as new:
-            blob = {sha: PaperStatus.empty(sha) for sha in all_pdf_shas()}
+            blob = {sha: PaperStatus.empty(sha, sha_path.strip(configuration.output_directory)) for sha, sha_path in zip(all_pdf_shas(), pdf_paths)}
             json.dump(jsonable_encoder(blob), new)
 
     elif not exists:

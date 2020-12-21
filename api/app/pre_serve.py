@@ -7,7 +7,7 @@ class Configuration(NamedTuple):
     General configuration for the annotation tool.
 
     output_directory: str, required.
-        The directory where the pdfs, metadata and
+        The directory where the pdfs and
         annotation output will be stored.
     labels: List[Dict[str, str]], required.
         The labels in use for annotation.
