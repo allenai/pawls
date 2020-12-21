@@ -3,7 +3,7 @@ import json
 import click
 from collections import OrderedDict
 from glob import glob
-from typing import List, NamedTuple, Optional, Union, Dict, Iterable, Any
+from typing import List, NamedTuple, Union, Dict, Iterable, Any
 
 from tqdm import tqdm
 from pdf2image import convert_from_path
@@ -96,12 +96,10 @@ class AnnotationFiles:
         for _file in self._files:
             paper_sha = _file.split("/")[-2]
             pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
-            metadata_path = f"{self.labeling_folder}/{paper_sha}/metadata.json"
 
             yield dict(
                 paper_sha=paper_sha,
                 pdf_path=pdf_path,
-                metadata_path=metadata_path,
                 annotation_path=_file,
             )
 
@@ -129,8 +127,6 @@ class COCOBuilder:
     class PaperTemplate(NamedTuple):
         id: int
         paper_sha: str
-        year: Optional[int]
-        title: str
         pages: int
 
     class ImageTemplate(NamedTuple):
@@ -191,12 +187,10 @@ class COCOBuilder:
         ]
 
     def add_paper(
-        self, paper_sha: str, pdf_path: str, metadata_path: str, annotation_path: str
+        self, paper_sha: str, pdf_path: str, annotation_path: str
     ) -> None:
         """Create the annotation for each paper. 
         """
-        paper_metadata = load_json(metadata_path)
-        assert paper_metadata["sha"] == paper_sha
 
         num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
 
@@ -205,8 +199,6 @@ class COCOBuilder:
         paper_info = self.PaperTemplate(
             paper_id,
             paper_sha,
-            paper_metadata.get("year"),
-            paper_metadata.get("title", ""),
             pages=num_pages,
         )
 
