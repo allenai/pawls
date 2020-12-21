@@ -16,13 +16,13 @@ import re
     "--sha-file",
     "-f",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
-    help="A path to a file containing pdf shas.",
+    help="A path to a file containing shas.",
 )
 @click.option(
     "--name-file",
     "-f",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
-    help="A path to a file containing a json blob mapping shas to file names.",
+    help="A path to a json file mapping shas to file names.",
 )
 @click.option(
     "--all",
