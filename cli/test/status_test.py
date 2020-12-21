@@ -25,7 +25,7 @@ There are three task:
 
 
 def _load_json(filename: str):
-    with open(filename, 'r') as fp:
+    with open(filename, "r") as fp:
         return json.load(fp)
 
 
@@ -33,7 +33,7 @@ class TestStatus(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.TEST_ANNO_DIR = "test/fixtures/pawls/"
-        self.TEST_CONFIG_FILE = 'test/fixtures/configuration.json'
+        self.TEST_CONFIG_FILE = "test/fixtures/configuration.json"
         self.PDF_SHAS = [
             "3febb2bed8865945e7fddc99efd791887bb7e14f",
             "34f25a8704614163c4095b3ee2fc969b60de4698",
@@ -45,16 +45,17 @@ class TestStatus(unittest.TestCase):
     def test_status(self):
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tempdir:
-            result = runner.invoke(
-                status, [self.TEST_ANNO_DIR])
+            result = runner.invoke(status, [self.TEST_ANNO_DIR])
             assert result.exit_code == 0
 
     def test_save(self):
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tempdir:
             result = runner.invoke(
-                status, [self.TEST_ANNO_DIR, "--output", f"{tempdir}/test.csv"])
+                status, [self.TEST_ANNO_DIR, "--output", f"{tempdir}/test.csv"]
+            )
             assert result.exit_code == 0
-            
+
+
 if __name__ == "__main__":
     unittest.main()

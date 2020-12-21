@@ -70,8 +70,7 @@ class AnnotationFiles:
 
     def get_all_annotation_files(self) -> List[str]:
         return glob(
-            os.path.join(
-                f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
+            os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
         )
 
     def get_finished_annotation_files(self) -> List[str]:
@@ -98,9 +97,7 @@ class AnnotationFiles:
             pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
 
             yield dict(
-                paper_sha=paper_sha,
-                pdf_path=pdf_path,
-                annotation_path=_file,
+                paper_sha=paper_sha, pdf_path=pdf_path, annotation_path=_file,
             )
 
     def __len__(self):
@@ -186,9 +183,7 @@ class COCOBuilder:
             for idx, category in enumerate(categories)
         ]
 
-    def add_paper(
-        self, paper_sha: str, pdf_path: str, annotation_path: str
-    ) -> None:
+    def add_paper(self, paper_sha: str, pdf_path: str, annotation_path: str) -> None:
         """Create the annotation for each paper. 
         """
 
@@ -196,11 +191,7 @@ class COCOBuilder:
 
         # Add paper information
         paper_id = len(self._papers)  # Start from zero
-        paper_info = self.PaperTemplate(
-            paper_id,
-            paper_sha,
-            pages=num_pages,
-        )
+        paper_info = self.PaperTemplate(paper_id, paper_sha, pages=num_pages,)
 
         # Add individual page images and annotations
         current_images = OrderedDict()
@@ -214,8 +205,7 @@ class COCOBuilder:
         for anno in pawls_annotations:
             page_id = anno["page"]
 
-            image_filename = self._create_pdf_page_image_filename(
-                paper_sha, page_id)
+            image_filename = self._create_pdf_page_image_filename(paper_sha, page_id)
             width, height = page_sizes[anno["page"]]
 
             if page_id not in current_images:
@@ -264,8 +254,7 @@ class COCOBuilder:
 
         pbar = tqdm(anno_files)
         for anno_file in pbar:
-            pbar.set_description(
-                f"Working on {anno_file['paper_sha'][:10]}...")
+            pbar.set_description(f"Working on {anno_file['paper_sha'][:10]}...")
             self.add_paper(**anno_file)
 
     def export(self, annotation_name="annotations.json") -> None:
@@ -317,8 +306,7 @@ def export(
 
     if len(annotator) == 0:
         annotator = all_annotators
-        print(
-            f"Export annotations from all available annotators {all_annotators}")
+        print(f"Export annotations from all available annotators {all_annotators}")
     else:
         print(f"Export annotations from annotators {annotator}")
 

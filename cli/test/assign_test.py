@@ -76,7 +76,16 @@ class TestAssign(unittest.TestCase):
             shutil.copytree(f"test/fixtures/pawls/", sub_temp_dir)
             # This time we pass a file containing the name mapping,
             # so we should find the name in the resulting status.
-            result = runner.invoke(assign, [sub_temp_dir, "mark", sha, "--name-file", "test/fixtures/pawls/name_mapping.json"])
+            result = runner.invoke(
+                assign,
+                [
+                    sub_temp_dir,
+                    "mark",
+                    sha,
+                    "--name-file",
+                    "test/fixtures/pawls/name_mapping.json",
+                ],
+            )
             assert result.exit_code == 0
             status_path = os.path.join(sub_temp_dir, "status", "mark.json")
 
