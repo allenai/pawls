@@ -15,13 +15,13 @@ import { BrowserRouter, Route, Redirect} from 'react-router-dom';
 
 import { PDFPage } from './pages';
 import { CenterOnPage } from "./components"
-import { getAllocatedPaperInfo } from "./api"
+import { getAllocatedPaperStatus } from "./api"
 
 
 const RedirectToFirstPaper = () => {
     const [sha, setSha] = useState<string>();
     useEffect(() => {
-        getAllocatedPaperInfo().then((papers) => {
+        getAllocatedPaperStatus().then((papers) => {
             const first = papers[0]
             setSha(first.sha)
         })

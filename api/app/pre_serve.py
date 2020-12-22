@@ -7,7 +7,7 @@ class Configuration(NamedTuple):
     General configuration for the annotation tool.
 
     output_directory: str, required.
-        The directory where the pdfs, metadata and
+        The directory where the pdfs and
         annotation output will be stored.
     labels: List[Dict[str, str]], required.
         The labels in use for annotation.
@@ -28,7 +28,10 @@ def load_configuration(filepath: str) -> Configuration:
         blob = json.load(open(filepath))
         return Configuration(**blob)
     except TypeError as e:
-        print("Error loading configuration file %s, maybe you're missing a required field? Exception string: %s" % (filepath, e))
+        print(
+            "Error loading configuration file %s, maybe you're missing a required field? Exception string: %s"
+            % (filepath, e)
+        )
         raise e
     except Exception as e:
         print("Error loading configuration file %s" % filepath)

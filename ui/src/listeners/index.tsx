@@ -1,6 +1,6 @@
 import {useEffect, useContext} from "react";
 import { AnnotationStore } from "../context";
-import { saveAnnotations, PaperInfo } from "../api";
+import { saveAnnotations } from "../api";
 import { notification } from "@allenai/varnish";
 
 
@@ -65,12 +65,11 @@ export const HandleAnnotationSelection = ({setModalVisible}: HandleAnnotationSel
 
 
 
-interface WithAssignment {
+interface WithSha {
     sha: string,
-    assignedPaperInfo: PaperInfo[]
 }
 
-export const SaveWithTimeout = ({sha, assignedPaperInfo}: WithAssignment) => {
+export const SaveWithTimeout = ({sha}: WithSha) => {
 
     const annotationStore = useContext(AnnotationStore)
     const {pdfAnnotations, setPdfAnnotations } = annotationStore
@@ -97,7 +96,7 @@ export const SaveWithTimeout = ({sha, assignedPaperInfo}: WithAssignment) => {
             }, 2000)
             return () => clearTimeout(currentTimeout)
         }
-    }, [sha, pdfAnnotations, assignedPaperInfo])
+    }, [sha, pdfAnnotations])
 
     return null
 }
@@ -105,7 +104,7 @@ export const SaveWithTimeout = ({sha, assignedPaperInfo}: WithAssignment) => {
 // TODO(Mark): There is a lot of duplication between these two listeners,
 // deduplicate if I need to save at another time as well.
 
-export const SaveBeforeUnload = ({sha, assignedPaperInfo}: WithAssignment) => {
+export const SaveBeforeUnload = ({sha}: WithSha) => {
 
     const annotationStore = useContext(AnnotationStore)
     const {pdfAnnotations, setPdfAnnotations } = annotationStore
@@ -132,7 +131,7 @@ export const SaveBeforeUnload = ({sha, assignedPaperInfo}: WithAssignment) => {
         return (() => {
             window.removeEventListener("beforeunload", beforeUnload)
         })
-    }, [sha, pdfAnnotations, assignedPaperInfo])
+    }, [sha, pdfAnnotations])
 
     return null
 }

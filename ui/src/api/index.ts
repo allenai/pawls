@@ -79,29 +79,15 @@ export async function getRelations(): Promise<Label[]> {
 }
 
 
-export interface PaperMetadata {
-
-    sha: string,
-    title: string,
-    venue: string,
-    year: number,
-    cited_by: number,
-    authors: string[]
-}
-
 export interface PaperStatus {
+    sha: string,
+    name: string,
     annotations: number,
     relations: number,
     finished: boolean,
     junk: boolean,
     comments: string,
     completedAt?: Date
-}
-
-export interface PaperInfo {
-    metadata: PaperMetadata,
-    status: PaperStatus,
-    sha: string
 }
 
 export async function setPdfComment(sha: string, comments: string) {
@@ -116,16 +102,10 @@ export async function setPdfJunk(sha: string, junk: boolean) {
     return axios.post(`/api/doc/${sha}/junk`, junk)
 }
 
-export async function getAllocatedPaperInfo(): Promise<PaperInfo[]> {
+export async function getAllocatedPaperStatus(): Promise<PaperStatus[]> {
     return axios.get("/api/annotation/allocation/info")
                 .then(r => r.data)
 }
-
-export async function getAssignedPapers(): Promise<PaperMetadata[]> {
-    return axios.get("/api/annotation/allocation/metadata")
-                .then(r => r.data)
-}
-
 
 export function saveAnnotations(
     sha: string,

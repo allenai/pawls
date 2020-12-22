@@ -12,8 +12,7 @@ def load_json(filename: str):
 
 
 def get_pdf_pages_and_sizes(filename: str):
-    """Ref https://stackoverflow.com/a/47686921
-    """
+    """Ref https://stackoverflow.com/a/47686921"""
     with open(filename, "rb") as fp:
         parser = PDFParser(fp)
         document = PDFDocument(parser)

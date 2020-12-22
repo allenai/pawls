@@ -3,7 +3,7 @@ import json
 import click
 from collections import OrderedDict
 from glob import glob
-from typing import List, NamedTuple, Optional, Union, Dict, Iterable, Any
+from typing import List, NamedTuple, Union, Dict, Iterable, Any
 
 from tqdm import tqdm
 from pdf2image import convert_from_path
@@ -21,14 +21,13 @@ class LabelingConfiguration:
         """LabelingConfiguration handles parsing the configuration file.
 
         Args:
-            config (click.File): The config file handle. 
+            config (click.File): The config file handle.
         """
         self.config = json.load(config)
 
     @property
     def categories(self) -> List[str]:
-        """Returns all labeling category names in the config file."
-        """
+        """Returns all labeling category names in the config file." """
         return [l["text"] for l in self.config["labels"]]
 
     @property
@@ -43,19 +42,19 @@ class AnnotationFiles:
     def __init__(
         self, labeling_folder: str, annotator: str, include_unfinished: bool = True
     ):
-        """AnnotationFiles is an iterator for selected annotation files 
-        given the selected annotators and configurations. 
+        """AnnotationFiles is an iterator for selected annotation files
+        given the selected annotators and configurations.
 
         Args:
-            labeling_folder (str): 
+            labeling_folder (str):
                 The folder to save the pdf annotation files, e.g.,
-                `./skiff_files/apps/pawls/papers`. 
-            annotator (str, optional): 
+                `./skiff_files/apps/pawls/papers`.
+            annotator (str, optional):
                 The name of the annotator.
-                If not set, then changed to the default user 
+                If not set, then changed to the default user
                 `AnnotationFiles.DEVELOPMENT_USER`.
-            include_unfinished (bool, optional): 
-                Whether output unfinished annotations of the given user. 
+            include_unfinished (bool, optional):
+                Whether output unfinished annotations of the given user.
                 Defaults to True.
         """
         self.labeling_folder = labeling_folder
@@ -70,8 +69,7 @@ class AnnotationFiles:
 
     def get_all_annotation_files(self) -> List[str]:
         return glob(
-            os.path.join(
-                f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
+            os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
         )
 
     def get_finished_annotation_files(self) -> List[str]:
@@ -96,12 +94,10 @@ class AnnotationFiles:
         for _file in self._files:
             paper_sha = _file.split("/")[-2]
             pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
-            metadata_path = f"{self.labeling_folder}/{paper_sha}/metadata.json"
 
             yield dict(
                 paper_sha=paper_sha,
                 pdf_path=pdf_path,
-                metadata_path=metadata_path,
                 annotation_path=_file,
             )
 
@@ -111,7 +107,7 @@ class AnnotationFiles:
 
     @staticmethod
     def get_all_annotators(labeling_folder: str) -> List[str]:
-        """Fetch all annotators in the labeling folder, 
+        """Fetch all annotators in the labeling folder,
         including the default DEVELOPMENT_USER.
         """
 
@@ -129,8 +125,6 @@ class COCOBuilder:
     class PaperTemplate(NamedTuple):
         id: int
         paper_sha: str
-        year: Optional[int]
-        title: str
         pages: int
 
     class ImageTemplate(NamedTuple):
@@ -149,18 +143,18 @@ class COCOBuilder:
         area: Union[float, int]
 
     def __init__(self, categories: List, save_path: str):
-        """COCOBuilder generates the coco-format dataset based on 
-        source annotation files. 
+        """COCOBuilder generates the coco-format dataset based on
+        source annotation files.
 
         It will create a COCO-format annotation json file for every
-        annotated page and convert all the labeled pdf pages into 
-        images, which is stored in `<save_path>/images/<pdf_sha>_<page no>.jpg`. 
+        annotated page and convert all the labeled pdf pages into
+        images, which is stored in `<save_path>/images/<pdf_sha>_<page no>.jpg`.
 
         Args:
-            categories (List): 
+            categories (List):
                 All the labeling categories in the dataset
-            save_path (str): 
-                The folder for saving all the annotation files. 
+            save_path (str):
+                The folder for saving all the annotation files.
 
         Examples::
             >>> anno_files = AnnotationFiles(**configs) # Initialize anno_files based on configs
@@ -190,13 +184,8 @@ class COCOBuilder:
             for idx, category in enumerate(categories)
         ]
 
-    def add_paper(
-        self, paper_sha: str, pdf_path: str, metadata_path: str, annotation_path: str
-    ) -> None:
-        """Create the annotation for each paper. 
-        """
-        paper_metadata = load_json(metadata_path)
-        assert paper_metadata["sha"] == paper_sha
+    def add_paper(self, paper_sha: str, pdf_path: str, annotation_path: str) -> None:
+        """Create the annotation for each paper."""
 
         num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
 
@@ -205,8 +194,6 @@ class COCOBuilder:
         paper_info = self.PaperTemplate(
             paper_id,
             paper_sha,
-            paper_metadata.get("year"),
-            paper_metadata.get("title", ""),
             pages=num_pages,
         )
 
@@ -222,8 +209,7 @@ class COCOBuilder:
         for anno in pawls_annotations:
             page_id = anno["page"]
 
-            image_filename = self._create_pdf_page_image_filename(
-                paper_sha, page_id)
+            image_filename = self._create_pdf_page_image_filename(paper_sha, page_id)
             width, height = page_sizes[anno["page"]]
 
             if page_id not in current_images:
@@ -272,8 +258,7 @@ class COCOBuilder:
 
         pbar = tqdm(anno_files)
         for anno_file in pbar:
-            pbar.set_description(
-                f"Working on {anno_file['paper_sha'][:10]}...")
+            pbar.set_description(f"Working on {anno_file['paper_sha'][:10]}...")
             self.add_paper(**anno_file)
 
     def export(self, annotation_name="annotations.json") -> None:
@@ -325,8 +310,7 @@ def export(
 
     if len(annotator) == 0:
         annotator = all_annotators
-        print(
-            f"Export annotations from all available annotators {all_annotators}")
+        print(f"Export annotations from all available annotators {all_annotators}")
     else:
         print(f"Export annotations from annotators {annotator}")
 

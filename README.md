@@ -10,9 +10,6 @@
 
 ### Secrets
 
-The Pawls CLI requires a AWS key with read access to the S2 Pdf buckets. There is a key pair for this task specifically [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/yq475h75a2zaeuh4zhq23otkki), but your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which you use for day-to-day AI2 work will
-be suitable - just make sure they are set as environment variables when running the PAWLS CLI.
-
 The Pawls service and the PAWLS CLI require the python client of the [S2 Pdf Structure Service](https://github.com/allenai/s2-pdf-structure-service),
 which you can find [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/i73dbwizxzlu2savgd2pbrzyzq).
 To use this locally, create a `.env` file (used by `docker-compose.yaml`) with

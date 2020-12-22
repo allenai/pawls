@@ -31,7 +31,6 @@ class TestApp(TestCase):
     def test_root(self):
         response = self.client.get("/")
         assert response.status_code == 204
-        assert response.json() == {}
 
     def test_get_bad_pdf(self):
 
@@ -63,7 +62,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["status"]["comments"] == "hello this is a comment."
+        assert response.json()[0]["comments"] == "hello this is a comment."
 
     def test_set_pdf_finished(self):
 
@@ -76,7 +75,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["status"]["finished"] is True
+        assert response.json()[0]["finished"] is True
 
     def test_set_pdf_junk(self):
 
@@ -89,7 +88,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["status"]["junk"] is True
+        assert response.json()[0]["junk"] is True
 
     def test_get_allocation_info(self):
 
@@ -100,31 +99,14 @@ class TestApp(TestCase):
 
         gold = [
             {
-                "metadata": {
-                    "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
-                    "title": "Deep contextualized word representations",
-                    "venue": "NAACL-HLT",
-                    "year": 2018,
-                    "cited_by": 3723,
-                    "authors": [
-                        "Matthew E. Peters",
-                        "Mark Neumann",
-                        "Mohit Iyyer",
-                        "Matt Gardner",
-                        "Christopher Clark",
-                        "Kenton Lee",
-                        "Luke Zettlemoyer",
-                    ],
-                },
-                "status": {
-                    "annotations": 0,
-                    "relations": 0,
-                    "finished": False,
-                    "junk": False,
-                    "comments": "",
-                    "completedAt": None,
-                },
                 "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                "name": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                "annotations": 0,
+                "relations": 0,
+                "finished": False,
+                "junk": False,
+                "comments": "",
+                "completedAt": None,
             }
         ]
         assert response.json() == gold
@@ -165,4 +147,4 @@ class TestApp(TestCase):
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
 
-        assert response.json()[0]["status"]["annotations"] == 1
+        assert response.json()[0]["annotations"] == 1
