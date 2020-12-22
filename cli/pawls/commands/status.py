@@ -90,7 +90,8 @@ def get_labeling_status(target_dir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
 @click.option("--output", help="Path to save the export data", type=click.Path())
 def status(
-    path: click.Path, output: click.Path,
+    path: click.Path,
+    output: click.Path,
 ):
     """
     Checking the labeling status for some annotation project

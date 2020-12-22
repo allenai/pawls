@@ -21,14 +21,13 @@ class LabelingConfiguration:
         """LabelingConfiguration handles parsing the configuration file.
 
         Args:
-            config (click.File): The config file handle. 
+            config (click.File): The config file handle.
         """
         self.config = json.load(config)
 
     @property
     def categories(self) -> List[str]:
-        """Returns all labeling category names in the config file."
-        """
+        """Returns all labeling category names in the config file." """
         return [l["text"] for l in self.config["labels"]]
 
     @property
@@ -43,19 +42,19 @@ class AnnotationFiles:
     def __init__(
         self, labeling_folder: str, annotator: str, include_unfinished: bool = True
     ):
-        """AnnotationFiles is an iterator for selected annotation files 
-        given the selected annotators and configurations. 
+        """AnnotationFiles is an iterator for selected annotation files
+        given the selected annotators and configurations.
 
         Args:
-            labeling_folder (str): 
+            labeling_folder (str):
                 The folder to save the pdf annotation files, e.g.,
-                `./skiff_files/apps/pawls/papers`. 
-            annotator (str, optional): 
+                `./skiff_files/apps/pawls/papers`.
+            annotator (str, optional):
                 The name of the annotator.
-                If not set, then changed to the default user 
+                If not set, then changed to the default user
                 `AnnotationFiles.DEVELOPMENT_USER`.
-            include_unfinished (bool, optional): 
-                Whether output unfinished annotations of the given user. 
+            include_unfinished (bool, optional):
+                Whether output unfinished annotations of the given user.
                 Defaults to True.
         """
         self.labeling_folder = labeling_folder
@@ -97,7 +96,9 @@ class AnnotationFiles:
             pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
 
             yield dict(
-                paper_sha=paper_sha, pdf_path=pdf_path, annotation_path=_file,
+                paper_sha=paper_sha,
+                pdf_path=pdf_path,
+                annotation_path=_file,
             )
 
     def __len__(self):
@@ -106,7 +107,7 @@ class AnnotationFiles:
 
     @staticmethod
     def get_all_annotators(labeling_folder: str) -> List[str]:
-        """Fetch all annotators in the labeling folder, 
+        """Fetch all annotators in the labeling folder,
         including the default DEVELOPMENT_USER.
         """
 
@@ -142,18 +143,18 @@ class COCOBuilder:
         area: Union[float, int]
 
     def __init__(self, categories: List, save_path: str):
-        """COCOBuilder generates the coco-format dataset based on 
-        source annotation files. 
+        """COCOBuilder generates the coco-format dataset based on
+        source annotation files.
 
         It will create a COCO-format annotation json file for every
-        annotated page and convert all the labeled pdf pages into 
-        images, which is stored in `<save_path>/images/<pdf_sha>_<page no>.jpg`. 
+        annotated page and convert all the labeled pdf pages into
+        images, which is stored in `<save_path>/images/<pdf_sha>_<page no>.jpg`.
 
         Args:
-            categories (List): 
+            categories (List):
                 All the labeling categories in the dataset
-            save_path (str): 
-                The folder for saving all the annotation files. 
+            save_path (str):
+                The folder for saving all the annotation files.
 
         Examples::
             >>> anno_files = AnnotationFiles(**configs) # Initialize anno_files based on configs
@@ -184,14 +185,17 @@ class COCOBuilder:
         ]
 
     def add_paper(self, paper_sha: str, pdf_path: str, annotation_path: str) -> None:
-        """Create the annotation for each paper. 
-        """
+        """Create the annotation for each paper."""
 
         num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
 
         # Add paper information
         paper_id = len(self._papers)  # Start from zero
-        paper_info = self.PaperTemplate(paper_id, paper_sha, pages=num_pages,)
+        paper_info = self.PaperTemplate(
+            paper_id,
+            paper_sha,
+            pages=num_pages,
+        )
 
         # Add individual page images and annotations
         current_images = OrderedDict()

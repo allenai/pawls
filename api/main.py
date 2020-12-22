@@ -316,7 +316,12 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperS
     if not exists and IN_PRODUCTION == "dev":
         os.makedirs(status_dir, exist_ok=True)
         with open(status_path, "w+") as new:
-            blob = {sha: PaperStatus.empty(sha, sha_path.strip(configuration.output_directory)) for sha, sha_path in zip(all_pdf_shas(), pdf_paths)}
+            blob = {
+                sha: PaperStatus.empty(
+                    sha, sha_path.strip(configuration.output_directory)
+                )
+                for sha, sha_path in zip(all_pdf_shas(), pdf_paths)
+            }
             json.dump(jsonable_encoder(blob), new)
 
     elif not exists:
