@@ -44,7 +44,7 @@ def assign(
     Assign pdfs and annotators for a project.
 
     Use assign to assign annotators to a project, or assign them
-    pdfs fetched using `pawls fetch <pdfs>`.
+    pdfs in the specified directory.
 
     Annotators must be assigned a username corresponding
     to their AI2 email, e.g `markn` for email `markn@allenai.org`.
@@ -74,7 +74,7 @@ def assign(
         error = f"Found shas which are not present in path {path} .\n"
         error = (
             error
-            + f"Run pawls fetch {path} <shas> before assigning pdfs to annotators.\n"
+            + f"Add pdf files in the specified directory, one per sub-directory."
         )
         for sha in diff:
             error = error + f"{sha}\n"

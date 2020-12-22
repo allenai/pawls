@@ -16,16 +16,22 @@ To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
 
 `GITHUB_ACCESS_TOKEN=<password from 1password>`
 
-### PDFs
+### Getting Started
 
 In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.
 
 For instance, you can run this command to download the specified PDF:
 
 ```bash
-    pawls fetch skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698
-    pawls preprocess grobid skiff_files/apps/pawls/papers
+  # Fetches pdfs from semantic scholar's S3 buckets.
+  python scripts/ai2-internal/fetch_pdfs.py skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698 3febb2bed8865945e7fddc99efd791887bb7e14f 553c58a05e25f794d24e8db8c2b8fdb9603e6a29
+  # ensure that the papers are pre-processed with grobid so that they have token information.
+  pawls preprocess grobid skiff_files/apps/pawls/papers
+  # Assign the development user to all the papers we've downloaded.
+  pawls assign skiff_files/apps/pawls/papers development_user --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
 ```
+
+and then open up the UI locally by running `docker-compose up`.
 
 ### Authentication and Authorization
 
