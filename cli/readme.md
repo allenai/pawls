@@ -32,11 +32,11 @@ Please follow the [instructions here](https://github.com/Belval/pdf2image#window
 
 1. Download PDFs based on <PDF_SHA>s into the <SAVE_PATH> (e.g., `skiff_files/apps/pawls/papers` ). If you work at AI2, see the internal usage script for doing this [here](../../scripts/ai2-internal). Otherwise, pdfs are expected to be in a directory structure with a single pdf per folder, where each folder's name is a unique id corresponding to that pdf. For example:
 ```
---- top_level/
-    -- pdf1/
-      -- my_pdf1.pdf
-    -- pdf2/
-      -- my_pdf2.pdf
+    top_level/
+    ├───pdf1/
+    │     └───pdf1.pdf
+    └───pdf2/
+    │     └───pdf2.pdf
 ```
 By default, pawls will use the name of the containing directory to refer to the pdf in the ui.
 
