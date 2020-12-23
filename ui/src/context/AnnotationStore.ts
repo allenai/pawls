@@ -165,6 +165,9 @@ interface _AnnotationStore {
 
     freeFormAnnotations: boolean;
     toggleFreeFormAnnotations: (state: boolean) => void;
+
+    hideLabels: boolean;
+    setHideLabels: (state: boolean) => void;
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
@@ -188,6 +191,10 @@ export const AnnotationStore = createContext<_AnnotationStore>({
     },
     freeFormAnnotations: false,
     toggleFreeFormAnnotations: (_: boolean) => {
+        throw new Error('Unimplemented');
+    },
+    hideLabels: false,
+    setHideLabels: (_: boolean) => {
         throw new Error('Unimplemented');
     },
 });

@@ -51,6 +51,7 @@ export const PDFPage = () => {
     const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
     const [ activeRelationLabel, setActiveRelationLabel] = useState<Label>();
     const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
+    const [ hideLabels, setHideLabels] = useState<boolean>(false);
 
     const [ relationModalVisible, setRelationModalVisible] = useState<boolean>(false);
 
@@ -225,13 +226,16 @@ export const PDFPage = () => {
                                 selectedAnnotations,
                                 setSelectedAnnotations,
                                 freeFormAnnotations,
-                                toggleFreeFormAnnotations
+                                toggleFreeFormAnnotations,
+                                hideLabels,
+                                setHideLabels
                             }}
                         >
                             <listeners.UndoAnnotation/>
                             <listeners.HandleAnnotationSelection setModalVisible={setRelationModalVisible}/>
                             <listeners.SaveWithTimeout sha={sha}/>
                             <listeners.SaveBeforeUnload sha={sha}/>
+                            <listeners.HideAnnotationLabels/>
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
