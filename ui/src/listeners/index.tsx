@@ -27,6 +27,33 @@ export const UndoAnnotation = () => {
 }
 
 
+export const HideAnnotationLabels = () => {
+    // Shows or hides the labels of annotations on pressing ctrl.
+    // This makes it easier to do detailed annotations.
+
+    const annotationStore = useContext(AnnotationStore)
+    const {hideLabels, setHideLabels } = annotationStore
+
+    // Toggle state on key down.
+    useEffect(() => {
+        const hideLabelsOnKeyDown = (e: KeyboardEvent) => {
+
+            if (e.ctrlKey) {
+                    setHideLabels(!hideLabels)
+                }
+        }
+        window.addEventListener('keydown', hideLabelsOnKeyDown);
+        return () => {
+            window.removeEventListener('keydown', hideLabelsOnKeyDown)
+        };
+    }, [hideLabels, setHideLabels])
+
+    return null
+
+}
+
+
+
 interface HandleAnnotationSelectionProps {
     setModalVisible: (v: boolean) => void
 }

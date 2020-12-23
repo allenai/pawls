@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 
-import { Bounds, TokenId, PDFPageInfo, Annotation, RelationGroup, AnnotationStore } from '../context';
+import { Bounds, TokenId, PDFPageInfo, Annotation, AnnotationStore } from '../context';
 import { CloseCircleFilled } from '@ant-design/icons';
 
  function hexToRgb(hex: string) {
@@ -15,7 +15,18 @@ import { CloseCircleFilled } from '@ant-design/icons';
       b: parseInt(result[3], 16)
     }
   }
-  
+
+function getBorderWidthFromBounds(bounds: Bounds): number {
+    // 
+    const width = bounds.right - bounds.left;
+    const height = bounds.bottom - bounds.top;
+    if (width < 100 || height < 100) {
+        return 1;
+    } 
+    else {
+        return 3;
+    }
+}
 
 interface SelectionBoundaryProps {
     color: string
@@ -26,14 +37,15 @@ interface SelectionBoundaryProps {
     onClick?: () => void
 }
 
+
 export const SelectionBoundary = ({color, bounds, children, onClick, selected}: SelectionBoundaryProps) => {
 
     const width = bounds.right - bounds.left;
     const height = bounds.bottom - bounds.top;
     const rotateY = width < 0 ? -180 : 0;
     const rotateX = height < 0 ? -180 : 0;
-    const border = 3
     const rgbColor = hexToRgb(color)
+    const border = getBorderWidthFromBounds(bounds)
 
     return (
         <span
@@ -133,10 +145,9 @@ export const Selection = ({
     } else {
         color = label.color
     }
-    const border = 3
 
     const bounds = pageInfo.getScaledBounds(annotation.bounds)
-
+    const border = getBorderWidthFromBounds(bounds)
 
     const removeAnnotation = () => {
         annotationStore.setPdfAnnotations(
@@ -168,7 +179,7 @@ export const Selection = ({
             onClick={onShiftClick}
             selected={selected}
             >
-            {showInfo ? (
+            {showInfo && !annotationStore.hideLabels ? (
                 <SelectionInfo border={border} color={color}>
                 <span>
                     {label.text}

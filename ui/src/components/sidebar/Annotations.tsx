@@ -51,6 +51,10 @@ export const Annotations = ({sha, annotations}: AnnotationsProps) => {
                 <InfoCircleOutlined style={{marginRight: "3px"}}/>
                 Use CMD + z to undo the last annotation. 
             </ExplainerText>
+            <ExplainerText>
+                <InfoCircleOutlined style={{marginRight: "3px"}}/>
+                Press CTRL to show/hide annotation labels for small annotations.
+            </ExplainerText>
             <span>
                 <ToggleDescription>
                     Finished?
