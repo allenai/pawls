@@ -16,9 +16,6 @@ requests
 # used for form parsing
 python-multipart
 
-# pdf-structure service client.
-git+https://${GITHUB_ACCESS_TOKEN}@github.com/allenai/s2-pdf-structure-service@master#egg=pkg&subdirectory=clients/python
-
 # Allows us to use FastAPI's FileResponse for serving pdfs.
 aiofiles
 

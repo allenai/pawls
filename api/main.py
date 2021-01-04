@@ -8,7 +8,6 @@ from fastapi import FastAPI, Query, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
-from app import pdf_structure
 from app.metadata import PaperStatus
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
@@ -267,9 +266,14 @@ def get_tokens(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(sha, token_sources=sources,)
+    pdf_tokens = os.path.join(configuration.output_directory, sha, "tokens.json")
+    with open(pdf_tokens, "r") as f:
+        response = json.load(f)
+
     if pages is not None:
-        response = pdf_structure.filter_token_source_for_pages(response, pages)
+
+        # TODO: Fix this to actually filter the pages
+        response = response
 
     return response
 
