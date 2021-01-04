@@ -6,7 +6,7 @@ import click
 import glob
 
 from pawls.preprocessors.grobid import process_grobid
-
+from pawls.preprocessors.pdfplumber import process_pdfplumber
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
@@ -29,6 +29,8 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
 
         `pawls preprocess grobid ./`
     """
+    print(f"Processing using the {preprocessor} preprocessor...")
+
     which_pdf_service = "prod" if prod else "dev"
     if os.path.isdir(path):
         in_glob = os.path.join(path, "*/*.pdf")
@@ -46,7 +48,8 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
         pbar.set_description(f"Processing {sha[:10]}...")
         if preprocessor == "grobid":
             status.append(process_grobid(sha, str(path), env=which_pdf_service))
-
+        elif preprocessor == "pdfplumber":
+            status.append(process_pdfplumber(sha, str(path), env=which_pdf_service))
     print(
         f"Added {sum(status)}/{len(pdfs)} annotations from {preprocessor} to the {which_pdf_service} S2 PDF Structure Service."
     )
