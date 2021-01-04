@@ -47,20 +47,12 @@ def process_grobid(
     """
     Integration for importing annotations from grobid.
     Depends on a grobid API built from our fork https://github.com/allenai/grobid.
-    Fetches a PDF by sha, sends it to the Grobid API and inserts the resulting annotations
-    Does nothing if Grobid annotations already exist for that PDF.
+    Fetches a PDF by sha, sends it to the Grobid API and returns them.
 
-    sha: str
-        The s2 sha for a pdf.
     pdf_file: str
         The path to the pdf file to process.
     grobid_host: str (optional, default = http://s2-grobid-tokens.us-west-2.elasticbeanstalk.com)
         The forked grobid API which we use to produce the annotations.
-    source: str (optional, default = "grobid")
-        The source name to use for inserting into the pdf structure service.
-    env: str (optional, default = "dev")
-        Whether to insert pdfs into the development
-        or production version of the pdf structure service.
     """
     grobid_structure = fetch_grobid_structure(pdf_file, grobid_host)
     annotations = parse_annotations(grobid_structure)

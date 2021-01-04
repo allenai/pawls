@@ -217,7 +217,7 @@ def save_annotations(
 ):
     """
     sha: str
-        PDF sha to retrieve from the PDF structure service.
+        PDF sha to save annotations for.
     annotations: List[Annotation]
         A json blob of the annotations to save.
     relations: List[RelationGroup]
@@ -259,7 +259,7 @@ def get_tokens(
 ):
     """
     sha: str
-        PDF sha to retrieve from the PDF structure service.
+        PDF sha to retrieve.
     sources: List[str] (default = "all")
         The annotation sources to fetch.
         This allows fetching of specific annotations.
