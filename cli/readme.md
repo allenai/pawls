@@ -40,7 +40,7 @@ Please follow the [instructions here](https://github.com/Belval/pdf2image#window
 ```
 By default, pawls will use the name of the containing directory to refer to the pdf in the ui.
 
-2. Process the token information for each PDF document:
+2. Process the token information for each PDF document with the given PDF preprocessor `grobid/pdfplumber`:
     ```bash
     pawls preprocess grobid skiff_files/apps/pawls/papers
     ```

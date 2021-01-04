@@ -17,3 +17,6 @@ requests
 # used for testing
 pytest
 
+# Used for pdf-token extraction
+pdfplumber
+layoutparser
