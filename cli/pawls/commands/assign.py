@@ -47,11 +47,11 @@ def assign(
     pdfs in the specified directory.
 
     Annotators must be assigned a username corresponding
-    to their AI2 email, e.g `markn` for email `markn@allenai.org`.
+    to a gmail email address, such as `markn@gmail.com`.
 
-    Add an annotator called markn:
+    Add an annotator:
 
-        `pawls assign <path to pawls directory> markn`
+        `pawls assign <path to pawls directory> markn@gmail.com`
 
     To assign all current pdfs in the project to an annotator, use:
 
@@ -80,12 +80,18 @@ def assign(
             error = error + f"{sha}\n"
         raise UsageError(error)
 
-    result = re.match(r"^[a-zA-Z0-9_.+-]+", annotator)
+    if all:
+        # If --all flag, we use all pdfs in the current project.
+        shas.update(project_shas)
+
+    if sha_file is not None:
+        extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
+        shas.extend(extra_ids)
+
+    result = re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", annotator)
 
     if not result or result.group(0) != annotator:
-        raise BadArgumentUsage(
-            "Annotator names should be alphanumeric strings (_, ., + and - are also valid characters.)"
-        )
+        raise BadArgumentUsage("Provided annotator was not a valid email.")
 
     status_dir = os.path.join(path, "status")
     os.makedirs(status_dir, exist_ok=True)

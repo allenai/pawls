@@ -37,7 +37,7 @@ class LabelingConfiguration:
 
 class AnnotationFiles:
 
-    DEVELOPMENT_USER = "development_user"
+    DEVELOPMENT_USER = "development_user@example.com"
 
     def __init__(
         self, labeling_folder: str, annotator: str, include_unfinished: bool = True

@@ -61,8 +61,7 @@ def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     if not user_is_allowed(user_email):
         raise HTTPException(403, "Forbidden")
 
-    # This returns the "username" portion of the email address.
-    return user_email.split("@")[0]
+    return user_email
 
 
 def user_is_allowed(user_email: str) -> bool:
@@ -268,10 +267,7 @@ def get_tokens(
     pages: Optional[List[str]], (default = None)
         Optionally provide pdf pages to filter by.
     """
-    response = pdf_structure.get_annotations(
-        sha,
-        token_sources=sources,
-    )
+    response = pdf_structure.get_annotations(sha, token_sources=sources,)
     if pages is not None:
         response = pdf_structure.filter_token_source_for_pages(response, pages)
 

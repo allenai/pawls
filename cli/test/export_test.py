@@ -39,8 +39,8 @@ class TestExport(unittest.TestCase):
             "34f25a8704614163c4095b3ee2fc969b60de4698",
             "553c58a05e25f794d24e8db8c2b8fdb9603e6a29",
         ]
-        self.USERS = ["markn", "shannons"]
-        self.DEFAULT_USER = "development_user"
+        self.USERS = ["markn@example.com", "shannons@example.com"]
+        self.DEFAULT_USER = "development_user@example.com"
 
     def test_export_annotation_from_all_annotators(self):
         runner = CliRunner()
