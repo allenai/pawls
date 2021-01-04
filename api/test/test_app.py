@@ -51,27 +51,44 @@ class TestApp(TestCase):
             {"text": "Definition", "color": "#FFD45D"},
         ]
 
-    def test_set_pdf_status(self):
-
-        status = {
-            "annotations": 3,
-            "relations": 2,
-            "finished": True,
-            "junk": False,
-            "comments": "",
-            "completedAt": None,
-        }
+    def test_set_pdf_comments(self):
 
         self.client.post(
-            f"/api/doc/{self.pdf_sha}/status",
-            json=status,
+            f"/api/doc/{self.pdf_sha}/comments",
+            json="hello this is a comment.",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
         response = self.client.get(
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["status"] == status
+        assert response.json()[0]["comments"] == "hello this is a comment."
+
+    def test_set_pdf_finished(self):
+
+        self.client.post(
+            f"/api/doc/{self.pdf_sha}/finished",
+            json=True,
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+        response = self.client.get(
+            "/api/annotation/allocation/info",
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+        assert response.json()[0]["finished"] is True
+
+    def test_set_pdf_junk(self):
+
+        self.client.post(
+            f"/api/doc/{self.pdf_sha}/junk",
+            json=True,
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+        response = self.client.get(
+            "/api/annotation/allocation/info",
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+        assert response.json()[0]["junk"] is True
 
     def test_get_allocation_info(self):
 
@@ -82,31 +99,14 @@ class TestApp(TestCase):
 
         gold = [
             {
-                "metadata": {
-                    "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
-                    "title": "Deep contextualized word representations",
-                    "venue": "NAACL-HLT",
-                    "year": 2018,
-                    "cited_by": 3723,
-                    "authors": [
-                        "Matthew E. Peters",
-                        "Mark Neumann",
-                        "Mohit Iyyer",
-                        "Matt Gardner",
-                        "Christopher Clark",
-                        "Kenton Lee",
-                        "Luke Zettlemoyer",
-                    ],
-                },
-                "status": {
-                    "annotations": 0,
-                    "relations": 0,
-                    "finished": False,
-                    "junk": False,
-                    "comments": "",
-                    "completedAt": None,
-                },
                 "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                "name": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                "annotations": 0,
+                "relations": 0,
+                "finished": False,
+                "junk": False,
+                "comments": "",
+                "completedAt": None,
             }
         ]
         assert response.json() == gold
@@ -140,3 +140,11 @@ class TestApp(TestCase):
             f"/api/doc/{self.pdf_sha}/annotations", headers=headers
         )
         assert response.json() == {"annotations": [annotation], "relations": []}
+
+        # and the status should have been updated with the annotation count:
+        response = self.client.get(
+            "/api/annotation/allocation/info",
+            headers={"X-Auth-Request-Email": "example@gmail.com"},
+        )
+
+        assert response.json()[0]["annotations"] == 1

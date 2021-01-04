@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List, Callable, Set, Dict, Tuple, NamedTuple, Optional
+from typing import List, Callable, Set, Dict, Tuple, Optional
 
 import click
 import boto3
@@ -40,14 +40,16 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
     )
 
     metadata_failed = []
+    name_mapping = {}
     for sha in result["success"]:
-        metadata_path = os.path.join(path, sha, "metadata.json")
-        metadata = get_paper_metadata(sha)
-        if metadata is None:
+        title = get_paper_title(sha)
+        if title is None:
             metadata_failed.append(sha)
         else:
-            with open(metadata_path, "w+") as out:
-                json.dump(metadata._asdict(), out)
+            name_mapping[sha] = title
+
+    with open(os.path.join(path, "name_mapping.json"), "w+") as f:
+        json.dump(name_mapping, f)
 
     okay = True
     if metadata_failed:
@@ -159,16 +161,7 @@ def bulk_fetch_pdfs_for_s2_ids(
 S2_API = "https://www.semanticscholar.org/api/1/paper/"
 
 
-class PaperMetadata(NamedTuple):
-    sha: str
-    title: str
-    venue: str
-    year: int
-    cited_by: int
-    authors: List[str]
-
-
-def get_paper_metadata(paper_sha: str) -> Optional[PaperMetadata]:
+def get_paper_title(paper_sha: str) -> Optional[str]:
     """
     Fetch a small metadata blob from S2.
 
@@ -176,21 +169,16 @@ def get_paper_metadata(paper_sha: str) -> Optional[PaperMetadata]:
         The paper id to search for.
 
     returns:
-        PaperMetadata if the paper is found, otherwise None.
+        str if the paper is found, otherwise None.
     """
 
     response = requests.get(S2_API + paper_sha)
     if response.ok:
         data = response.json()
-
-        return PaperMetadata(
-            sha=paper_sha,
-            title=data["paper"]["title"]["text"],
-            venue=data["paper"]["venue"]["text"],
-            year=int(data["paper"]["year"]["text"]),
-            cited_by=int(data["paper"]["citationStats"]["numCitations"]),
-            authors=[author[0]["name"] for author in data["paper"]["authors"]],
-        )
-
+        return data["paper"]["title"]["text"]
     else:
         return None
+
+if __name__ == "__main__":
+
+    fetch()

@@ -22,8 +22,6 @@ services:
             # makes debugging easier.
             - PYTHONUNBUFFERED=1
             - LOG_LEVEL=DEBUG
-            - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-            - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
         command: ["main:app", "--host", "0.0.0.0", "--reload"]
     ui:
         build: ./ui

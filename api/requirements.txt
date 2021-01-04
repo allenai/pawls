@@ -10,7 +10,7 @@ uvicorn
 pytest
 pytest-env
 flake8
-black
+black==20.8b1
 requests
 
 # used for form parsing

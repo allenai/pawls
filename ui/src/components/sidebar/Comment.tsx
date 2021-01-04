@@ -3,24 +3,16 @@ import styled from "styled-components";
 import { Input} from "@allenai/varnish";
 
 import { SidebarItem, SidebarItemTitle } from "./common";
-import { PaperStatus } from "../../api";
+import { PaperStatus, setPdfComment } from "../../api";
 
 interface CommentProps {
-    onStatusChange: (s: PaperStatus) => Promise<void>
+    sha: string
     paperStatus: PaperStatus
 }
 
-export const Comment = ({onStatusChange, paperStatus}: CommentProps) => {
+export const Comment = ({ sha, paperStatus}: CommentProps) => {
 
     const [comment, setComment] = useState<string>(paperStatus.comments)
-
-    const onCommentSave = () => {
-        const newStatus = {
-            ...paperStatus,
-            comments: comment
-        }
-        onStatusChange(newStatus)
-    }
 
     return (
         <SidebarItem>
@@ -30,7 +22,7 @@ export const Comment = ({onStatusChange, paperStatus}: CommentProps) => {
             <DarkTextArea
                 defaultValue={paperStatus.comments}
                 onChange={(e) => setComment(e.target.value)}
-                onBlur={onCommentSave}
+                onBlur={() => setPdfComment(sha, comment)}
                 autoSize={{minRows: 6}}
             />
         </SidebarItem>

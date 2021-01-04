@@ -1,6 +1,7 @@
 <div align="center">
     <br>
     <img src="./ui/src/components/sidebar/pawlsLogo.png" width="400"/>
+
     PDF Annotations with Labels and Structure is software that makes it easy
     to collect a series of annotations associated with a PDF document. It was written
     specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org) corpus, but can be used with any collection of PDF documents.
@@ -9,25 +10,28 @@
 
 ### Secrets
 
-The Pawls CLI requires a AWS key with read access to the S2 Pdf buckets. There is a key pair for this task specifically [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/yq475h75a2zaeuh4zhq23otkki), but your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which you use for day-to-day AI2 work will
-be suitable - just make sure they are set as environment variables when running the PAWLS CLI.
-
 The Pawls service and the PAWLS CLI require the python client of the [S2 Pdf Structure Service](https://github.com/allenai/s2-pdf-structure-service),
 which you can find [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/i73dbwizxzlu2savgd2pbrzyzq).
 To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
 
 `GITHUB_ACCESS_TOKEN=<password from 1password>`
 
-### PDFs
+### Getting Started
 
 In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.
 
 For instance, you can run this command to download the specified PDF:
 
 ```bash
-    pawls fetch skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698
-    pawls preprocess grobid skiff_files/apps/pawls/papers
+  # Fetches pdfs from semantic scholar's S3 buckets.
+  python scripts/ai2-internal/fetch_pdfs.py skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698 3febb2bed8865945e7fddc99efd791887bb7e14f 553c58a05e25f794d24e8db8c2b8fdb9603e6a29
+  # ensure that the papers are pre-processed with grobid so that they have token information.
+  pawls preprocess grobid skiff_files/apps/pawls/papers
+  # Assign the development user to all the papers we've downloaded.
+  pawls assign skiff_files/apps/pawls/papers development_user --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
 ```
+
+and then open up the UI locally by running `docker-compose up`.
 
 ### Authentication and Authorization
 

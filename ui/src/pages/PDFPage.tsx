@@ -8,9 +8,10 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperInfo, getAllocatedPaperInfo, setPaperStatus, getLabels, Label, getAnnotations, saveAnnotations, getRelations, PaperStatus } from '../api';
+import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
+import * as listeners from "../listeners";
 
 // This tells PDF.js the URL the code to load for it's webworker, which handles heavy-handed
 // tasks in a background thread. Ideally we'd load this from the application itself rather
@@ -43,13 +44,14 @@ export const PDFPage = () => {
 
     const [ selectedAnnotations, setSelectedAnnotations ] = useState<Annotation[]>([])
 
-    const [ assignedPaperInfo, setAssignedPaperInfo] = useState<PaperInfo[]>([])
-    const [ activePaperInfo, setActivePaperInfo] = useState<PaperInfo>()
+    const [ assignedPaperStatuses, setAssignedPaperStatuses] = useState<PaperStatus[]>([])
+    const [ activePaperStatus, setActivePaperStatus] = useState<PaperStatus>()
     const [ activeLabel, setActiveLabel] = useState<Label>();
     const [ labels, setLabels] = useState<Label[]>([]);
     const [ relationLabels, setRelationLabels] = useState<Label[]>([]);
     const [ activeRelationLabel, setActiveRelationLabel] = useState<Label>();
     const [ freeFormAnnotations, toggleFreeFormAnnotations] = useState<boolean>(false);
+    const [ hideLabels, setHideLabels] = useState<boolean>(false);
 
     const [ relationModalVisible, setRelationModalVisible] = useState<boolean>(false);
 
@@ -66,64 +68,6 @@ export const PDFPage = () => {
     }, [ setViewState ]);
 
     const theme = useContext(ThemeContext);
-
-   function onStatusChange(status: PaperStatus): Promise<void> {
-        if (activePaperInfo) {
-            const idx = assignedPaperInfo.indexOf(activePaperInfo)
-        
-            return setPaperStatus(sha, status).then(() => {
-                const newInfo = {
-                    metadata: activePaperInfo.metadata,
-                    status: status,
-                    sha: activePaperInfo.sha
-                }
-
-                return new Promise<any>((resolved, rejected) => {
-                    setAssignedPaperInfo([
-                        ...assignedPaperInfo.slice(0, idx),
-                        newInfo,
-                        ...assignedPaperInfo.slice(idx + 1)
-
-                    ])
-                    setActivePaperInfo(newInfo)
-                    resolved()
-                })
-            })
-        } else {
-            setViewState(ViewState.ERROR)
-            throw new Error("No active Paper!")
-        }
-    }
-
-    useEffect(() => {
-        // We only save annotations once the annotations have
-        // been fetched, because otherwise we save when the
-        // annotations and relations are empty.
-        if (pdfAnnotations.unsavedChanges) {
-
-            const currentTimeout = setTimeout(() => {
-                saveAnnotations(sha, pdfAnnotations).then(() => {
-                    setPdfAnnotations(
-                        pdfAnnotations.saved()
-                    )
-                }).catch((err) => {
-        
-                    notification.error({
-                        message: "Sorry, something went wrong!",
-                        description: "Try re-doing your previous annotation, or contact someone on the Semantic Scholar team."
-                    })
-                    console.log("Failed to save annotations: ", err)
-                })
-                const current = assignedPaperInfo.filter(x => x.sha === sha)[0]
-                setPaperStatus(sha, {
-                    ...current.status,
-                    annotations: pdfAnnotations.annotations.length,
-                    relations: pdfAnnotations.relations.length
-                })
-            }, 2000)
-            return () => clearTimeout(currentTimeout)
-        }
-    }, [sha, pdfAnnotations.unsavedChanges, assignedPaperInfo])
 
     const onRelationModalOk = (group: RelationGroup) => {
         setPdfAnnotations(pdfAnnotations.withNewRelation(group))
@@ -152,50 +96,10 @@ export const PDFPage = () => {
         })
     }, [sha]) 
     
-    useEffect(() => {
-
-        const onShiftUp = (e: KeyboardEvent) => {
-
-            const shift = e.keyCode === 16
-            const somethingSelected = selectedAnnotations.length !== 0
-            const hasRelations = activeRelationLabel !== undefined
-            // Shift key up
-            if (shift && somethingSelected && hasRelations) {
-                setRelationModalVisible(true)
-            }
-            else if (shift && somethingSelected) {
-                setSelectedAnnotations([])
-            }
-        }
-
-        window.addEventListener("keyup", onShiftUp)
-        return (() => {
-            window.removeEventListener("keyup", onShiftUp)
-        })
-    }, [activeRelationLabel, selectedAnnotations, setRelationModalVisible])
-
-
-    useEffect(() => {
-        const handleUndo = (e: KeyboardEvent) => {
-
-            if (e.metaKey && e.keyCode === 90) {
-                    setPdfAnnotations(pdfAnnotations.undoAnnotation())
-                }
-        }
-
-        window.addEventListener('keydown', handleUndo);
-        return () => {
-            window.removeEventListener('keydown', handleUndo)
-        };
-    }, [pdfAnnotations, setPdfAnnotations])
-
-
-
-
     useEffect( () => {
-        getAllocatedPaperInfo().then((paperInfo) => {
-            setAssignedPaperInfo(paperInfo)
-            setActivePaperInfo(
+        getAllocatedPaperStatus().then((paperInfo) => {
+            setAssignedPaperStatuses(paperInfo)
+            setActivePaperStatus(
                 paperInfo.filter(p => p.sha === sha)[0]
             )
 
@@ -277,7 +181,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPaperInfo}/>
+                        <AssignedPaperList papers={assignedPaperStatuses}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Progress
@@ -292,7 +196,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPaperInfo}/>
+                        <AssignedPaperList papers={assignedPaperStatuses}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Result
@@ -322,28 +226,34 @@ export const PDFPage = () => {
                                 selectedAnnotations,
                                 setSelectedAnnotations,
                                 freeFormAnnotations,
-                                toggleFreeFormAnnotations
+                                toggleFreeFormAnnotations,
+                                hideLabels,
+                                setHideLabels
                             }}
                         >
+                            <listeners.UndoAnnotation/>
+                            <listeners.HandleAnnotationSelection setModalVisible={setRelationModalVisible}/>
+                            <listeners.SaveWithTimeout sha={sha}/>
+                            <listeners.SaveBeforeUnload sha={sha}/>
+                            <listeners.HideAnnotationLabels/>
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header/>
                                     <Labels/>
-                                    <AssignedPaperList papers={assignedPaperInfo}/>
-                                    {activePaperInfo ?
+                                    <AssignedPaperList papers={assignedPaperStatuses}/>
+                                    {activePaperStatus ?
                                     <Annotations 
-                                        onStatusChange={onStatusChange}
+                                        sha={sha}
                                         annotations={pdfAnnotations.annotations}
-                                        paperStatus={activePaperInfo.status}
                                     /> : null}
                                     {activeRelationLabel ? 
                                     <Relations relations={pdfAnnotations.relations}/>
                                     : null
                                     }
-                                    {activePaperInfo ?
+                                    {activePaperStatus ?
                                         <Comment
-                                            onStatusChange={onStatusChange}
-                                            paperStatus={activePaperInfo.status}
+                                            sha={sha}
+                                            paperStatus={activePaperStatus}
                                         />
                                         : null
                                     }
@@ -373,7 +283,7 @@ export const PDFPage = () => {
                 <WithSidebar width={sidebarWidth}>
                     <SidebarContainer width={sidebarWidth}>
                         <Header/>
-                        <AssignedPaperList papers={assignedPaperInfo}/>
+                        <AssignedPaperList papers={assignedPaperStatuses}/>
                     </SidebarContainer>
                     <CenterOnPage>
                         <Result

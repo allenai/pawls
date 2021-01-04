@@ -1,15 +1,15 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import logging
 import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException, Header, Response
+from fastapi import FastAPI, Query, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
 from app import pdf_structure
-from app.metadata import PaperMetadata, PaperInfo, PaperStatus
+from app.metadata import PaperStatus
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
@@ -89,6 +89,16 @@ def all_pdf_shas() -> List[str]:
     return [p.split("/")[-2] for p in pdfs]
 
 
+def update_status_json(status_path: str, sha: str, data: Dict[str, Any]):
+
+    with open(status_path, "r+") as st:
+        status_json = json.load(st)
+        status_json[sha] = {**status_json[sha], **data}
+        st.seek(0)
+        json.dump(status_json, st)
+        st.truncate()
+
+
 @app.get("/", status_code=204)
 def read_root():
     """
@@ -97,18 +107,6 @@ def read_root():
     root URL, so it can tell the service is ready for requests.
     """
     return Response(status_code=204)
-
-
-@app.get("/api/doc/{sha}")
-def get_metadata(sha: str) -> PaperMetadata:
-
-    metadata = os.path.join(configuration.output_directory, sha, "metadata.json")
-    exists = os.path.exists(metadata)
-
-    if exists:
-        return json.load(open(metadata))
-    else:
-        raise HTTPException(404, detail=f"Metadata not found for pdf: {sha}")
 
 
 @app.get("/api/doc/{sha}/pdf")
@@ -127,23 +125,68 @@ async def get_pdf(sha: str):
     return FileResponse(pdf, media_type="application/pdf")
 
 
-@app.post("/api/doc/{sha}/status")
-def set_pdf_status(
-    sha: str, status: PaperStatus, x_auth_request_email: str = Header(None)
+@app.get("/api/doc/{sha}/title")
+async def get_pdf_title(sha: str) -> Optional[str]:
+    """
+    Fetches a PDF's title.
+
+    sha: str
+        The sha of the pdf title to return.
+    """
+    pdf_info = os.path.join(configuration.output_directory, f"pdf_info.json")
+
+    with open(pdf_info, "r") as f:
+        info = json.load(f)
+
+    data = info.get("sha", None)
+
+    if data is None:
+        return None
+
+    return data.get("title", None)
+
+
+@app.post("/api/doc/{sha}/comments")
+def set_pdf_comments(
+    sha: str, comments: str = Body(...), x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
 
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(status_path, sha, {"comments": comments})
+    return {}
+
+
+@app.post("/api/doc/{sha}/junk")
+def set_pdf_junk(
+    sha: str, junk: bool = Body(...), x_auth_request_email: str = Header(None)
+):
+    user = get_user_from_header(x_auth_request_email)
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
         raise HTTPException(status_code=404, detail="No annotations allocated!")
 
-    with open(status_path, "r+") as st:
-        status_json = json.load(st)
-        status_json[sha] = jsonable_encoder(status)
-        st.seek(0)
-        json.dump(status_json, st)
-        st.truncate()
+    update_status_json(status_path, sha, {"junk": junk})
+    return {}
+
+
+@app.post("/api/doc/{sha}/finished")
+def set_pdf_finished(
+    sha: str, finished: bool = Body(...), x_auth_request_email: str = Header(None)
+):
+    user = get_user_from_header(x_auth_request_email)
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(status_path, sha, {"finished": finished})
+    return {}
 
 
 @app.get("/api/doc/{sha}/annotations")
@@ -185,7 +228,7 @@ def save_annotations(
         For local development, this will be None, because the authentication
         is controlled by the Skiff Kubernetes cluster.
     """
-
+    # Update the annotations in the annotation json file.
     user = get_user_from_header(x_auth_request_email)
     annotations_path = os.path.join(
         configuration.output_directory, sha, f"{user}_annotations.json"
@@ -195,6 +238,17 @@ def save_annotations(
 
     with open(annotations_path, "w+") as f:
         json.dump({"annotations": json_annotations, "relations": json_relations}, f)
+
+    # Update the annotation counts in the status file.
+    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    exists = os.path.exists(status_path)
+    if not exists:
+        raise HTTPException(status_code=404, detail="No annotations allocated!")
+
+    update_status_json(
+        status_path, sha, {"annotations": len(annotations), "relations": len(relations)}
+    )
+
     return {}
 
 
@@ -220,49 +274,6 @@ def get_tokens(
     return response
 
 
-@app.get("/api/doc/{sha}/elements")
-def get_elements(
-    sha: str,
-    sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None),
-):
-    """
-    sha: str
-        PDF sha to retrieve from the PDF structure service.
-    source: str (default = "all")
-        The annotation sources to fetch.
-        This allows fetching of specific annotations.
-    pages: Optional[List[str]], (default = None)
-        Optionally provide pdf pages to filter by.
-    """
-    response = pdf_structure.get_annotations(sha, text_element_sources=sources)
-
-    if pages is not None:
-        response = pdf_structure.filter_text_elements_for_pages(response, pages)
-    return response
-
-
-@app.get("/api/doc/{sha}/regions")
-def get_regions(
-    sha: str,
-    sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None),
-):
-    """
-    sha: str
-        PDF sha to retrieve from the PDF structure service.
-    source: str (default = "all")
-        The annotation sources to fetch.
-        This allows fetching of specific annotations.
-    pages: Optional[List[str]], (default = None)
-        Optionally provide pdf pages to filter by.
-    """
-    response = pdf_structure.get_annotations(sha, region_sources=sources,)
-    if pages is not None:
-        response = pdf_structure.filter_regions_for_pages(response, pages)
-    return response
-
-
 @app.get("/api/annotation/labels")
 def get_labels() -> List[Dict[str, str]]:
     """
@@ -280,7 +291,7 @@ def get_relations() -> List[Dict[str, str]]:
 
 
 @app.get("/api/annotation/allocation/info")
-def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperInfo]:
+def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperStatus]:
 
     # In development, the app isn't passed the x_auth_request_email header,
     # meaning this would always fail. Instead, to smooth local development,
@@ -296,10 +307,17 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     # have to explicitly assign development_user annotators.
     # Instead we just create it on the fly if it's not there,
     # meaning this will get run once only.
+
+    pdf_paths = glob.glob(f"{configuration.output_directory}/*/*.pdf")
     if not exists and IN_PRODUCTION == "dev":
         os.makedirs(status_dir, exist_ok=True)
         with open(status_path, "w+") as new:
-            blob = {sha: PaperStatus.empty() for sha in all_pdf_shas()}
+            blob = {
+                sha: PaperStatus.empty(
+                    sha, sha_path.strip(configuration.output_directory)
+                )
+                for sha, sha_path in zip(all_pdf_shas(), pdf_paths)
+            }
             json.dump(jsonable_encoder(blob), new)
 
     elif not exists:
@@ -311,12 +329,6 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperI
     response = []
 
     for sha, status in status_json.items():
-        response.append(
-            PaperInfo(
-                metadata=PaperMetadata(**get_metadata(sha)),
-                status=PaperStatus(**status),
-                sha=sha,
-            )
-        )
+        response.append(PaperStatus(**status))
 
     return response
