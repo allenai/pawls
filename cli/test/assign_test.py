@@ -40,9 +40,9 @@ class TestAssign(unittest.TestCase):
             # Copy the fixture in, as though it was there already.
             sub_temp_dir = os.path.join(tempdir, "pdfs")
             shutil.copytree(f"test/fixtures/pawls/", sub_temp_dir)
-            result = runner.invoke(assign, [tempdir, "mark@example.org", sha])
+            result = runner.invoke(assign, [sub_temp_dir, "mark@example.org", sha])
             assert result.exit_code == 0
-            status_path = os.path.join(tempdir, "status", "mark@example.org.json")
+            status_path = os.path.join(sub_temp_dir, "status", "mark@example.org.json")
 
             annotator_json = json.load(open(status_path))
             assert annotator_json == {
