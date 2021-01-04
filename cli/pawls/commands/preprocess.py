@@ -15,8 +15,7 @@ from pawls.preprocessors.grobid import process_grobid
 def preprocess(preprocessor: str, path: click.Path):
     """
     Run a pre-processor on a pdf/directory of pawls pdfs and
-    send the results to the S2 PDF Structure Service, so they
-    can be used as a base for annotation.
+    write the resulting token information to the pdf location.
 
     Current preprocessor options are: "grobid".
 

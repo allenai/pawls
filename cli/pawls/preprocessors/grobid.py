@@ -1,12 +1,8 @@
 import json
 import requests
 
-from pdfstructure.client.v1 import models
 
-
-def fetch_grobid_structure(
-    pdf_file: str, grobid_host: str = "http://localhost:8070"
-) -> models.PdfAnnotations:
+def fetch_grobid_structure(pdf_file: str, grobid_host: str = "http://localhost:8070"):
     files = {
         "input": (pdf_file, open(pdf_file, "rb"), "application/pdf", {"Expires": "0"})
     }
