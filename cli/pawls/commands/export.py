@@ -3,117 +3,23 @@ import json
 import click
 from collections import OrderedDict
 from glob import glob
-from typing import List, NamedTuple, Union, Dict, Iterable, Any
+from typing import List, NamedTuple, Union, Dict, Any
 
 from tqdm import tqdm
 from pdf2image import convert_from_path
 
-from pawls.commands.utils import load_json, get_pdf_pages_and_sizes
+from pawls.commands.utils import (
+    load_json,
+    get_pdf_pages_and_sizes,
+    LabelingConfiguration,
+    AnnotationFolder,
+    AnnotationFiles
+)
 
 
 def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
     x1, y1, x2, y2 = bounds["left"], bounds["top"], bounds["right"], bounds["bottom"]
     return x1, y1, x2 - x1, y2 - y1
-
-
-class LabelingConfiguration:
-    def __init__(self, config: click.File):
-        """LabelingConfiguration handles parsing the configuration file.
-
-        Args:
-            config (click.File): The config file handle.
-        """
-        self.config = json.load(config)
-
-    @property
-    def categories(self) -> List[str]:
-        """Returns all labeling category names in the config file." """
-        return [l["text"] for l in self.config["labels"]]
-
-    @property
-    def relations(self):
-        raise NotImplementedError
-
-
-class AnnotationFiles:
-
-    DEVELOPMENT_USER = "development_user@example.com"
-
-    def __init__(
-        self, labeling_folder: str, annotator: str, include_unfinished: bool = True
-    ):
-        """AnnotationFiles is an iterator for selected annotation files
-        given the selected annotators and configurations.
-
-        Args:
-            labeling_folder (str):
-                The folder to save the pdf annotation files, e.g.,
-                `./skiff_files/apps/pawls/papers`.
-            annotator (str, optional):
-                The name of the annotator.
-                If not set, then changed to the default user
-                `AnnotationFiles.DEVELOPMENT_USER`.
-            include_unfinished (bool, optional):
-                Whether output unfinished annotations of the given user.
-                Defaults to True.
-        """
-        self.labeling_folder = labeling_folder
-
-        self.annotator = annotator
-        self.include_unfinished = include_unfinished
-
-        if self.include_unfinished:
-            self._files = self.get_all_annotation_files()
-        else:
-            self._files = self.get_finished_annotation_files()
-
-    def get_all_annotation_files(self) -> List[str]:
-        return glob(
-            os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
-        )
-
-    def get_finished_annotation_files(self) -> List[str]:
-
-        user_assignment_file = f"{self.labeling_folder}/status/{self.annotator}.json"
-        if not os.path.exists(user_assignment_file):
-            print(
-                "Warning:",
-                f"The user annotation file does not exist: {user_assignment_file}",
-            )
-            return self.get_all_annotation_files()
-
-        user_assignment = load_json(user_assignment_file)
-        return [
-            f"{self.labeling_folder}/{pdf_sha}/{self.annotator}_annotations.json"
-            for pdf_sha, assignment in user_assignment.items()
-            if (assignment["finished"] and not assignment["junk"])
-        ]
-
-    def __iter__(self) -> Iterable[Dict]:
-
-        for _file in self._files:
-            paper_sha = _file.split("/")[-2]
-            pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
-
-            yield dict(
-                paper_sha=paper_sha,
-                pdf_path=pdf_path,
-                annotation_path=_file,
-            )
-
-    def __len__(self):
-
-        return len(self._files)
-
-    @staticmethod
-    def get_all_annotators(labeling_folder: str) -> List[str]:
-        """Fetch all annotators in the labeling folder,
-        including the default DEVELOPMENT_USER.
-        """
-
-        return [AnnotationFiles.DEVELOPMENT_USER] + [
-            os.path.splitext(e)[0] for e in os.listdir(f"{labeling_folder}/status")
-        ]
 
 
 class COCOBuilder:
@@ -306,7 +212,7 @@ def export(
 
     config = LabelingConfiguration(config)
 
-    all_annotators = AnnotationFiles.get_all_annotators(path)
+    all_annotators = AnnotationFolder(path).get_all_annotators()
 
     if len(annotator) == 0:
         annotator = all_annotators
