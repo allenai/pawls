@@ -27,27 +27,15 @@ steps:
     'docker pull gcr.io/$PROJECT_ID/$REPO_NAME-proxy:latest || exit 0'
   ]
   waitFor: [ '-' ]
-- id: 'decrypt-github-token'
-  name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'gcloud'
-  args: [
-    'kms', 'decrypt',
-    '--plaintext-file', '/workspace/github_token.txt',
-    '--ciphertext-file', '/workspace/encrypted_github_token.txt',
-    '--location', 'global',
-    '--keyring', 'pawls',
-    '--key', 'github-token'
-  ]
-  waitFor: [ '-' ]
 # Build docker images for each piece of the puzzle
 - id: 'api.build'
   name: 'gcr.io/cloud-builders/docker'
   entrypoint: '/bin/bash'
   args: [
     '-c',
-    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest --build-arg=GITHUB_ACCESS_TOKEN=$(cat /workspace/github_token.txt) .'
+    'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest .'
   ]
-  waitFor: [ 'api.pull', 'decrypt-github-token' ]
+  waitFor: [ 'api.pull' ]
   dir: 'api'
 - id: 'ui.build'
   name: 'gcr.io/cloud-builders/docker'
