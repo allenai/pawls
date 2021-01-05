@@ -31,7 +31,13 @@ enum ViewState {
     LOADING, LOADED, NOT_FOUND, ERROR
 }
 
-export const PDFPage = () => {
+interface PDFPageProps {
+    email: string
+}
+
+export const PDFPage = ({email}: PDFPageProps) => {
+
+    console.log(email)
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
 
