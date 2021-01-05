@@ -1,5 +1,25 @@
 import json
+from typing import NamedTuple, List
 import requests
+
+
+class Token(NamedTuple):
+    text: str
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+class PageInfo(NamedTuple):
+    width: float
+    height: float
+    index: int
+
+
+class Page(NamedTuple):
+    page: PageInfo
+    tokens: List[Token]
 
 
 def fetch_grobid_structure(pdf_file: str, grobid_host: str = "http://localhost:8070"):
@@ -14,7 +34,7 @@ def fetch_grobid_structure(pdf_file: str, grobid_host: str = "http://localhost:8
         raise Exception("Grobid returned status code {}".format(resp.status_code))
 
 
-def parse_annotations(grobid_structure, source="grobid_test"):
+def parse_annotations(grobid_structure) -> List[Page]:
     pages = []
     for grobid_page in grobid_structure["tokens"]["pages"]:
         tokens = []
