@@ -111,6 +111,17 @@ class TestApp(TestCase):
         ]
         assert response.json() == gold
 
+    def test_get_tokens(self):
+
+        response = self.client.get(f"/api/doc/{self.pdf_sha}/tokens")
+
+        data = response.json()
+        assert len(data) == 11
+
+        # Wrong pdf sha should return 404
+        response = self.client.get(f"/api/doc/not_a_pdf_sha/tokens")
+        assert response.status_code == 404
+
     def test_get_annotations(self):
         # All requests in this test are authenticated as this user.
         headers = {"X-Auth-Request-Email": "example@gmail.com"}

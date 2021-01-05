@@ -4,7 +4,7 @@ import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException, Header, Response, Body
+from fastapi import FastAPI, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -252,28 +252,16 @@ def save_annotations(
 
 
 @app.get("/api/doc/{sha}/tokens")
-def get_tokens(
-    sha: str,
-    sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None),
-):
+def get_tokens(sha: str):
     """
     sha: str
-        PDF sha to retrieve.
-    sources: List[str] (default = "all")
-        The annotation sources to fetch.
-        This allows fetching of specific annotations.
-    pages: Optional[List[str]], (default = None)
-        Optionally provide pdf pages to filter by.
+        PDF sha to retrieve tokens for.
     """
-    pdf_tokens = os.path.join(configuration.output_directory, sha, "tokens.json")
+    pdf_tokens = os.path.join(configuration.output_directory, sha, "pdf_structure.json")
+    if not os.path.exists(pdf_tokens):
+        raise HTTPException(status_code=404, detail="No tokens for pdf.")
     with open(pdf_tokens, "r") as f:
         response = json.load(f)
-
-    if pages is not None:
-
-        # TODO: Fix this to actually filter the pages
-        response = response
 
     return response
 
