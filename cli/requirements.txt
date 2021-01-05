@@ -16,4 +16,3 @@ pytest
 
 # Used for pdf-token extraction
 pdfplumber
-layoutparser
