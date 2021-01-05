@@ -7,7 +7,7 @@ import click
 import glob
 
 from pawls.preprocessors.grobid import process_grobid
-
+from pawls.preprocessors.pdfplumber import process_pdfplumber
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
@@ -23,6 +23,8 @@ def preprocess(preprocessor: str, path: click.Path):
 
         `pawls preprocess grobid ./`
     """
+    print(f"Processing using the {preprocessor} preprocessor...")
+
     if os.path.isdir(path):
         in_glob = os.path.join(path, "*/*.pdf")
         pdfs = glob.glob(in_glob)
@@ -32,13 +34,16 @@ def preprocess(preprocessor: str, path: click.Path):
         pdfs = [str(path)]
 
     pbar = tqdm(pdfs)
+
     for p in pbar:
         path = Path(p)
         sha = path.name.strip(".pdf")
         pbar.set_description(f"Processing {sha[:10]}...")
         if preprocessor == "grobid":
             data = process_grobid(str(path))
+        elif preprocessor == "pdfplumber":
+            data = process_pdfplumber(str(path))
+        with open(path.parent / "pdf_structure.json", "w+") as f:
 
-            with open(path.parent / "pdf_structure.json", "w+") as f:
+            json.dump(data, f)
 
-                json.dump(data, f)
