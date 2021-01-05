@@ -8,14 +8,6 @@
 
 </div>
 
-### Secrets
-
-The Pawls service and the PAWLS CLI require the python client of the [S2 Pdf Structure Service](https://github.com/allenai/s2-pdf-structure-service),
-which you can find [here](https://allenai.1password.com/vaults/4736qu2dqfkjjxqs63w4c2gwt4/allitems/i73dbwizxzlu2savgd2pbrzyzq).
-To use this locally, create a `.env` file (used by `docker-compose.yaml`) with
-
-`GITHUB_ACCESS_TOKEN=<password from 1password>`
-
 ### Getting Started
 
 In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.

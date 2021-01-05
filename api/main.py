@@ -4,11 +4,10 @@ import os
 import json
 import glob
 
-from fastapi import FastAPI, Query, HTTPException, Header, Response, Body
+from fastapi import FastAPI, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
-from app import pdf_structure
 from app.metadata import PaperStatus
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
@@ -218,7 +217,7 @@ def save_annotations(
 ):
     """
     sha: str
-        PDF sha to retrieve from the PDF structure service.
+        PDF sha to save annotations for.
     annotations: List[Annotation]
         A json blob of the annotations to save.
     relations: List[RelationGroup]
@@ -253,23 +252,16 @@ def save_annotations(
 
 
 @app.get("/api/doc/{sha}/tokens")
-def get_tokens(
-    sha: str,
-    sources: Optional[List[str]] = Query(["all"]),
-    pages: Optional[List[str]] = Query(None),
-):
+def get_tokens(sha: str):
     """
     sha: str
-        PDF sha to retrieve from the PDF structure service.
-    sources: List[str] (default = "all")
-        The annotation sources to fetch.
-        This allows fetching of specific annotations.
-    pages: Optional[List[str]], (default = None)
-        Optionally provide pdf pages to filter by.
+        PDF sha to retrieve tokens for.
     """
-    response = pdf_structure.get_annotations(sha, token_sources=sources,)
-    if pages is not None:
-        response = pdf_structure.filter_token_source_for_pages(response, pages)
+    pdf_tokens = os.path.join(configuration.output_directory, sha, "pdf_structure.json")
+    if not os.path.exists(pdf_tokens):
+        raise HTTPException(status_code=404, detail="No tokens for pdf.")
+    with open(pdf_tokens, "r") as f:
+        response = json.load(f)
 
     return response
 

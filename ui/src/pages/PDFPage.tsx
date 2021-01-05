@@ -2,13 +2,13 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress, notification } from '@allenai/varnish';
+import { Result, Progress } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { SourceId, pdfURL, getTokens, Token, TokensResponse, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations } from '../api';
+import { pdfURL, getTokens, PageTokens, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
 import * as listeners from "../listeners";
@@ -123,7 +123,7 @@ export const PDFPage = () => {
             // side-effects, so we should remain wary of this code.
             loadingTask.promise as unknown as Promise<pdfjs.PDFDocumentProxy>,
             getTokens(sha)
-        ]).then(([ doc, resp ]: [ pdfjs.PDFDocumentProxy, TokensResponse ]) => {
+        ]).then(([ doc, resp ]: [ pdfjs.PDFDocumentProxy, PageTokens[] ]) => {
             setDocument(doc);
 
             // Load all the pages too. In theory this makes things a little slower to startup,
@@ -135,14 +135,8 @@ export const PDFPage = () => {
                 // See line 50 for an explanation of the cast here.
                 loadPages.push(
                     doc.getPage(i).then(p => {
-                        let pageTokens: Token[] = [];
-                        if (resp.tokens) {
-                            const grobidTokensByPage = resp.tokens.sources[SourceId.GROBID].pages;
-                            const pageIndex = p.pageNumber - 1;
-                            if (pageIndex in grobidTokensByPage) {
-                                pageTokens = grobidTokensByPage[pageIndex].tokens;
-                            }
-                        }
+                        const pageIndex = p.pageNumber - 1;
+                        const pageTokens = resp[pageIndex].tokens
                         return new PDFPageInfo(p, pageTokens);
                     }) as unknown as Promise<PDFPageInfo>
                 );

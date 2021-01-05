@@ -7,7 +7,6 @@ export interface Token {
     height: number;
     width: number;
     text: string;
-    style_name: string;
 }
 
 interface Page {
@@ -16,38 +15,9 @@ interface Page {
     height: number;
 }
 
-interface PageTokens {
+export interface PageTokens {
     page: Page;
     tokens: Token[];
-}
-
-interface Style {
-    size: number;
-    font_style?: string;
-    color: number;
-    font_type?: string;
-    family?: string;
-    width?: number;
-}
-
-interface DocumentTokens {
-    pages: PageTokens[];
-    // TODO (@MarkN, @codeviking): I don't think we use these, so we should probably drop them
-    // from the response. It might make things a little smaller.
-    styles: { [name: string]: Style };
-}
-
-// There's only one right now.
-export enum SourceId {
-    GROBID = "grobid"
-};
-
-export interface TokensBySourceId {
-    [sourceId: string]: DocumentTokens;
-}
-
-export interface TokensResponse {
-    tokens: { sources: TokensBySourceId };
 }
 
 function docURL(sha: string): string {
@@ -58,7 +28,7 @@ export function pdfURL(sha: string): string {
     return `${docURL(sha)}/pdf`;
 }
 
-export async function getTokens(sha: string): Promise<TokensResponse> {
+export async function getTokens(sha: string): Promise<PageTokens[]> {
     return axios.get(`${docURL(sha)}/tokens`)
                 .then(r => r.data);
 }
