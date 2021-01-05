@@ -3,6 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class AuthenticationResponse(BaseModel):
+    email: str
+    hasAllocation: bool
+
+
 class PaperStatus(BaseModel):
     sha: str
     name: str

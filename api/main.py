@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
-from app.metadata import PaperStatus
+from app.metadata import PaperStatus, AuthenticationResponse
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
@@ -106,6 +106,21 @@ def read_root():
     root URL, so it can tell the service is ready for requests.
     """
     return Response(status_code=204)
+
+@app.get("/api/auth")
+async def authenticate_user(x_auth_request_email: str = Header(None)) -> AuthenticationResponse:
+    """
+
+    """
+    user = get_user_from_header(x_auth_request_email)
+    status_dir = os.path.join(configuration.output_directory, "status")
+    status_path = os.path.join(status_dir, f"{user}.json")
+    exists = os.path.exists(status_path)
+
+    return {
+        "email": user,
+        "hasAllocation": exists
+    }
 
 
 @app.get("/api/doc/{sha}/pdf")

@@ -20,6 +20,13 @@ export interface PageTokens {
     tokens: Token[];
 }
 
+export interface AuthenticationResponse {
+
+    email: string;
+    hasAllocation: boolean;
+}
+
+
 function docURL(sha: string): string {
     return `/api/doc/${sha}`;
 }
@@ -58,6 +65,11 @@ export interface PaperStatus {
     junk: boolean,
     comments: string,
     completedAt?: Date
+}
+
+
+export async function authenticateUser(): Promise<AuthenticationResponse> {
+    return axios.get("/api/auth").then(r => r.data)
 }
 
 export async function setPdfComment(sha: string, comments: string) {

@@ -40,7 +40,7 @@ const App = () => {
         <>
             <BrowserRouter>
                 <Route path="/" exact component={RedirectToFirstPaper}/>
-                <Route path="/pdf/:sha" render={() => <PDFPage email={"markn@allenai.org"}/>} />
+                <Route path="/pdf/:sha" component={PDFPage} />
             </BrowserRouter>
             <GlobalStyles />
         </>

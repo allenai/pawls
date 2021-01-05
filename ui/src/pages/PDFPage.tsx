@@ -8,7 +8,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { pdfURL, getTokens, PageTokens, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations } from '../api';
+import { pdfURL, getTokens, PageTokens, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations, AuthenticationResponse, authenticateUser } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
 import * as listeners from "../listeners";
@@ -31,19 +31,15 @@ enum ViewState {
     LOADING, LOADED, NOT_FOUND, ERROR
 }
 
-interface PDFPageProps {
-    email: string
-}
+export const PDFPage = () => {
 
-export const PDFPage = ({email}: PDFPageProps) => {
-
-    console.log(email)
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
 
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
+    const [ auth, setAuth ] = useState<AuthenticationResponse>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>(
         new PdfAnnotations([], [])
     );
@@ -87,13 +83,22 @@ export const PDFPage = ({email}: PDFPageProps) => {
         setSelectedAnnotations([])
     }
 
-
     useEffect(() => {
         getLabels().then(labels => {
             setLabels(labels)
             setActiveLabel(labels[0])
         })
     }, []) 
+
+    useEffect(() => {
+        authenticateUser().then((resp) => {
+            setAuth(resp)
+        }).catch((err) => {
+            setViewState(ViewState.ERROR)
+            console.log(err)
+        })
+    }, []) 
+
 
     useEffect(() => {
         getRelations().then(relations => {
@@ -206,7 +211,7 @@ export const PDFPage = ({email}: PDFPageProps) => {
                 </WithSidebar>
             );
         case ViewState.LOADED:
-            if (doc && pages && pdfAnnotations) {
+            if (doc && pages && pdfAnnotations && auth) {
                 return (
                     <PDFStore.Provider value={{
                         doc,
@@ -215,6 +220,8 @@ export const PDFPage = ({email}: PDFPageProps) => {
                     }}>
                         <AnnotationStore.Provider
                             value={{
+                                annotator:auth.email,
+                                hasAllocation:auth.hasAllocation,
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
