@@ -1,25 +1,8 @@
 import json
-from typing import NamedTuple, List
+from typing import List
 import requests
 
-
-class Token(NamedTuple):
-    text: str
-    x: float
-    y: float
-    width: float
-    height: float
-
-
-class PageInfo(NamedTuple):
-    width: float
-    height: float
-    index: int
-
-
-class Page(NamedTuple):
-    page: PageInfo
-    tokens: List[Token]
+from pawls.preprocessors.model import Token, PageInfo, Page
 
 
 def fetch_grobid_structure(pdf_file: str, grobid_host: str = "http://localhost:8070"):
