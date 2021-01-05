@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import json
 
 from tqdm import tqdm
 import click
@@ -11,17 +12,10 @@ from pawls.preprocessors.pdfplumber import process_pdfplumber
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
 @click.argument("path", type=click.Path(exists=True, file_okay=True, dir_okay=True))
-@click.option(
-    "--prod/--dev",
-    type=bool,
-    default=False,
-    help="Whether to add preprocessor annotations to the dev or prod PDF Structure Service.",
-)
-def preprocess(preprocessor: str, path: click.Path, prod: bool):
+def preprocess(preprocessor: str, path: click.Path):
     """
     Run a pre-processor on a pdf/directory of pawls pdfs and
-    send the results to the S2 PDF Structure Service, so they
-    can be used as a base for annotation.
+    write the resulting token information to the pdf location.
 
     Current preprocessor options are: "grobid".
 
@@ -31,7 +25,6 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
     """
     print(f"Processing using the {preprocessor} preprocessor...")
 
-    which_pdf_service = "prod" if prod else "dev"
     if os.path.isdir(path):
         in_glob = os.path.join(path, "*/*.pdf")
         pdfs = glob.glob(in_glob)
@@ -41,15 +34,16 @@ def preprocess(preprocessor: str, path: click.Path, prod: bool):
         pdfs = [str(path)]
 
     pbar = tqdm(pdfs)
-    status = []
+
     for p in pbar:
         path = Path(p)
         sha = path.name.strip(".pdf")
         pbar.set_description(f"Processing {sha[:10]}...")
         if preprocessor == "grobid":
-            status.append(process_grobid(sha, str(path), env=which_pdf_service))
+            data = process_grobid(str(path))
         elif preprocessor == "pdfplumber":
-            status.append(process_pdfplumber(sha, str(path), env=which_pdf_service))
-    print(
-        f"Added {sum(status)}/{len(pdfs)} annotations from {preprocessor} to the {which_pdf_service} S2 PDF Structure Service."
-    )
+            data = process_pdfplumber(str(path))
+        with open(path.parent / "pdf_structure.json", "w+") as f:
+
+            json.dump(data, f)
+

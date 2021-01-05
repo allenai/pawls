@@ -9,8 +9,6 @@ ARG GITHUB_ACCESS_TOKEN
 RUN pip install --upgrade pip setuptools wheel
 COPY requirements.txt .
 
-# The PDF structure service installs via a method that will be deprecated in some future pip version.
-# It does install, but it makes a lot of scary noise in the build.
 RUN pip install -r requirements.txt
 
 
