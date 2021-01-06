@@ -1,12 +1,17 @@
 import json
-import click
 from typing import List, Dict, Iterable
 from glob import glob
 import os
+import uuid
+
+import click
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import resolve1
+
+from pawls.preprocessors.model import load_tokens_from_file
+
 
 DEVELOPMENT_USER = "development_user@example.com"
 
@@ -29,6 +34,10 @@ def get_pdf_pages_and_sizes(filename: str):
         return num_pages, page_sizes
 
 
+def get_pdf_sha(pdf_file_name: str) -> str:
+    return os.path.basename(pdf_file_name).replace(".pdf", "")
+
+
 class LabelingConfiguration:
     def __init__(self, config: click.File):
         """LabelingConfiguration handles parsing the configuration file.
@@ -47,9 +56,9 @@ class LabelingConfiguration:
     def relations(self):
         raise NotImplementedError
 
-    def get_labels(self) -> Dict[str, str]:
-        """Returns a dictionary for category, color pairs in the config file."""
-        return {l["text"]: l["color"] for l in self.config["labels"]}
+    def get_labels(self) -> Dict[str, Dict]:
+        """Returns a dictionary for category name, label pairs in the config file."""
+        return {l["text"]: l for l in self.config["labels"]}
 
 
 class AnnotationFolder:
@@ -60,7 +69,8 @@ class AnnotationFolder:
         self.path = path
         self.pdf_structure_name = pdf_structure_name or self.DEFAULT_PDF_STRUCTURE_NAME
 
-    def get_all_annotators(self) -> List[str]:
+    @property
+    def all_annotators(self) -> List[str]:
         """Fetch all annotators in the labeling folder,
         including the default DEVELOPMENT_USER.
         """
@@ -69,12 +79,13 @@ class AnnotationFolder:
             os.path.splitext(e)[0] for e in os.listdir(f"{self.path}/status")
         ]
 
-    def get_all_pdf_names(self) -> List[str]:
+    @property
+    def all_pdfs(self) -> List[str]:
         """Fetch all pdf names in the labeling folder,"""
         return [os.path.basename(pdf_path) for pdf_path in glob(f"{self.path}/*/*.pdf")]
 
-    def get_pdf_structure_filename(self, pdf_name: str) -> str:
-        """Get the pdf structure json file path for a pdf name
+    def get_pdf_tokens(self, pdf_name: str) -> str:
+        """Get the pdf tokens for a pdf name by loading from the corresponding pdf_structure file.
 
         Args:
             pdf_name (str): the name of the pdf file, e.g., xxx.pdf
@@ -87,16 +98,80 @@ class AnnotationFolder:
             str: the pdf_structure file path for this pdf file.
         """
 
-        sha = os.path.basename(pdf_name).replace(".pdf", "")
-
+        sha = get_pdf_sha(pdf_name)
         pdf_structure_path = f"{self.path}/{sha}/{self.pdf_structure_name}"
 
         if os.path.exists(pdf_structure_path):
-            return pdf_structure_path
+            return load_tokens_from_file(pdf_structure_path)
         else:
             raise FileNotFoundError(
                 f"pdf_structure is not found for {sha}.Did you forget run the following command?\n    pawls preprocess <processor-name> {self.path}/{sha}/{pdf_name}"
             )
+
+    def create_annotation_file(self, pdf_name: str, annotator: str) -> "AnnotationFile":
+        """Create an annotation file for the given pdf name and annotator.
+
+        Returns:
+            AnnotationFile:
+                An AnnotationFile object that used for creating annotations.
+        """
+        sha = get_pdf_sha(pdf_name)
+        annotation_file_path = f"{self.path}/{sha}/{annotator}_annotations.json"
+
+        return AnnotationFile(annotation_file_path)
+
+
+class AnnotationFile:
+    def __init__(self, filepath: str):
+        """Annotation file is used to help creating the annotation 
+        files manually.
+
+        Args:
+            filepath (str): the path to store the annotation file.
+        """
+        self.filepath = filepath
+        self.data = {"annotations": [], "relations": []}
+
+    def add_annotation(
+        self,
+        page_index: int,
+        label: Dict[str, str],
+        bounds: Dict[str, int],
+        token_indices: List[int] = [],
+    ):
+        """Add an annotation to the given paper.
+
+        Args:
+            page_index (int):
+                The page index of this annotation.
+            label (Dict[str, str]):
+                The label (text and color) of this annotation.
+            bounds (Dict[str, int]):
+                The bounding box coordinates of the block.
+            token_indices (List[int], optional):
+                A list of the indices of the contained tokens.
+                Defaults to [].
+        """
+        annotation = {
+            "id": str(uuid.uuid4()),
+            "page": page_index,
+            "label": label,
+            "bounds": bounds,
+            "tokens": [
+                {"pageIndex": page_index, "tokenIndex": token_id}
+                for token_id in token_indices
+            ],
+        }
+
+        self.data["annotations"].append(annotation)
+
+    def add_relations(self):
+        raise NotImplementedError()
+
+    def save(self):
+        """Save the annotation file in the designated filepath"""
+        with open(self.filepath, "w") as fp:
+            json.dump(self.data, fp)
 
 
 class AnnotationFiles:
