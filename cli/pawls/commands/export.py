@@ -1,10 +1,9 @@
 import os
 import json
-import click
 from collections import OrderedDict
-from glob import glob
 from typing import List, NamedTuple, Union, Dict, Any
 
+import click
 from tqdm import tqdm
 from pdf2image import convert_from_path
 
@@ -212,9 +211,8 @@ def export(
 
     config = LabelingConfiguration(config)
 
-    all_annotators = AnnotationFolder(path).get_all_annotators()
-
     if len(annotator) == 0:
+        all_annotators = AnnotationFolder(path).all_annotators
         annotator = all_annotators
         print(f"Export annotations from all available annotators {all_annotators}")
     else:
