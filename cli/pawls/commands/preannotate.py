@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from glob import glob
-from typing import List, NamedTuple, Union, Dict, Iterable, Any
+from typing import List, NamedTuple, Union, Dict, Iterable, Any, Optional
 
 import click
 from tqdm import tqdm
@@ -71,7 +71,8 @@ class ModelPredictions:
         """Obtain all pdfs in the ModelPredictions"""
         return list(self.pdf_preds.keys())
 
-    def get_pdf_annotations_per_page(self, pdf_name):
+    def get_pdf_annotations_per_page(self, pdf_name: str) -> Iterable[Page]:
+        """For a given pdf_name, return a iterator yielding block annotations for each page."""
 
         pdf_pred = self.pdf_preds[pdf_name]
 
@@ -91,8 +92,20 @@ class ModelPredictions:
         ]
 
 
-def find_token_data(all_token_data, index):
+def find_token_data(all_token_data: List[Page], index: int) -> Optional[Page]:
+    """Find the token_data with the given page index.
 
+    Args:
+        all_token_data (List[Page]):
+            A list of Page, contating the token data.
+        index (int):
+            The index of the target page.
+
+    Returns:
+        Optional[Page]:
+            Return the Page with the designated index when found.
+            Otherwise return None.
+    """
     for token_data in all_token_data:
         if token_data.page.index == index:
             return token_data
@@ -107,7 +120,7 @@ def find_token_data(all_token_data, index):
 @click.option(
     "--annotator",
     "-u",
-    # multiple=True,
+    multiple=True,
     help="Preannotate for the specified annotator.",
 )
 def preannotate(
@@ -128,63 +141,73 @@ def preannotate(
     """
 
     anno_folder = AnnotationFolder(path)
-    model_pred = ModelPredictions(pred_file)
+    all_annotators = annotator
+    for annotator in all_annotators:
+        assert annotator in anno_folder.all_annotators, f"Invalid Annotator {annotator}"
 
+    model_pred = ModelPredictions(pred_file)
     config_labels = LabelingConfiguration(config).get_labels()
 
-    assert annotator in anno_folder.all_annotators, f"Invalid Annotator {annotator}"
+    for annotator in all_annotators:
+        print(f"Adding annotations for the annotator {annotator}")
 
-    for pdf_name in tqdm(model_pred.all_pdfs):
+        pbar = tqdm(model_pred.all_pdfs)
 
-        if pdf_name not in anno_folder.all_pdfs:
-            logger.warning(f"The {pdf_name} is not in the annotation folder. Skipped")
+        for pdf_name in pbar:
 
-        source_token_data = anno_folder.get_pdf_tokens(pdf_name)
-        annotation_file = anno_folder.create_annotation_file(pdf_name, annotator)
+            pbar.set_description(f"{pdf_name[:10]}...")
 
-        anno_count = 0
-        for page_blocks in model_pred.get_pdf_annotations_per_page(pdf_name):
-
-            page_index = page_blocks.page.index
-            page_tokens = find_token_data(source_token_data, page_index)
-
-            if page_tokens is None:
+            if pdf_name not in anno_folder.all_pdfs:
                 logger.warning(
-                    f"There's no token data for page {page_index} in {pdf_name}. Skipped"
+                    f"The {pdf_name} is not in the annotation folder. Skipped"
                 )
-                continue
 
-            page_blocks.scale_like(page_tokens)  # Ensure they have the same size
+            source_token_data = anno_folder.get_pdf_tokens(pdf_name)
+            annotation_file = anno_folder.create_annotation_file(pdf_name, annotator)
 
-            for block_id, block in enumerate(page_blocks.tokens):
+            anno_count = 0
+            for page_blocks in model_pred.get_pdf_annotations_per_page(pdf_name):
 
-                if block.label not in config_labels:
+                page_index = page_blocks.page.index
+                page_tokens = find_token_data(source_token_data, page_index)
+
+                if page_tokens is None:
                     logger.warning(
-                        f"The {block_id}-th block in page {page_index} of {pdf_name} has invalid labels. Skipped"
+                        f"There's no token data for page {page_index} in {pdf_name}. Skipped"
                     )
                     continue
 
-                contained_tokens = page_tokens.filter_tokens_by(
-                    block, soft_margin=PADDING_FOR_SEARCHING_TOKEN_INSIDE_BOX
-                )
+                page_blocks.scale_like(page_tokens)  # Ensure they have the same size
 
-                token_indices = contained_tokens.keys()
-                contained_tokens = contained_tokens.values()
+                for block_id, block in enumerate(page_blocks.tokens):
 
-                # Rectify the block based on the contained tokens
-                if len(contained_tokens) >= 1:
-                    rectified_block = union_boxes(contained_tokens)
-                else:
-                    rectified_block = block.copy()
-                rectified_block.pad(**PADDING_FOR_RECTIFYING_BLOCK_BOX)
+                    if block.label not in config_labels:
+                        logger.warning(
+                            f"The {block_id}-th block in page {page_index} of {pdf_name} has invalid labels. Skipped"
+                        )
+                        continue
 
-                annotation_file.add_annotation(
-                    page_index=page_index,
-                    label=config_labels[block.label],
-                    bounds=rectified_block.as_bounds(),
-                    token_indices=token_indices,
-                )
-                anno_count += 1
+                    contained_tokens = page_tokens.filter_tokens_by(
+                        block, soft_margin=PADDING_FOR_SEARCHING_TOKEN_INSIDE_BOX
+                    )
 
-        annotation_file.save()
-        logger.info(f"Successfully stored {anno_count} annotations for {pdf_name}.")
+                    token_indices = contained_tokens.keys()
+                    contained_tokens = contained_tokens.values()
+
+                    # Rectify the block based on the contained tokens
+                    if len(contained_tokens) >= 1:
+                        rectified_block = union_boxes(contained_tokens)
+                    else:
+                        rectified_block = block.copy()
+                    rectified_block.pad(**PADDING_FOR_RECTIFYING_BLOCK_BOX)
+
+                    annotation_file.add_annotation(
+                        page_index=page_index,
+                        label=config_labels[block.label],
+                        bounds=rectified_block.as_bounds(),
+                        token_indices=token_indices,
+                    )
+                    anno_count += 1
+
+            annotation_file.save()
+            logger.info(f"Successfully stored {anno_count} annotations for {pdf_name}.")
