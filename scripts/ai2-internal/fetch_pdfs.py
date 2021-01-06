@@ -48,7 +48,7 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         else:
             name_mapping[sha] = title
 
-    with open(os.path.join(path, "name_mapping.json"), "w+") as f:
+    with open(os.path.join(path, "pdf_metadata.json"), "w+") as f:
         json.dump(name_mapping, f)
 
     okay = True

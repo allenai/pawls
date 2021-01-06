@@ -132,7 +132,7 @@ async def get_pdf_title(sha: str) -> Optional[str]:
     sha: str
         The sha of the pdf title to return.
     """
-    pdf_info = os.path.join(configuration.output_directory, f"pdf_info.json")
+    pdf_info = os.path.join(configuration.output_directory, "pdf_metadata.json")
 
     with open(pdf_info, "r") as f:
         info = json.load(f)
