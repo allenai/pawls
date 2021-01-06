@@ -60,6 +60,11 @@ export interface PaperStatus {
     completedAt?: Date
 }
 
+export interface Allocation {
+    papers: PaperStatus[]
+    hasAllocatedPapers: boolean
+}
+
 export async function setPdfComment(sha: string, comments: string) {
     return axios.post(`/api/doc/${sha}/comments`, comments)
 }
@@ -72,7 +77,7 @@ export async function setPdfJunk(sha: string, junk: boolean) {
     return axios.post(`/api/doc/${sha}/junk`, junk)
 }
 
-export async function getAllocatedPaperStatus(): Promise<PaperStatus[]> {
+export async function getAllocatedPaperStatus(): Promise<Allocation> {
     return axios.get("/api/annotation/allocation/info")
                 .then(r => r.data)
 }

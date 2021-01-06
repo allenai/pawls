@@ -21,8 +21,8 @@ import { getAllocatedPaperStatus } from "./api"
 const RedirectToFirstPaper = () => {
     const [sha, setSha] = useState<string>();
     useEffect(() => {
-        getAllocatedPaperStatus().then((papers) => {
-            const first = papers[0]
+        getAllocatedPaperStatus().then((allocation) => {
+            const first = allocation.papers[0]
             setSha(first.sha)
         })
     },[])

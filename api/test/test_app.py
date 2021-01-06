@@ -62,7 +62,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["comments"] == "hello this is a comment."
+        assert response.json()["papers"][0]["comments"] == "hello this is a comment."
 
     def test_set_pdf_finished(self):
 
@@ -75,7 +75,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["finished"] is True
+        assert response.json()["papers"][0]["finished"] is True
 
     def test_set_pdf_junk(self):
 
@@ -88,7 +88,7 @@ class TestApp(TestCase):
             "/api/annotation/allocation/info",
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
-        assert response.json()[0]["junk"] is True
+        assert response.json()["papers"][0]["junk"] is True
 
     def test_get_allocation_info(self):
 
@@ -97,19 +97,32 @@ class TestApp(TestCase):
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
 
-        gold = [
-            {
-                "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
-                "name": "3febb2bed8865945e7fddc99efd791887bb7e14f",
-                "annotations": 0,
-                "relations": 0,
-                "finished": False,
-                "junk": False,
-                "comments": "",
-                "completedAt": None,
-            }
-        ]
+        gold = {
+            "papers": [
+                {
+                    "sha": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                    "name": "3febb2bed8865945e7fddc99efd791887bb7e14f",
+                    "annotations": 0,
+                    "relations": 0,
+                    "finished": False,
+                    "junk": False,
+                    "comments": "",
+                    "completedAt": None,
+                }
+            ],
+            "hasAllocatedPapers": True
+        }
         assert response.json() == gold
+
+        # Now check that authorized but un-allocated users see all pdfs,
+        # but have hasAllocatedPapers set to false:
+        response = self.client.get(
+            "/api/annotation/allocation/info",
+            headers={"X-Auth-Request-Email": "example2@gmail.com"},
+        )
+
+        assert response.json()["papers"] == gold["papers"]
+        assert response.json()["hasAllocatedPapers"] == False
 
     def test_get_tokens(self):
 
@@ -158,4 +171,4 @@ class TestApp(TestCase):
             headers={"X-Auth-Request-Email": "example@gmail.com"},
         )
 
-        assert response.json()[0]["annotations"] == 1
+        assert response.json()["papers"][0]["annotations"] == 1

@@ -2,7 +2,7 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
@@ -32,6 +32,7 @@ enum ViewState {
 }
 
 export const PDFPage = () => {
+
     const { sha } = useParams<{ sha: string }>();
     const [ viewState, setViewState ] = useState<ViewState>(ViewState.LOADING);
 
@@ -81,7 +82,6 @@ export const PDFPage = () => {
         setSelectedAnnotations([])
     }
 
-
     useEffect(() => {
         getLabels().then(labels => {
             setLabels(labels)
@@ -97,11 +97,17 @@ export const PDFPage = () => {
     }, [sha]) 
     
     useEffect( () => {
-        getAllocatedPaperStatus().then((paperInfo) => {
-            setAssignedPaperStatuses(paperInfo)
+        getAllocatedPaperStatus().then((allocation) => {
+            setAssignedPaperStatuses(allocation.papers)
             setActivePaperStatus(
-                paperInfo.filter(p => p.sha === sha)[0]
+                allocation.papers.filter(p => p.sha === sha)[0]
             )
+            if (!allocation.hasAllocatedPapers) {
+                notification.warn({
+                    message: "Read Only Mode!",
+                    description: "This annotation project has no assigned papers for your email address. You can make annotations but they won't be saved."
+                })
+            }
 
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
