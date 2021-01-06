@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Header, Response, Body
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
-from app.metadata import PaperStatus, AuthenticationResponse
+from app.metadata import PaperStatus, Allocation
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
@@ -107,21 +107,6 @@ def read_root():
     """
     return Response(status_code=204)
 
-@app.get("/api/auth")
-async def authenticate_user(x_auth_request_email: str = Header(None)) -> AuthenticationResponse:
-    """
-
-    """
-    user = get_user_from_header(x_auth_request_email)
-    status_dir = os.path.join(configuration.output_directory, "status")
-    status_path = os.path.join(status_dir, f"{user}.json")
-    exists = os.path.exists(status_path)
-
-    return {
-        "email": user,
-        "hasAllocation": exists
-    }
-
 
 @app.get("/api/doc/{sha}/pdf")
 async def get_pdf(sha: str):
@@ -169,7 +154,8 @@ def set_pdf_comments(
     exists = os.path.exists(status_path)
 
     if not exists:
-        raise HTTPException(status_code=404, detail="No annotations allocated!")
+        # Not an allocated user. Do nothing.
+        return {}
 
     update_status_json(status_path, sha, {"comments": comments})
     return {}
@@ -183,7 +169,8 @@ def set_pdf_junk(
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
-        raise HTTPException(status_code=404, detail="No annotations allocated!")
+        # Not an allocated user. Do nothing.
+        return {}
 
     update_status_json(status_path, sha, {"junk": junk})
     return {}
@@ -197,7 +184,8 @@ def set_pdf_finished(
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
-        raise HTTPException(status_code=404, detail="No annotations allocated!")
+        # Not an allocated user. Do nothing.
+        return {}
 
     update_status_json(status_path, sha, {"finished": finished})
     return {}
@@ -250,14 +238,15 @@ def save_annotations(
     json_annotations = [jsonable_encoder(a) for a in annotations]
     json_relations = [jsonable_encoder(r) for r in relations]
 
-    with open(annotations_path, "w+") as f:
-        json.dump({"annotations": json_annotations, "relations": json_relations}, f)
-
     # Update the annotation counts in the status file.
     status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
-        raise HTTPException(status_code=404, detail="No annotations allocated!")
+        # Not an allocated user. Do nothing.
+        return {}
+
+    with open(annotations_path, "w+") as f:
+        json.dump({"annotations": json_annotations, "relations": json_relations}, f)
 
     update_status_json(
         status_path, sha, {"annotations": len(annotations), "relations": len(relations)}
@@ -298,7 +287,7 @@ def get_relations() -> List[Dict[str, str]]:
 
 
 @app.get("/api/annotation/allocation/info")
-def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperStatus]:
+def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
 
     # In development, the app isn't passed the x_auth_request_email header,
     # meaning this would always fail. Instead, to smooth local development,
@@ -310,32 +299,23 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> List[PaperS
     status_path = os.path.join(status_dir, f"{user}.json")
     exists = os.path.exists(status_path)
 
-    # HACK: This if statement deals with the fact that it's annoying to
-    # have to explicitly assign development_user annotators.
-    # Instead we just create it on the fly if it's not there,
-    # meaning this will get run once only.
+    if not exists:
+        # If the user doesn't have allocated papers, they can see all the
+        # pdfs but they can't save anything.
+        papers = [PaperStatus.empty(sha, sha) for sha in all_pdf_shas()]
+        response = Allocation(
+            papers=papers,
+            hasAllocatedPapers=False
+        )
 
-    pdf_paths = glob.glob(f"{configuration.output_directory}/*/*.pdf")
-    if not exists and IN_PRODUCTION == "dev":
-        os.makedirs(status_dir, exist_ok=True)
-        with open(status_path, "w+") as new:
-            blob = {
-                sha: PaperStatus.empty(
-                    sha, sha_path.strip(configuration.output_directory)
-                )
-                for sha, sha_path in zip(all_pdf_shas(), pdf_paths)
-            }
-            json.dump(jsonable_encoder(blob), new)
+    else:
+        with open(status_path) as f:
+            status_json = json.load(f)
 
-    elif not exists:
-        raise HTTPException(status_code=404, detail="No annotations allocated!")
+        papers = []
+        for sha, status in status_json.items():
+            papers.append(PaperStatus(**status))
 
-    with open(status_path) as f:
-        status_json = json.load(f)
-
-    response = []
-
-    for sha, status in status_json.items():
-        response.append(PaperStatus(**status))
+        response = Allocation(papers=papers, hasAllocatedPapers=True)
 
     return response

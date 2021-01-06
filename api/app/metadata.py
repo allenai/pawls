@@ -1,11 +1,6 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
-
-
-class AuthenticationResponse(BaseModel):
-    email: str
-    hasAllocation: bool
 
 
 class PaperStatus(BaseModel):
@@ -30,3 +25,8 @@ class PaperStatus(BaseModel):
             comments="",
             completedAt=None,
         )
+
+
+class Allocation(BaseModel):
+    papers: List[PaperStatus]
+    hasAllocatedPapers: bool

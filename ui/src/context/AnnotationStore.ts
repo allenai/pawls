@@ -149,8 +149,6 @@ export class PdfAnnotations {
 
 
 interface _AnnotationStore {
-    annotator?: string
-    hasAllocation: boolean
     labels: Label[]
     activeLabel?: Label
     setActiveLabel: (label: Label) => void;
@@ -173,8 +171,6 @@ interface _AnnotationStore {
 }
 
 export const AnnotationStore = createContext<_AnnotationStore>({
-    annotator: undefined,
-    hasAllocation: false,
     pdfAnnotations: new PdfAnnotations([],[]),
     labels: [],
     activeLabel: undefined,

@@ -83,6 +83,7 @@ interface PageProps {
 }
 
 const Page = ({ pageInfo, onError }: PageProps) => {
+    console.log(pageInfo)
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ isVisible, setIsVisible ] = useState<boolean>(false);
     const [ scale, setScale ] = useState<number>(1);

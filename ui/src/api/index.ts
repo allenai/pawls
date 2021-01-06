@@ -20,13 +20,6 @@ export interface PageTokens {
     tokens: Token[];
 }
 
-export interface AuthenticationResponse {
-
-    email: string;
-    hasAllocation: boolean;
-}
-
-
 function docURL(sha: string): string {
     return `/api/doc/${sha}`;
 }
@@ -67,9 +60,9 @@ export interface PaperStatus {
     completedAt?: Date
 }
 
-
-export async function authenticateUser(): Promise<AuthenticationResponse> {
-    return axios.get("/api/auth").then(r => r.data)
+export interface Allocation {
+    papers: PaperStatus[]
+    hasAllocatedPapers: boolean
 }
 
 export async function setPdfComment(sha: string, comments: string) {
@@ -84,7 +77,7 @@ export async function setPdfJunk(sha: string, junk: boolean) {
     return axios.post(`/api/doc/${sha}/junk`, junk)
 }
 
-export async function getAllocatedPaperStatus(): Promise<PaperStatus[]> {
+export async function getAllocatedPaperStatus(): Promise<Allocation> {
     return axios.get("/api/annotation/allocation/info")
                 .then(r => r.data)
 }

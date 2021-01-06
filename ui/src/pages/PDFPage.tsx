@@ -2,13 +2,13 @@ import React, { useContext, useCallback, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { useParams } from 'react-router-dom';
 import pdfjs from 'pdfjs-dist';
-import { Result, Progress } from '@allenai/varnish';
+import { Result, Progress, notification } from '@allenai/varnish';
 
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import { PDF, CenterOnPage, RelationModal } from '../components';
 import {SidebarContainer, Labels, Annotations, Relations, AssignedPaperList, Header, Comment} from "../components/sidebar";
-import { pdfURL, getTokens, PageTokens, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations, AuthenticationResponse, authenticateUser } from '../api';
+import { pdfURL, getTokens, PageTokens, PaperStatus, getAllocatedPaperStatus, getLabels, Label, getAnnotations, getRelations } from '../api';
 import { PDFPageInfo, Annotation, AnnotationStore, PDFStore, RelationGroup, PdfAnnotations } from '../context';
 
 import * as listeners from "../listeners";
@@ -39,7 +39,6 @@ export const PDFPage = () => {
     const [ doc, setDocument ] = useState<pdfjs.PDFDocumentProxy>();
     const [ progress, setProgress ] = useState(0);
     const [ pages, setPages ] = useState<PDFPageInfo[]>();
-    const [ auth, setAuth ] = useState<AuthenticationResponse>();
     const [ pdfAnnotations, setPdfAnnotations ] = useState<PdfAnnotations>(
         new PdfAnnotations([], [])
     );
@@ -91,16 +90,6 @@ export const PDFPage = () => {
     }, []) 
 
     useEffect(() => {
-        authenticateUser().then((resp) => {
-            setAuth(resp)
-        }).catch((err) => {
-            setViewState(ViewState.ERROR)
-            console.log(err)
-        })
-    }, []) 
-
-
-    useEffect(() => {
         getRelations().then(relations => {
             setRelationLabels(relations)
             setActiveRelationLabel(relations[0])
@@ -108,11 +97,17 @@ export const PDFPage = () => {
     }, [sha]) 
     
     useEffect( () => {
-        getAllocatedPaperStatus().then((paperInfo) => {
-            setAssignedPaperStatuses(paperInfo)
+        getAllocatedPaperStatus().then((allocation) => {
+            setAssignedPaperStatuses(allocation.papers)
             setActivePaperStatus(
-                paperInfo.filter(p => p.sha === sha)[0]
+                allocation.papers.filter(p => p.sha === sha)[0]
             )
+            if (!allocation.hasAllocatedPapers) {
+                notification.warn({
+                    message: "Read Only Mode!",
+                    description: "This annotation project has no assigned papers for your email address. You can make annotations but they won't be saved."
+                })
+            }
 
         }).catch((err: any) => {
             setViewState(ViewState.ERROR);
@@ -211,7 +206,7 @@ export const PDFPage = () => {
                 </WithSidebar>
             );
         case ViewState.LOADED:
-            if (doc && pages && pdfAnnotations && auth) {
+            if (doc && pages && pdfAnnotations) {
                 return (
                     <PDFStore.Provider value={{
                         doc,
@@ -220,8 +215,6 @@ export const PDFPage = () => {
                     }}>
                         <AnnotationStore.Provider
                             value={{
-                                annotator:auth.email,
-                                hasAllocation:auth.hasAllocation,
                                 labels,
                                 activeLabel,
                                 setActiveLabel,
