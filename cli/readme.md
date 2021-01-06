@@ -22,7 +22,7 @@ Please follow the [instructions here](https://github.com/Belval/pdf2image#window
     ├───pdf1/
     │     └───pdf1.pdf
     └───pdf2/
-    │     └───pdf2.pdf
+          └───pdf2.pdf
 ```
 By default, pawls will use the name of the containing directory to refer to the pdf in the ui.
 
@@ -37,7 +37,12 @@ By default, pawls will use the name of the containing directory to refer to the 
     Optionally at this stage, you can provide a `--name-file` argument to `pawls assign`,
     which allows you to specify a name for a given pdf (for example the title of a paper).
     This file should be a json file containing `sha:name` mappings.
-4. Export the annotated dataset to the COCO format:
+4. (optional) Create pre-annotations for the PDFs based on some model predictions `anno.json`:
+    ```bash
+    pawls preannotate <labeling_folder> <labeling_config> anno.json -u <user>
+    ```
+    You could find an example for generating the pre-annotations in `scripts/generate_pdf_layouts.py`.
+5. Export the annotated dataset to the COCO format:
 
     1. Export all annotations of a project of the default annotator (development_user):
         ```bash
