@@ -19,6 +19,7 @@ subcommands = [
     commands.assign,
     commands.export,
     commands.status,
+    commands.preannotate
 ]
 
 for subcommand in subcommands:
