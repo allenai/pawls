@@ -8,7 +8,7 @@ import click
 from tqdm import tqdm
 
 from pawls.commands.utils import LabelingConfiguration, load_json, AnnotationFolder
-from pawls.preprocessors.model import *
+from pawls.preprocessors.model import Page, Block, PageInfo, union_boxes
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class ModelPredictions:
                 ]
             },
             ....
-        ],
+        ]
 
     """
 
@@ -132,7 +132,8 @@ def preannotate(
     Firstly, you need to generate the region bounding box predictions using some models.
     And it should be stored in a format that's compatible with the ModelPredictions format.
 
-    We've provided a exemplar script for generating predictions for PDF files in <>.
+    We've provided a exemplar script for generating predictions for PDF files in 
+    scripts/generate_pdf_layouts.py.
 
     You also need to preprocess the PDFs in the <labeling_folder> use the `pawls preprocess` command.
 
@@ -183,7 +184,7 @@ def preannotate(
 
                     if block.label not in config_labels:
                         logger.warning(
-                            f"The {block_id}-th block in page {page_index} of {pdf_name} has invalid labels. Skipped"
+                            f"The {block_id}-th block in page {page_index} of {pdf_name} has labels which are not present in the configuration file. Add all labels produced by your model to the config file to include them. Skipping."
                         )
                         continue
 
@@ -198,6 +199,8 @@ def preannotate(
                     if len(contained_tokens) >= 1:
                         rectified_block = union_boxes(contained_tokens)
                     else:
+                        # Sometimes a valid block does not include any tokens (e.g., figure).
+                        # So we just use the block itself as the rectified_block.
                         rectified_block = block.copy()
                     rectified_block.pad(**PADDING_FOR_RECTIFYING_BLOCK_BOX)
 

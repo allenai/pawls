@@ -4,7 +4,7 @@ from typing import NamedTuple, List, Tuple, Dict, Union
 
 
 def union_boxes(boxes: List["Box"]) -> "Box":
-    """Find the outside boundary of the given boxes. 
+    """Find the outside boundary of the given boxes.
 
     Args:
         boxes (List[Box]):
@@ -13,14 +13,15 @@ def union_boxes(boxes: List["Box"]) -> "Box":
     Returns:
         Box: the unioned box.
     """
-    left, top, right, bottom = float('inf'), float('inf'), float('-inf'), float('-inf')
+    left, top, right, bottom = float("inf"), float("inf"), float("-inf"), float("-inf")
     for box in boxes:
         l, t, r, b = box.coordinates
         left = min(left, l)
         top = min(top, t)
         right = max(right, r)
         bottom = max(bottom, b)
-    return Box(left, top, right-left, bottom-top)
+    return Box(left, top, right - left, bottom - top)
+
 
 @dataclass
 class Box:
@@ -40,7 +41,7 @@ class Box:
         """Returns the left, top, right, bottom coordinates of the box"""
         return (self.x, self.y, self.x + self.width, self.y + self.height)
 
-    def is_in(self, other: "Box", soft_margin: Dict = {}) -> bool:
+    def is_in(self, other: "Box", soft_margin: Dict = None) -> bool:
         """Determines whether the center of this box is contained
         inside another box with a soft margin.
 
@@ -55,8 +56,8 @@ class Box:
         other = other.copy()
 
         x, y = self.center
-
-        other.pad(**soft_margin)
+        if soft_margin is not None:
+            other.pad(**soft_margin)
         xa, ya, xb, yb = other.coordinates
 
         return xa <= x <= xb and ya <= y <= yb
@@ -97,15 +98,15 @@ class Box:
             self.width *= scale_x
             self.height *= scale_y
 
-    def as_bounds(self) -> Dict[str,float]:
-        """Convert the box into a the bounds format.
-        """
+    def as_bounds(self) -> Dict[str, float]:
+        """Convert the box into a the bounds format."""
         return {
             "left": self.x,
             "top": self.y,
             "right": self.x + self.width,
-            "bottom": self.y + self.height
+            "bottom": self.y + self.height,
         }
+
 
 @dataclass
 class Token(Box):
@@ -168,10 +169,13 @@ class Page:
 
         self.scale((scale_x, scale_y))
 
-    def filter_tokens_by(self, box: Box, **kwargs) -> Dict[int, Token]:
+    def filter_tokens_by(self, box: Box, soft_margin: Dict = None) -> Dict[int, Token]:
         """Select tokens in the Page that inside the input box"""
-        
-        return {idx:token for idx, token in enumerate(self.tokens) if token.is_in(box, **kwargs)}
+        return {
+            idx: token
+            for idx, token in enumerate(self.tokens)
+            if token.is_in(box, soft_margin)
+        }
 
 
 def load_tokens_from_file(filename: str) -> List[Page]:
@@ -181,9 +185,9 @@ def load_tokens_from_file(filename: str) -> List[Page]:
         List[Page]:
             A list of `Page` object for eac page.
     """
-    
+
     with open(filename, "r") as fp:
-        source_data=json.load(fp)
+        source_data = json.load(fp)
 
     return [
         Page(

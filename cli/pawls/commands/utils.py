@@ -39,11 +39,11 @@ def get_pdf_sha(pdf_file_name: str) -> str:
 
 
 class LabelingConfiguration:
-    def __init__(self, config: click.File):
+    def __init__(self, config: str):
         """LabelingConfiguration handles parsing the configuration file.
 
         Args:
-            config (click.File): The config file handle.
+            config (str): The config file path.
         """
         self.config = json.load(config)
 
