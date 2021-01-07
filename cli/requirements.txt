@@ -16,3 +16,6 @@ pytest
 
 # Used for pdf-token extraction
 pdfplumber
+
+# Used for calculating scores 
+pycocotools
