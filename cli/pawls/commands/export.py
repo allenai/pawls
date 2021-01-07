@@ -9,10 +9,11 @@ from pdf2image import convert_from_path
 
 from pawls.commands.utils import (
     load_json,
+    get_pdf_sha,
     get_pdf_pages_and_sizes,
     LabelingConfiguration,
     AnnotationFolder,
-    AnnotationFiles
+    AnnotationFiles,
 )
 
 
@@ -46,6 +47,7 @@ class COCOBuilder:
         image_id: int
         category_id: int
         area: Union[float, int]
+        is_crowd: bool = False
 
     def __init__(self, categories: List, save_path: str):
         """COCOBuilder generates the coco-format dataset based on
@@ -78,7 +80,13 @@ class COCOBuilder:
         self._name2catid = {ele["name"]: ele["id"] for ele in self._categories}
         self._images = []
         self._papers = []
-        self._annotations = []
+
+    def get_image_data(self, paper_sha: str, page_id: int):
+        """Find the image data with the given paper_sha and page_id."""
+        filename = self._create_pdf_page_image_filename(paper_sha, page_id)
+        for data in self._images:
+            if data["file_name"] == filename:
+                return data
 
     def _create_pdf_page_image_filename(self, paper_sha: str, page_id: int) -> str:
         return f"{paper_sha}_{page_id}.jpg"
@@ -89,88 +97,111 @@ class COCOBuilder:
             for idx, category in enumerate(categories)
         ]
 
-    def add_paper(self, paper_sha: str, pdf_path: str, annotation_path: str) -> None:
-        """Create the annotation for each paper."""
+    def create_paper_data(self, annotation_folder: AnnotationFolder):
 
-        num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
+        print(f"Creating paper data for annotation folder {annotation_folder.path}")
+        _papers = []
+        _images = []
+        pbar = tqdm(annotation_folder.all_pdf_paths)
+        for pdf_path in pbar:
+            paper_sha = get_pdf_sha(pdf_path)
+            pbar.set_description(f"Working on {paper_sha[:10]}...")
 
-        # Add paper information
-        paper_id = len(self._papers)  # Start from zero
-        paper_info = self.PaperTemplate(
-            paper_id,
-            paper_sha,
-            pages=num_pages,
-        )
+            num_pages, page_sizes = get_pdf_pages_and_sizes(pdf_path)
+            pdf_page_images = convert_from_path(pdf_path)
 
-        # Add individual page images and annotations
-        current_images = OrderedDict()
-        current_annotations = []
-        previous_image_id = len(self._images)  # Start from zero
-        previous_anno_id = len(self._annotations)  # Start from zero
-
-        pdf_page_images = convert_from_path(pdf_path)
-        pawls_annotations = load_json(annotation_path)
-        pawls_annotations = pawls_annotations["annotations"]
-        for anno in pawls_annotations:
-            page_id = anno["page"]
-
-            image_filename = self._create_pdf_page_image_filename(paper_sha, page_id)
-            width, height = page_sizes[anno["page"]]
-
-            if page_id not in current_images:
-                current_images[anno["page"]] = self.ImageTemplate(
-                    id=previous_image_id + len(current_images),
-                    file_name=image_filename,
-                    height=height,
-                    width=width,
-                    paper_id=paper_id,
-                    page_number=anno["page"],
-                )._asdict()
-
-            if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
-                pdf_page_images[anno["page"]].resize((width, height)).save(
-                    f"{self.save_path_image}/{image_filename}"
-                )
-
-            page_image_id = current_images[anno["page"]]["id"]
-            x, y, w, h = _convert_bounds_to_coco_bbox(anno["bounds"])
-
-            current_annotations.append(
-                self.AnnoTemplate(
-                    id=previous_anno_id + len(current_annotations),
-                    bbox=[x, y, w, h],
-                    category_id=self._name2catid[anno["label"]["text"]],
-                    image_id=page_image_id,
-                    area=w * h,
-                )._asdict()
+            # Add paper information
+            paper_id = len(_papers)  # Start from zero
+            paper_info = self.PaperTemplate(
+                paper_id,
+                paper_sha,
+                pages=num_pages,
             )
 
-        # After all information collection finishes,
-        # add the data to the object storage
-        self._papers.append(paper_info._asdict())
-        self._images.extend(list(current_images.values()))
-        self._annotations.extend(current_annotations)
+            current_images = []
+            previous_image_id = len(_images)  # Start from zero
 
-    def create_combined_json(self) -> Dict[str, Any]:
+            for page_id, page_size in enumerate(page_sizes):
+                image_filename = self._create_pdf_page_image_filename(
+                    paper_sha, page_id
+                )
+                width, height = page_size
+                current_images.append(
+                    self.ImageTemplate(
+                        id=previous_image_id + len(current_images),
+                        file_name=image_filename,
+                        height=height,
+                        width=width,
+                        paper_id=paper_id,
+                        page_number=page_id,
+                    )._asdict()
+                )
+                if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
+                    pdf_page_images[page_id].resize((width, height)).save(
+                        f"{self.save_path_image}/{image_filename}"
+                    )
+
+            _papers.append(paper_info._asdict())
+            _images.extend(current_images)
+
+        self._papers = _papers
+        self._images = _images
+
+    def create_annotation_for_annotator(self, anno_files: AnnotationFiles) -> None:
+        """Create the annotations for the given annotation files"""
+
+        _annotations = []
+        anno_id = 0
+        pbar = tqdm(anno_files)
+        for anno_file in pbar:
+
+            paper_sha = anno_file["paper_sha"]
+
+            pbar.set_description(f"Working on {paper_sha[:10]}...")
+            pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
+
+            for anno in pawls_annotations:
+                page_id = anno["page"]
+
+                image_data = self.get_image_data(paper_sha, page_id)
+                width, height = image_data["width"], image_data["height"]
+
+                x, y, w, h = _convert_bounds_to_coco_bbox(anno["bounds"])
+
+                _annotations.append(
+                    self.AnnoTemplate(
+                        id=anno_id,
+                        bbox=[x, y, w, h],
+                        category_id=self._name2catid[anno["label"]["text"]],
+                        image_id=image_data["id"],
+                        area=w * h,
+                    )._asdict()
+                )
+                anno_id += 1
+
+        return _annotations
+
+    def create_combined_json_for_annotations(
+        self, annotations: List[Dict]
+    ) -> Dict[str, Any]:
         return {
             "papers": self._papers,
             "images": self._images,
-            "annotations": self._annotations,
+            "annotations": annotations,
             "categories": self._categories,
         }
 
     def build_annotations(self, anno_files: AnnotationFiles) -> None:
 
-        pbar = tqdm(anno_files)
-        for anno_file in pbar:
-            pbar.set_description(f"Working on {anno_file['paper_sha'][:10]}...")
-            self.add_paper(**anno_file)
+        annotations = self.create_annotation_for_annotator(anno_files)
+        coco_json = self.create_combined_json_for_annotations(annotations)
+        self.export(coco_json, f"{anno_files.annotator}.json")
 
-    def export(self, annotation_name="annotations.json") -> None:
+    def export(self, coco_json: Dict, annotation_name="annotations.json") -> None:
 
         with open(f"{self.save_path}/{annotation_name}", "w") as fp:
 
-            json.dump(self.create_combined_json(), fp)
+            json.dump(coco_json, fp)
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -210,24 +241,24 @@ def export(
     """
 
     config = LabelingConfiguration(config)
+    annotation_folder = AnnotationFolder(path)
 
     if len(annotator) == 0:
-        all_annotators = AnnotationFolder(path).all_annotators
-        annotator = all_annotators
-        print(f"Export annotations from all available annotators {all_annotators}")
+        all_annotators = annotation_folder.all_annotators
+        print("Export annotations from all available annotators")
     else:
+        all_annotators = annotator
+
+    coco_builder = COCOBuilder(config.categories, output)
+    coco_builder.create_paper_data(annotation_folder)
+
+    for annotator in all_annotators:
         print(f"Export annotations from annotators {annotator}")
 
-    for anno in annotator:
-
-        output_folder = output if len(annotator) == 1 else f"{output}/{anno}"
-
-        anno_files = AnnotationFiles(path, anno, include_unfinished)
-        coco_builder = COCOBuilder(config.categories, output_folder)
+        anno_files = AnnotationFiles(path, annotator, include_unfinished)
 
         coco_builder.build_annotations(anno_files)
-        coco_builder.export()
 
         print(
-            f"Successfully exported {len(anno_files)} annotations of annotator {anno} to {output}."
+            f"Successfully exported {len(anno_files)} annotations of annotator {annotator} to {output}."
         )

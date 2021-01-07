@@ -68,7 +68,10 @@ class AnnotationFolder:
 
         self.path = path
         self.pdf_structure_name = pdf_structure_name or self.DEFAULT_PDF_STRUCTURE_NAME
-
+        
+        self.all_pdf_paths = [pdf_path for pdf_path in glob(f"{self.path}/*/*.pdf")]
+        self.all_pdfs = [os.path.basename(pdf_path) for pdf_path in self.all_pdf_paths]
+        
     @property
     def all_annotators(self) -> List[str]:
         """Fetch all annotators in the labeling folder,
@@ -78,11 +81,6 @@ class AnnotationFolder:
         return [DEVELOPMENT_USER] + [
             os.path.splitext(e)[0] for e in os.listdir(f"{self.path}/status")
         ]
-
-    @property
-    def all_pdfs(self) -> List[str]:
-        """Fetch all pdf names in the labeling folder,"""
-        return [os.path.basename(pdf_path) for pdf_path in glob(f"{self.path}/*/*.pdf")]
 
     def get_pdf_tokens(self, pdf_name: str) -> str:
         """Get the pdf tokens for a pdf name by loading from the corresponding pdf_structure file.
