@@ -10,7 +10,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createGlobalStyle } from 'styled-components';
-import { Spin } from "@allenai/varnish";
+import { Spin, Result } from "@allenai/varnish";
 import { BrowserRouter, Route, Redirect} from 'react-router-dom';
 
 import { PDFPage } from './pages';
@@ -20,20 +20,45 @@ import { getAllocatedPaperStatus } from "./api"
 
 const RedirectToFirstPaper = () => {
     const [sha, setSha] = useState<string>();
+    const [authenticated, setAuthenticated] = useState<boolean>(true);
     useEffect(() => {
         getAllocatedPaperStatus().then((allocation) => {
             const first = allocation.papers[0]
             setSha(first.sha)
+        }).catch((err) => {
+            setAuthenticated(false)
         })
     },[])
 
-    return sha ? <Redirect to={`/pdf/${sha}`} /> : (
-        <CenterOnPage>
-            <Spin size="large"/>
-        </CenterOnPage>
-    )
-}
+    if (!sha && authenticated) {
+        return (
+            <CenterOnPage>
+                <Spin size="large"/>
+            </CenterOnPage>
+        )
+    }
+    else if (!sha && !authenticated) {
+        return ( 
 
+            <CenterOnPage>
+                <Result
+                    status="403"
+                    title="403"
+                    subTitle={
+                        <p>
+                            Sorry, you are not authorized to access this page.
+                            If you believe you should have access, please try logging out 
+                            <a href="https://google.login.apps.allenai.org/oauth2/sign_out"> here </a>
+                            and reloading this page.
+                        </p>
+                        }
+                />
+            </CenterOnPage>
+        )}
+    else {
+        return <Redirect to={`/pdf/${sha}`} /> 
+    }
+}
 
 const App = () => {
     return (
