@@ -123,7 +123,7 @@ class AnnotationFolder:
 
 class AnnotationFile:
     def __init__(self, filepath: str):
-        """Annotation file is used to help creating the annotation 
+        """Annotation file is used to help creating the annotation
         files manually.
 
         Args:
@@ -170,6 +170,17 @@ class AnnotationFile:
 
     def save(self):
         """Save the annotation file in the designated filepath"""
+        if os.path.exists(self.filepath):
+            while True:
+                overwrite = input(
+                    f"Overwrite existing annotations {self.filepath}? [Y/N]\n"
+                ).lower()
+                if overwrite in ["y", "n"]:
+                    if overwrite == "n":
+                        return None
+                    break
+                print("Please enter Y or N.")
+
         with open(self.filepath, "w") as fp:
             json.dump(self.data, fp)
 
