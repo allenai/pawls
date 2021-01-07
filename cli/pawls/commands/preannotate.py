@@ -121,10 +121,19 @@ def find_token_data(all_token_data: List[Page], index: int) -> Optional[Page]:
     "--annotator",
     "-u",
     multiple=True,
-    help="Preannotate for the specified annotator.",
+    help="Preannotate for the specified annotator."
+)
+@click.option(
+    "--all",
+    "-a",
+    is_flag=True,
+    type=bool,
+    default=False,
+    help="Whether to preannotate for all annotators."
 )
 def preannotate(
-    path: click.Path, config: click.File, pred_file: click.Path, annotator: List
+    path: click.Path, config: click.File, pred_file: click.Path, annotator: List,
+    all: bool=False
 ):
     """
     Preannotate the PDFs with model prediction results.
@@ -132,19 +141,27 @@ def preannotate(
     Firstly, you need to generate the region bounding box predictions using some models.
     And it should be stored in a format that's compatible with the ModelPredictions format.
 
-    We've provided a exemplar script for generating predictions for PDF files in 
-    scripts/generate_pdf_layouts.py.
+    We've provided a exemplar script for generating predictions for PDF files in
+    https://github.com/allenai/pawls/tree/master/scripts/generate_pdf_layouts.py .
 
     You also need to preprocess the PDFs in the <labeling_folder> use the `pawls preprocess` command.
 
     To prepopulate predictions for PDFs in the <labeling_folder> for some annotator, you could use:
-        pawls preannoate <labeling_folder> <labeling_config> <pred_file> -u markn --allow-overlapping
+
+        pawls preannoate <labeling_folder> <labeling_config> <pred_file> -u markn 
+    
+    To prepopulate predictions for PDFs all annotators, you can use:
+    
+        pawls preannoate <labeling_folder> <labeling_config> <pred_file> --all
     """
 
     anno_folder = AnnotationFolder(path)
-    all_annotators = annotator
-    for annotator in all_annotators:
-        assert annotator in anno_folder.all_annotators, f"Invalid Annotator {annotator}"
+    if all: 
+        all_annotators = anno_folder.all_annotators
+    else:
+        all_annotators = annotator
+        for annotator in all_annotators:
+            assert annotator in anno_folder.all_annotators, f"Invalid Annotator {annotator}"
 
     model_pred = ModelPredictions(pred_file)
     config_labels = LabelingConfiguration(config).get_labels()
