@@ -16,6 +16,26 @@
         {
             "text": "Task",
             "color": "#2F85F7"
+        },
+        {
+            "text": "Paragraph",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Title",
+            "color": "#FFD45D"
+        },
+        {
+            "text": "Figure",
+            "color": "#FF9F9E"
+        },
+        {
+            "text": "Table",
+            "color": "#2F85F7"
+        },
+        {
+            "text": "ListItem",
+            "color": "#2F85F7"
         }
     ],
     "relations": [
