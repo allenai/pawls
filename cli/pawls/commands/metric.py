@@ -150,7 +150,16 @@ def metric(
     include_unfinished: bool = False,
     show_detailed: bool = False,
 ):
-    """Calculate the inter-annotator scores for the annotation project"""
+    """Calculate the inter-annotator agreement for the annotation project
+
+    To get a simple report for annotator A and B, use:
+
+        `pawls metric <labeling_folder> <labeling_config> -u <annotator-A> -u <annotator-B>`
+
+    To get a detailed report for all annotators, use:
+
+        `pawls metric <labeling_folder> <labeling_config> -u <annotator_name> --show-detailed`
+    """
 
     with tempfile.TemporaryDirectory() as tempdir:
         
