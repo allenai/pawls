@@ -3,6 +3,7 @@ import shutil
 import unittest
 import tempfile
 import json
+from glob import glob
 
 from click.testing import CliRunner
 
@@ -31,14 +32,18 @@ class TestPreannotate(unittest.TestCase):
         self.USERS = ["markn@example.com", "shannons@example.com"]
         self.DEFAULT_USER = "development_user@example.com"
 
+    def copy_and_remove_existing_annotations(self, sub_temp_dir):
+
+        shutil.copytree(self.TEST_ANNO_DIR, sub_temp_dir)
+        for anno_file in glob(f"{sub_temp_dir}/*/*_annotations.json"):
+            os.remove(anno_file)
+
     def test_add_annotation(self):
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tempdir:
 
             sub_temp_dir = os.path.join(tempdir, "pawls")
-            shutil.copytree(self.TEST_ANNO_DIR, sub_temp_dir)
-
-            result = runner.invoke(preprocess, ["grobid", sub_temp_dir])
+            self.copy_and_remove_existing_annotations(sub_temp_dir)
 
             result = runner.invoke(
                 preannotate,
@@ -59,7 +64,10 @@ class TestPreannotate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
 
             sub_temp_dir = os.path.join(tempdir, "pawls")
-            shutil.copytree(self.TEST_ANNO_DIR, sub_temp_dir)
+            self.copy_and_remove_existing_annotations(sub_temp_dir)
+
+            for pdf_sha in self.PDF_SHAS:
+                os.remove(f"{sub_temp_dir}/{pdf_sha}/pdf_structure.json")
 
             result = runner.invoke(
                 preannotate,
@@ -72,4 +80,24 @@ class TestPreannotate(unittest.TestCase):
                 ],
             )
 
-            assert result.exit_code == 1 # It should raise an exception
+            assert result.exit_code == 1  # It should raise an exception
+
+    def test_add_annotation_all(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+
+            sub_temp_dir = os.path.join(tempdir, "pawls")
+            self.copy_and_remove_existing_annotations(sub_temp_dir)
+
+            result = runner.invoke(
+                preannotate,
+                [sub_temp_dir, self.TEST_CONFIG_FILE, self.TEST_ANNO_FILE, "-a"],
+            )
+
+            assert result.exit_code == 0  # It should raise an exception
+
+            for pdf_sha in self.PDF_SHAS:
+                for user in self.USERS:
+                    assert os.path.exists(
+                        os.path.join(sub_temp_dir, pdf_sha, f"{user}_annotations.json")
+                    )
