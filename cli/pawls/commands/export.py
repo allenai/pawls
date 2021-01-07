@@ -1,6 +1,5 @@
 import os
 import json
-from collections import OrderedDict
 from typing import List, NamedTuple, Union, Dict, Any
 
 import click
@@ -47,7 +46,7 @@ class COCOBuilder:
         image_id: int
         category_id: int
         area: Union[float, int]
-        is_crowd: bool = False
+        iscrowd: bool = False
 
     def __init__(self, categories: List, save_path: str):
         """COCOBuilder generates the coco-format dataset based on
@@ -97,9 +96,10 @@ class COCOBuilder:
             for idx, category in enumerate(categories)
         ]
 
-    def create_paper_data(self, annotation_folder: AnnotationFolder):
+    def create_paper_data(
+        self, annotation_folder: AnnotationFolder, save_images: bool = True
+    ):
 
-        print(f"Creating paper data for annotation folder {annotation_folder.path}")
         _papers = []
         _images = []
         pbar = tqdm(annotation_folder.all_pdf_paths)
@@ -136,7 +136,9 @@ class COCOBuilder:
                         page_number=page_id,
                     )._asdict()
                 )
-                if not os.path.exists(f"{self.save_path_image}/{image_filename}"):
+                if save_images and not os.path.exists(
+                    f"{self.save_path_image}/{image_filename}"
+                ):
                     pdf_page_images[page_id].resize((width, height)).save(
                         f"{self.save_path_image}/{image_filename}"
                     )
@@ -220,12 +222,18 @@ class COCOBuilder:
     is_flag=True,
     help="A flag to export all annotation by the specified annotator including unfinished ones.",
 )
+@click.option(
+    "--not-export-images",
+    is_flag=True,
+    help="A flag to not to export images of PDFs",
+)
 def export(
     path: click.Path,
     config: click.File,
     output: click.Path,
     annotator: List,
     include_unfinished: bool = False,
+    not_export_images: bool = False,
 ):
     """
     Export the COCO annotations for an annotation project.
@@ -250,7 +258,8 @@ def export(
         all_annotators = annotator
 
     coco_builder = COCOBuilder(config.categories, output)
-    coco_builder.create_paper_data(annotation_folder)
+    print(f"Creating paper data for annotation folder {annotation_folder.path}")
+    coco_builder.create_paper_data(annotation_folder, save_images=not not_export_images)
 
     for annotator in all_annotators:
         print(f"Export annotations from annotators {annotator}")
