@@ -2,7 +2,7 @@ import json
 from typing import List
 import requests
 
-from pawls.preprocessors.model import Token, PageInfo, Page
+from pawls.preprocessors.model import Page
 
 
 def fetch_grobid_structure(pdf_file: str, grobid_host: str = "http://localhost:8070"):
@@ -45,7 +45,7 @@ def parse_annotations(grobid_structure) -> List[Page]:
 
 def process_grobid(
     pdf_file: str,
-    grobid_host: str = "http://s2-grobid-tokens.us-west-2.elasticbeanstalk.com"
+    grobid_host: str = "http://localhost:8070"
 ):
     """
     Integration for importing annotations from grobid.
@@ -54,7 +54,7 @@ def process_grobid(
 
     pdf_file: str
         The path to the pdf file to process.
-    grobid_host: str (optional, default = http://s2-grobid-tokens.us-west-2.elasticbeanstalk.com)
+    grobid_host: str (optional, default="http://localhost:8070")
         The forked grobid API which we use to produce the annotations.
     """
     grobid_structure = fetch_grobid_structure(pdf_file, grobid_host)
