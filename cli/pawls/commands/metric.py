@@ -174,9 +174,12 @@ def metric(
         )
 
         all_cocos = {}
-        for username in sorted(glob(f"{tempdir}/*.json")):
+        all_users = []
+        for userfile in sorted(glob(f"{tempdir}/*.json")):
             with HiddenPrints():
-                all_cocos[username.split("/")[-1][:-5]] = COCO(username)
+                username = userfile.split("/")[-1][:-5]
+                all_users.append(username)
+                all_cocos[username] = COCO(userfile)
 
         for coco in all_cocos.values():
             for ele in coco.dataset['annotations']:
@@ -185,7 +188,7 @@ def metric(
         coco_results = defaultdict(dict)
         coco_results_per_category = defaultdict(dict)
         class_names = [
-            val["name"] for _, val in all_cocos["development_user"].cats.items()
+            val["name"] for _, val in all_cocos[all_users[0]].cats.items()
         ]
 
         print("\n")
