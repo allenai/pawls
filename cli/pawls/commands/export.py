@@ -289,7 +289,7 @@ class TokenTableBuilder:
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
-@click.argument("config", type=click.File("r"))
+@click.argument("config", type=str)
 @click.argument("output", type=click.Path(file_okay=True))
 @click.argument("format", type=click.Path(file_okay=False))
 @click.option(

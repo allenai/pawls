@@ -45,7 +45,8 @@ class LabelingConfiguration:
         Args:
             config (str): The config file path.
         """
-        self.config = json.load(config)
+
+        self.config = load_json(config)
 
     @property
     def categories(self) -> List[str]:
