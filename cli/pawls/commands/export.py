@@ -3,6 +3,7 @@ import json
 from typing import List, NamedTuple, Union, Dict, Any
 
 import click
+import pandas as pd
 from tqdm import tqdm
 from pdf2image import convert_from_path
 
@@ -14,6 +15,8 @@ from pawls.commands.utils import (
     AnnotationFolder,
     AnnotationFiles,
 )
+
+ALL_SUPPORTED_EXPORT_TYPE = ["coco", "token"]
 
 
 def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
@@ -206,10 +209,76 @@ class COCOBuilder:
             json.dump(coco_json, fp)
 
 
+class TokenTableBuilder:
+    def __init__(self, save_path: str):
+
+        self.save_path = save_path
+
+    def create_paper_data(self, annotation_folder: AnnotationFolder):
+
+        all_page_token_data = {}
+        for pdf in annotation_folder.all_pdfs:
+            all_page_tokens = annotation_folder.get_pdf_tokens(pdf)
+
+            # Get page token data
+            page_token_data = []
+            for page_tokens in all_page_tokens:
+                token_data = [
+                    (page_tokens.page.index, idx, token.text)
+                    for idx, token in enumerate(page_tokens.tokens)
+                ]
+                df = pd.DataFrame(token_data, columns=["page_index", "index", "text"])
+                df = df.set_index(["page_index", "index"])
+                page_token_data.append(df)
+            page_token_data = pd.concat(page_token_data)
+
+            all_page_token_data[get_pdf_sha(pdf)] = page_token_data
+
+        self.all_page_token_data = all_page_token_data
+
+    def create_annotation_for_annotator(self, anno_files: AnnotationFiles) -> None:
+
+        annotator = anno_files.annotator
+
+        pbar = tqdm(anno_files)
+
+        for anno_file in pbar:
+            paper_sha = anno_file["paper_sha"]
+            df = self.all_page_token_data[paper_sha]
+            df[annotator] = None
+
+            pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
+            for anno in pawls_annotations:
+                if anno["tokens"] is None:
+                    continue
+
+                label = anno["label"]["text"]
+                anno_token_indices = [
+                    (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
+                ]
+
+                if "/" not in label:
+                    df.loc[anno_token_indices, annotator] = label
+
+    def export(self):
+
+        for pdf, df in self.all_page_token_data.items():
+            df["pdf"] = pdf
+
+        df = (
+            pd.concat(self.all_page_token_data.values())
+            .reset_index()
+            .set_index(["pdf", "page_index", "index"])
+        )
+
+        df.to_csv(self.save_path)
+        return df
+
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
 @click.argument("config", type=click.File("r"))
 @click.argument("output", type=click.Path(file_okay=False))
+@click.argument("format", type=click.Path(file_okay=False))
 @click.option(
     "--annotator",
     "-u",
@@ -231,6 +300,7 @@ def export(
     path: click.Path,
     config: click.File,
     output: click.Path,
+    format: str,
     annotator: List,
     include_unfinished: bool = False,
     not_export_images: bool = False,
@@ -248,6 +318,11 @@ def export(
         `pawls export <labeling_folder> <labeling_config> <output_path> -u markn --include-unfinished`.
     """
 
+    assert (
+        format in ALL_SUPPORTED_EXPORT_TYPE
+    ), f"Invalid export format {format}. Should be one of {ALL_SUPPORTED_EXPORT_TYPE}."
+    print(f"Export the annotaitons to the {format} format.")
+
     config = LabelingConfiguration(config)
     annotation_folder = AnnotationFolder(path)
 
@@ -257,17 +332,41 @@ def export(
     else:
         all_annotators = annotator
 
-    coco_builder = COCOBuilder(config.categories, output)
-    print(f"Creating paper data for annotation folder {annotation_folder.path}")
-    coco_builder.create_paper_data(annotation_folder, save_images=not not_export_images)
+    if format == "coco":
 
-    for annotator in all_annotators:
-        print(f"Export annotations from annotators {annotator}")
+        coco_builder = COCOBuilder(config.categories, output)
+        print(f"Creating paper data for annotation folder {annotation_folder.path}")
+        coco_builder.create_paper_data(
+            annotation_folder, save_images=not not_export_images
+        )
 
-        anno_files = AnnotationFiles(path, annotator, include_unfinished)
+        for annotator in all_annotators:
+            print(f"Export annotations from annotators {annotator}")
 
-        coco_builder.build_annotations(anno_files)
+            anno_files = AnnotationFiles(path, annotator, include_unfinished)
 
+            coco_builder.build_annotations(anno_files)
+
+            print(
+                f"Successfully exported {len(anno_files)} annotations of annotator {annotator} to {output}."
+            )
+
+    elif format == "token":
+        
+        if not output.endswith(".csv"):
+            output = f"{output}.csv"
+        token_builder = TokenTableBuilder(output)
+
+        print(f"Creating paper data for annotation folder {annotation_folder.path}")
+        token_builder.create_paper_data(annotation_folder)
+
+        for annotator in all_annotators:
+
+            # print(f"Export annotations from annotators {annotator}")
+            anno_files = AnnotationFiles(path, annotator, include_unfinished)
+            token_builder.create_annotation_for_annotator(anno_files)
+
+        df = token_builder.export()
         print(
-            f"Successfully exported {len(anno_files)} annotations of annotator {annotator} to {output}."
+            f"Successfully exported annotations for {len(df)} tokens from annotators {all_annotators} to {output}."
         )
