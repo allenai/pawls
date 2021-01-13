@@ -260,7 +260,7 @@ class TokenTableBuilder:
             for anno in pawls_annotations:
                 if anno["tokens"] is None:
                     continue
-                
+
                 # Skip if current category is not in the specified categories
                 label = anno["label"]["text"]
                 if label not in self.categories:
@@ -311,8 +311,8 @@ class TokenTableBuilder:
     help="A flag to export all annotation by the specified annotator including unfinished ones.",
 )
 @click.option(
-    "--not-export-images",
-    is_flag=True,
+    "--export-images/--no-export-images",
+    default=True,
     help="A flag to not to export images of PDFs",
 )
 def export(
@@ -323,7 +323,7 @@ def export(
     annotator: List,
     categories: List,
     include_unfinished: bool = False,
-    not_export_images: bool = False,
+    export_images: bool = True,
 ):
     """
     Export the COCO annotations for an annotation project.
@@ -341,7 +341,7 @@ def export(
     assert (
         format in ALL_SUPPORTED_EXPORT_TYPE
     ), f"Invalid export format {format}. Should be one of {ALL_SUPPORTED_EXPORT_TYPE}."
-    print(f"Export the annotaitons to the {format} format.")
+    print(f"Export the annotations to the {format} format.")
 
     config = LabelingConfiguration(config)
     annotation_folder = AnnotationFolder(path)
@@ -360,9 +360,7 @@ def export(
 
         coco_builder = COCOBuilder(categories, output)
         print(f"Creating paper data for annotation folder {annotation_folder.path}")
-        coco_builder.create_paper_data(
-            annotation_folder, save_images=not not_export_images
-        )
+        coco_builder.create_paper_data(annotation_folder, save_images=export_images)
 
         for annotator in all_annotators:
             print(f"Export annotations from annotators {annotator}")
