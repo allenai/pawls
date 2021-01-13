@@ -12,8 +12,8 @@
 
 First, we need to download some processed PDFs to view in the UI. PAWLS uses the PDFs themselves to render in the browser, as well as using a JSON file of extracted token bounding boxes per page, called `pdf_structure.json`. The [PAWLS CLI](cli/readme.md) can be used to do this pre-processing, but for the quick start, we have done it for you. Download them from the provided AWS S3 Bucket like so:
 
-```
-aws s3 sync <PATH> ./skiff_files/apps/pawls/papers/
+```bash
+aws s3 sync s3://ai2-s2-pawls-public/example-data ./skiff_files/apps/pawls/papers/
 ```
 
 Configuration in PAWLS is controlled by a json file, located in the [`api/config`](./api/config/configuration.json) directory. The location that we downloaded the pdfs to above corresponds to the location in the config file, where it is mounted in using [`docker-compose.yaml`](./docker-compose.yaml). So, when PAWLS starts up, the API knows where to look to serve the PDFs we want.
