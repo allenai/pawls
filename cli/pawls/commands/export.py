@@ -238,14 +238,16 @@ class TokenTableBuilder:
 
     def create_annotation_for_annotator(self, anno_files: AnnotationFiles) -> None:
 
+        # Firstly initialize the annotation tables with the annotator name
         annotator = anno_files.annotator
+        for token_data in self.all_page_token_data.values():
+            token_data[annotator] = None
 
         pbar = tqdm(anno_files)
 
         for anno_file in pbar:
             paper_sha = anno_file["paper_sha"]
             df = self.all_page_token_data[paper_sha]
-            df[annotator] = None
 
             pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
             for anno in pawls_annotations:
@@ -274,8 +276,9 @@ class TokenTableBuilder:
         df.to_csv(self.save_path)
         return df
 
+
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
-@click.argument("path", type=click.Path(exists=True, file_okay=False))
+@click.argument("path", type=click.Path(exists=True, file_okay=True))
 @click.argument("config", type=click.File("r"))
 @click.argument("output", type=click.Path(file_okay=False))
 @click.argument("format", type=click.Path(file_okay=False))
@@ -328,7 +331,7 @@ def export(
 
     if len(annotator) == 0:
         all_annotators = annotation_folder.all_annotators
-        print("Export annotations from all available annotators")
+        print(f"Export annotations from all available annotators {all_annotators}")
     else:
         all_annotators = annotator
 
@@ -352,7 +355,7 @@ def export(
             )
 
     elif format == "token":
-        
+
         if not output.endswith(".csv"):
             output = f"{output}.csv"
         token_builder = TokenTableBuilder(output)

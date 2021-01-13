@@ -3,6 +3,7 @@ import unittest
 import tempfile
 import json
 
+import pandas as pd
 from click.testing import CliRunner
 
 from pawls.commands import export
@@ -29,7 +30,7 @@ def _load_json(filename: str):
         return json.load(fp)
 
 
-class TestExport(unittest.TestCase):
+class TestExportCOCO(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.TEST_ANNO_DIR = "test/fixtures/pawls/"
@@ -46,13 +47,13 @@ class TestExport(unittest.TestCase):
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tempdir:
             result = runner.invoke(
-                export, [self.TEST_ANNO_DIR, self.TEST_CONFIG_FILE, tempdir]
+                export, [self.TEST_ANNO_DIR, self.TEST_CONFIG_FILE, tempdir, "coco"]
             )
             assert result.exit_code == 0
 
-            assert os.path.exists(os.path.join(tempdir, self.USERS[0] + '.json'))
-            assert os.path.exists(os.path.join(tempdir, self.USERS[1] + '.json'))
-            assert os.path.exists(os.path.join(tempdir, self.DEFAULT_USER + '.json'))
+            assert os.path.exists(os.path.join(tempdir, self.USERS[0] + ".json"))
+            assert os.path.exists(os.path.join(tempdir, self.USERS[1] + ".json"))
+            assert os.path.exists(os.path.join(tempdir, self.DEFAULT_USER + ".json"))
             assert os.path.exists(os.path.join(tempdir, "images"))
 
     def test_export_annotation_from_multiple_annotators(self):
@@ -64,6 +65,7 @@ class TestExport(unittest.TestCase):
                     self.TEST_ANNO_DIR,
                     self.TEST_CONFIG_FILE,
                     tempdir,
+                    "coco",
                     "-u",
                     self.USERS[0],
                     "-u",
@@ -72,9 +74,11 @@ class TestExport(unittest.TestCase):
             )
             assert result.exit_code == 0
 
-            assert os.path.exists(os.path.join(tempdir, self.USERS[0] + '.json'))
-            assert os.path.exists(os.path.join(tempdir, self.USERS[1] + '.json'))
-            assert not os.path.exists(os.path.join(tempdir, self.DEFAULT_USER + '.json'))
+            assert os.path.exists(os.path.join(tempdir, self.USERS[0] + ".json"))
+            assert os.path.exists(os.path.join(tempdir, self.USERS[1] + ".json"))
+            assert not os.path.exists(
+                os.path.join(tempdir, self.DEFAULT_USER + ".json")
+            )
             assert os.path.exists(os.path.join(tempdir, "images"))
 
     def test_export_annotation_with_all_annotators_annotations(self):
@@ -86,6 +90,7 @@ class TestExport(unittest.TestCase):
                     self.TEST_ANNO_DIR,
                     self.TEST_CONFIG_FILE,
                     tempdir,
+                    "coco",
                     "-u",
                     self.USERS[0],
                     "--include-unfinished",
@@ -108,6 +113,7 @@ class TestExport(unittest.TestCase):
                     self.TEST_ANNO_DIR,
                     self.TEST_CONFIG_FILE,
                     tempdir,
+                    "coco",
                     "-u",
                     self.USERS[1],
                     "--include-unfinished",
@@ -116,12 +122,57 @@ class TestExport(unittest.TestCase):
             assert result.exit_code == 0
 
             anno_file = _load_json(os.path.join(tempdir, f"{self.USERS[1]}.json"))
-            paper_sha_map = {ele["id"]:ele["paper_sha"] for ele in anno_file["papers"]}
-            image_paper_map = {ele["id"]:ele["paper_id"] for ele in anno_file["images"]}
-            all_paper_shas = [paper_sha_map[image_paper_map[anno["image_id"]]] for anno in anno_file["annotations"]]
+            paper_sha_map = {ele["id"]: ele["paper_sha"] for ele in anno_file["papers"]}
+            image_paper_map = {
+                ele["id"]: ele["paper_id"] for ele in anno_file["images"]
+            }
+            all_paper_shas = [
+                paper_sha_map[image_paper_map[anno["image_id"]]]
+                for anno in anno_file["annotations"]
+            ]
 
             assert self.PDF_SHAS[2] in all_paper_shas
             assert self.PDF_SHAS[1] not in all_paper_shas
+
+
+class TestExportToken(TestExportCOCO):
+    def test_export_annotation_from_all_annotators(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            saved_path = f"{tempdir}/annotations.csv"
+            result = runner.invoke(
+                export, [self.TEST_ANNO_DIR, self.TEST_CONFIG_FILE, saved_path, "token"]
+            )
+            assert result.exit_code == 0
+            assert os.path.exists(saved_path)
+
+            df = pd.read_csv(saved_path)
+            for annotator in self.USERS + [self.DEFAULT_USER]:
+                assert annotator in df.columns
+
+    def test_export_annotation_from_multiple_annotators(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            saved_path = f"{tempdir}/annotations.csv"
+            result = runner.invoke(
+                export,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    saved_path,
+                    "token",
+                    "-u",
+                    self.USERS[0],
+                    "-u",
+                    self.USERS[1],
+                ],
+            )
+            assert result.exit_code == 0
+            assert os.path.exists(saved_path)
+
+            df = pd.read_csv(saved_path)
+            for annotator in self.USERS:
+                assert annotator in df.columns
 
 
 if __name__ == "__main__":
