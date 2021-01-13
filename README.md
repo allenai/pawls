@@ -6,6 +6,34 @@
   to collect a series of annotations associated with a PDF document. It was written
   specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org) corpus, but can be used with any collection of PDF documents.
 
+### Quick Start
+
+*Quick start will download some pre-processed PDFs and get the UI set up so that you can see them. If you want to pre-process your own pdfs, keep reading! If it's your first time working with PAWLS, we recommend you try the quick start first though.*
+
+First, we need to download some processed PDFs to view in the UI. PAWLS uses the PDFs themselves to render in the browser, as well as using a JSON file of extracted token bounding boxes per page, called `pdf_structure.json`. The [PAWLS CLI](cli/readme.md) can be used to do this pre-processing, but for the quick start, we have done it for you. Download them from the provided AWS S3 Bucket like so:
+
+```
+aws s3 sync <PATH> ./skiff_files/apps/pawls/papers/
+```
+
+Configuration in PAWLS is controlled by a json file, located in the [`api/config`](./api/config/configuration.json) directory. The location that we downloaded the pdfs to above corresponds to the location in the config file, where it is mounted in using [`docker-compose.yaml`](./docker-compose.yaml). So, when PAWLS starts up, the API knows where to look to serve the PDFs we want.
+
+Next, we can start the services required to use PAWLS using `docker-compose`:
+
+```
+~ docker-compose up --build
+```
+
+This process launches 4 services:
+- the `ui`, which renders the user interface that PAWLS uses
+- the `api`, which serves PDFs and saves/recieves annotations
+- a `proxy` responsible for forwarding traffic to the appropriate services.
+- A `grobid` service, running [a fork of Grobid](https://github.com/allenai/grobid). This is not actually necessary for the application, but is useful for the CLI.
+
+You'll see output from each.
+
+Once all of these have come up, navigate to `localhost:8080` in your browser and you should see the PAWLS UI! Happy annotating.
+
 
 ### Getting Started
 
@@ -126,7 +154,7 @@ The TL;DR of this is the following:
 
 So, in your web application, you would make a request, e.g `axios.get("/api/route", data)`, which the server recieves at `localhost:8000/route`.
 This makes it easy to develop without worrying about where apis will be hosted in production vs development, and also allows for things like
-rate limiting. The configuration for the proxy lives [here](https://github.com/allenai/skiff-template/blob/master/proxy/local.conf) for development and [here](https://github.com/allenai/skiff-template/blob/master/proxy/prod.conf) for production.
+rate limiting. The configuration for the proxy lives [here](./proxy/local.conf) for development and [here](./proxy/prod.conf) for production.
 
 For example, if you wanted to expose the `docs` route `localhost:8000/docs` from your `api` container to users of your app in production, you would add this to `prod.conf`:
 
@@ -136,5 +164,5 @@ location /docs/ {
     proxy_pass http://api:8000/;
 }
 ```
-* [.skiff/webapp.jsonnet](https://github.com/allenai/skiff-template/blob/master/.skiff/webapp.jsonnet) contains lots of deployment details which
-you might wish to change/configure, particularly if your Docker images are built differently from the default ones in `skiff-template` (for instance, if they take different arguments to start the server).
+
+PAWLS is an open-source project developed by [the Allen Institute for Artificial Intelligence (AI2)](http://www.allenai.org). AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
