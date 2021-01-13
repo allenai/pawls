@@ -35,6 +35,7 @@ class TestExportCOCO(unittest.TestCase):
         super().setUp()
         self.TEST_ANNO_DIR = "test/fixtures/pawls/"
         self.TEST_CONFIG_FILE = "test/fixtures/configuration.json"
+        self.TEST_SELECTED_CATEGORY = "Figure Text"
         self.PDF_SHAS = [
             "3febb2bed8865945e7fddc99efd791887bb7e14f",
             "34f25a8704614163c4095b3ee2fc969b60de4698",
@@ -134,6 +135,29 @@ class TestExportCOCO(unittest.TestCase):
             assert self.PDF_SHAS[2] in all_paper_shas
             assert self.PDF_SHAS[1] not in all_paper_shas
 
+    def test_export_annotation_with_specific_category(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            result = runner.invoke(
+                export,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    tempdir,
+                    "coco",
+                    "-u",
+                    self.USERS[0],
+                    "-c",
+                    self.TEST_SELECTED_CATEGORY,
+                    "--include-unfinished",
+                ],
+            )
+            assert result.exit_code == 0
+
+            anno = _load_json(os.path.join(tempdir, f"{self.USERS[0]}.json"))
+
+            assert len(anno["categories"]) == 1
+            assert anno["categories"][0]['name'] == self.TEST_SELECTED_CATEGORY
 
 class TestExportToken(TestExportCOCO):
     def test_export_annotation_from_all_annotators(self):
@@ -173,7 +197,32 @@ class TestExportToken(TestExportCOCO):
             df = pd.read_csv(saved_path)
             for annotator in self.USERS:
                 assert annotator in df.columns
+    
+    def test_export_annotation_with_specific_category(self):
+        
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            saved_path = f"{tempdir}/annotations.csv"
+            result = runner.invoke(
+                export,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    saved_path,
+                    "token",
+                    "-u",
+                    self.USERS[0],
+                    "-c",
+                    self.TEST_SELECTED_CATEGORY
+                ]
+            )
+            assert result.exit_code == 0
 
+            df = pd.read_csv(saved_path)
+            
+            all_exported_labels = df[self.USERS[0]].dropna().unique()
+            assert len(all_exported_labels) == 1
+            assert self.TEST_SELECTED_CATEGORY in all_exported_labels[0] 
 
 if __name__ == "__main__":
     unittest.main()

@@ -167,6 +167,12 @@ class COCOBuilder:
 
             for anno in pawls_annotations:
                 page_id = anno["page"]
+                category = anno["label"]["text"]
+
+                # Skip if current category is not in the specified categories
+                cat_id = self._name2catid.get(category, None)
+                if cat_id is None:
+                    continue
 
                 image_data = self.get_image_data(paper_sha, page_id)
                 width, height = image_data["width"], image_data["height"]
@@ -177,7 +183,7 @@ class COCOBuilder:
                     self.AnnoTemplate(
                         id=anno_id,
                         bbox=[x, y, w, h],
-                        category_id=self._name2catid[anno["label"]["text"]],
+                        category_id=cat_id,
                         image_id=image_data["id"],
                         area=w * h,
                     )._asdict()
@@ -210,8 +216,9 @@ class COCOBuilder:
 
 
 class TokenTableBuilder:
-    def __init__(self, save_path: str):
+    def __init__(self, categories, save_path: str):
 
+        self.categories = categories
         self.save_path = save_path
 
     def create_paper_data(self, annotation_folder: AnnotationFolder):
@@ -253,14 +260,17 @@ class TokenTableBuilder:
             for anno in pawls_annotations:
                 if anno["tokens"] is None:
                     continue
-
+                
+                # Skip if current category is not in the specified categories
                 label = anno["label"]["text"]
+                if label not in self.categories:
+                    continue
+
                 anno_token_indices = [
                     (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
                 ]
 
-                if "/" not in label:
-                    df.loc[anno_token_indices, annotator] = label
+                df.loc[anno_token_indices, annotator] = label
 
     def export(self):
 
@@ -278,15 +288,21 @@ class TokenTableBuilder:
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
-@click.argument("path", type=click.Path(exists=True, file_okay=True))
+@click.argument("path", type=click.Path(exists=True, file_okay=False))
 @click.argument("config", type=click.File("r"))
-@click.argument("output", type=click.Path(file_okay=False))
+@click.argument("output", type=click.Path(file_okay=True))
 @click.argument("format", type=click.Path(file_okay=False))
 @click.option(
     "--annotator",
     "-u",
     multiple=True,
     help="Export annotations of the specified annotator.",
+)
+@click.option(
+    "--categories",
+    "-c",
+    multiple=True,
+    help="Export specified categories in the annotations.",
 )
 @click.option(
     "--include-unfinished",
@@ -305,6 +321,7 @@ def export(
     output: click.Path,
     format: str,
     annotator: List,
+    categories: List,
     include_unfinished: bool = False,
     not_export_images: bool = False,
 ):
@@ -335,9 +352,13 @@ def export(
     else:
         all_annotators = annotator
 
+    if len(categories) == 0:
+        categories = config.categories
+        print(f"Export annotations from all available categories {categories}")
+
     if format == "coco":
 
-        coco_builder = COCOBuilder(config.categories, output)
+        coco_builder = COCOBuilder(categories, output)
         print(f"Creating paper data for annotation folder {annotation_folder.path}")
         coco_builder.create_paper_data(
             annotation_folder, save_images=not not_export_images
@@ -358,7 +379,7 @@ def export(
 
         if not output.endswith(".csv"):
             output = f"{output}.csv"
-        token_builder = TokenTableBuilder(output)
+        token_builder = TokenTableBuilder(categories, output)
 
         print(f"Creating paper data for annotation folder {annotation_folder.path}")
         token_builder.create_paper_data(annotation_folder)
