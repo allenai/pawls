@@ -1,0 +1,6 @@
+# Ignore everything in this directory
+*
+# Except this file.
+!.gitignore
+# This allows us to commit an empty directory into the repository,
+# which we need to ensure the build doesn't fail

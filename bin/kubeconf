@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import json
+from os import path, getlogin, devnull
+from argparse import ArgumentParser
+from subprocess import check_call, check_output
+
+def configure(env, api, proxy, message, silent = False):
+    builder_image = "gcr.io/ai2-reviz/jsonnet"
+    stdout = open(devnull) if silent == True else None
+    check_call(["docker", "pull", builder_image ], stdout=stdout)
+    root = path.abspath(path.join(path.dirname(__file__), ".."))
+    sha = check_output([ "git", "rev-parse", "HEAD" ]).decode("utf-8").strip()
+    branch = check_output([ "git", "rev-parse", "--abbrev-ref", "HEAD" ]).decode("utf-8").strip()
+    cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "-it",
+        "-v", "%s:/workspace" % root,
+        builder_image,
+        "eval",
+        "-y",
+        "--output-file", "/workspace/.skiff/webapp.yaml",
+        "--tla-str", "proxyImage=%s" % proxy,
+        "--tla-str", "apiImage=%s" % api,
+        "--tla-str", "cause=%s" % message,
+        "--tla-str", "env=%s" % env,
+        "--tla-str", "sha=%s" % sha,
+        "--tla-str", "branch=%s" % branch,
+        "/workspace/.skiff/webapp.jsonnet"
+    ]
+    # The docker run command needs a valid stdout to write to, which means
+    # if the silent flag is enabled we need to capture and discard the output
+    if silent == True:
+        check_output(cmd)
+    else:
+        check_call(cmd)
+    config = path.abspath(path.join(root, ".skiff", "webapp.yaml"))
+    return config
+
+if __name__ == "__main__":
+    parser = ArgumentParser(prog="kubeconf",
+        description="Utility for generating the kubernetes manifest for a given environment")
+    parser.add_argument("--env", "-e", default="staging", type=str,
+        help="The value of the $_ENV cloudbuild variable")
+    parser.add_argument("--api", "-a", type=str,
+        help="The target API image.", required=True)
+    parser.add_argument("--proxy", "-p", type=str,
+        help="The target Proxy image.", required=True)
+    parser.add_argument("--message", "-m", type=str,
+        help="The reason behind the deployment", required=True)
+    formats = set([ "text", "json" ])
+    parser.add_argument("--output", "-o", type=str, choices=formats,
+        help="The output format.", default="text")
+    parser.add_argument("-s", "--silent", action="store_true", default=False,
+        help="If specified verbose output is disabled.")
+    args = parser.parse_args()
+    output = configure(
+        args.env,
+        args.api,
+        args.proxy,
+        args.message,
+        args.silent
+    )
+    if args.output == "text":
+        print("✨ successfully wrote %s" % output)
+    else:
+        print(json.dumps(output))

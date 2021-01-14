@@ -1,0 +1,24 @@
+{
+    "output_directory": "test/fixtures/tmp",
+    "labels": [
+        {
+            "text": "Figure Text",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Section Header",
+            "color": "#FFD45D"
+        }
+    ],
+    "relations": [
+        {
+            "text": "Caption Of",
+            "color": "#70DDBA"
+        },
+        {
+            "text": "Definition",
+            "color": "#FFD45D"
+        }
+    ],
+    "users_file": "test/fixtures/users/allowed.txt"
+}

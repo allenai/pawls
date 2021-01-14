@@ -1,0 +1,48 @@
+version: '3'
+services:
+    sonar:
+        build: ./sonar
+        depends_on:
+            - api
+            - ui
+            - proxy
+    api:
+        build:
+          context: ./api
+        volumes:
+            - ./api:/usr/local/src/skiff/app/api
+            - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
+            - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
+        environment:
+            # This ensures that errors are printed as they occur, which
+            # makes debugging easier.
+            - PYTHONUNBUFFERED=1
+            - LOG_LEVEL=DEBUG
+        command: ["main:app", "--host", "0.0.0.0", "--reload"]
+    ui:
+        build: ./ui
+        # We can't mount the entire UI directory, since JavaScript dependencies
+        # (`node_modules`) live at that location.
+        volumes:
+            - ./ui/src:/usr/local/src/skiff/app/ui/src
+            - ./ui/public:/usr/local/src/skiff/app/ui/public
+            - ./ui/package.json:/usr/local/src/skiff/app/ui/package.json
+            - ./ui/tsconfig.json:/usr/local/src/skiff/app/ui/tsconfig.json
+            - ./ui/yarn.lock:/usr/local/src/skiff/app/ui/yarn.lock
+    proxy:
+        build: ./proxy
+        ports:
+            - 8080:80
+        depends_on:
+            - api
+            - ui
+
+    # This service is optional!
+    # It is not used during deployment, but simply runs a grobid service
+    # which the CLI can use for pre-processing PDFs, using grobid to provide
+    # the detailed token information.
+    grobid:
+        image: 'allenai/grobid:0.5.6-pdf-structure'
+        ports:
+            - '8070:8070'
+            - '8071:8071'

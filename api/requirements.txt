@@ -1,0 +1,21 @@
+
+# Skiff logging
+python-json-logger==0.1.10
+
+# Server
+fastapi
+uvicorn
+
+# used for testing/formatting
+pytest
+pytest-env
+flake8
+black==20.8b1
+requests
+
+# used for form parsing
+python-multipart
+
+# Allows us to use FastAPI's FileResponse for serving pdfs.
+aiofiles
+
