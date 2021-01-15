@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Dict
 import csv
 import io
 
@@ -8,11 +8,23 @@ from pdf2image import convert_from_path
 from PIL import Image
 
 from pawls.preprocessors.model import Token, PageInfo, Page
+from pawls.commands.utils import get_pdf_pages_and_sizes
 
 
-def extract_page_tokens(pdf_image: Image, language="eng") -> List[Token]:
+def calculate_image_scale_factor(pdf_size, image_size):
+    pdf_w, pdf_h = pdf_size
+    img_w, img_h = image_size
+    scale_w, scale_h = pdf_w / img_w, pdf_h / img_h
+    return scale_w, scale_h
+
+
+def extract_page_tokens(
+    pdf_image: Image, pdf_size=Tuple[float, float], language="eng"
+) -> List[Dict]:
 
     _data = pytesseract.image_to_data(pdf_image, lang=language)
+
+    scale_w, scale_h = calculate_image_scale_factor(pdf_size, pdf_image.size)
 
     res = pd.read_csv(
         io.StringIO(_data), quoting=csv.QUOTE_NONE, encoding="utf-8", sep="\t"
@@ -47,6 +59,12 @@ def extract_page_tokens(pdf_image: Image, language="eng") -> List[Token]:
             }
         )
         .drop(columns=["score", "id"])
+        .assign(
+            x=lambda df: df.x * scale_w,
+            y=lambda df: df.y * scale_h,
+            width=lambda df: df.width * scale_w,
+            height=lambda df: df.height * scale_h,
+        )
         .apply(lambda row: row.to_dict(), axis=1)
         .tolist()
     )
@@ -57,11 +75,11 @@ def extract_page_tokens(pdf_image: Image, language="eng") -> List[Token]:
 def parse_annotations(pdf_file: str) -> List[Page]:
 
     pdf_images = convert_from_path(pdf_file)
-
+    _, pdf_sizes = get_pdf_pages_and_sizes(pdf_file)
     pages = []
-    for page_index, pdf_image in enumerate(pdf_images):
-        tokens = extract_page_tokens(pdf_image)
-        w, h = pdf_image.size
+    for page_index, (pdf_image, pdf_size) in enumerate(zip(pdf_images, pdf_sizes)):
+        tokens = extract_page_tokens(pdf_image, pdf_size)
+        w, h = pdf_size
         page = dict(
             page=dict(
                 width=w,
