@@ -5,7 +5,6 @@ import io
 import pytesseract
 import pandas as pd
 from pdf2image import convert_from_path
-from PIL import Image
 
 from pawls.preprocessors.model import Token, PageInfo, Page
 from pawls.commands.utils import get_pdf_pages_and_sizes
@@ -19,7 +18,7 @@ def calculate_image_scale_factor(pdf_size, image_size):
 
 
 def extract_page_tokens(
-    pdf_image: Image, pdf_size=Tuple[float, float], language="eng"
+    pdf_image: "PIL.Image", pdf_size=Tuple[float, float], language="eng"
 ) -> List[Dict]:
 
     _data = pytesseract.image_to_data(pdf_image, lang=language)
