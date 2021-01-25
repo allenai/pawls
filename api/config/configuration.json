@@ -26,20 +26,20 @@
             "color": "#D9E4DD"
         },
         {
-            "text": "ListItem",
+            "text": "List",
             "color": "#CEEBFC"
         },
         {
-            "text": "BibItem",
+            "text": "Bibliography",
             "color": "#C6CC82"
-        },
-        {
-            "text": "Default",
-            "color": "#BFBFBF"
         },
         {
             "text": "Equation",
             "color": "#D6D2C4"
+        },
+        {
+            "text": "Algorithm",
+            "color": "#CFD4DF"
         },
         {
             "text": "Figure",
@@ -50,19 +50,19 @@
             "color": "#C7C2EB"
         },
         {
-            "text": "Algorithm",
-            "color": "#CFD4DF"
-        },
-        {
             "text": "Caption",
             "color": "#2F85F7"
+        },
+        {
+            "text": "Header",
+            "color": "#FFB2A7"
         },
         {
             "text": "Footer",
             "color": "#FFB2A7"
         },
         {
-            "text": "Header",
+            "text": "Footnote",
             "color": "#FFB2A7"
         },
         {
