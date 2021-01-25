@@ -11,8 +11,11 @@ The PAWLS CLI helps manage annotation tasks based on PDFs.
     python setup.py install
     ```
 
-2. Install poppler, the PDF renderer, which is used to export the annotations into a COCO-format Dataset by converting the PDF pages to images.
+2. (Optional) Install poppler, the PDF renderer, which is used to export the annotations into a COCO-format Dataset by converting the PDF pages to images.
 Please follow the [instructions here](https://github.com/Belval/pdf2image#windows). 
+
+3. (Optional) Install Tesseract, the OCR software, which is used to perform OCR on scanned documents.
+Please follow the [instructions here](https://tesseract-ocr.github.io/tessdoc/Installation.html).
 
 ### Usage
 
@@ -26,11 +29,14 @@ Please follow the [instructions here](https://github.com/Belval/pdf2image#window
 ```
 By default, pawls will use the name of the containing directory to refer to the pdf in the ui.
 
-2. Process the token information for each PDF document with the given PDF preprocessor `grobid/pdfplumber`. *Note: to use the grobid preprocessor, you need to run `docker-compose up` in a separate shell, because grobid needs to be running as a service.*:
+2. Process the token information for each PDF document with the given PDF preprocessor.
     ```bash
-    pawls preprocess grobid skiff_files/apps/pawls/papers
+    pawls preprocess <preprocessor-name> skiff_files/apps/pawls/papers
     ```
-At this point, you will be able to view a UI by running `docker-compose up` at the root of the repository and navigating to `localhost:8080`.
+    Currently we support the following preprocessors:
+    1. pdfplumber
+    2. grobid *Note: to use the grobid preprocessor, you need to run `docker-compose up` in a separate shell, because grobid needs to be running as a service.*
+    3. ocr *Note: you might need to install [tesseract-ocr](https://tesseract-ocr.github.io/tessdoc/Installation.html) for using this preprocessor.*
 
 3. Assign annotation tasks (<PDF_SHA>s) to specific users <user>:
     ```bash
