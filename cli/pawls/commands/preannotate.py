@@ -115,7 +115,7 @@ def find_token_data(all_token_data: List[Page], index: int) -> Optional[Page]:
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
-@click.argument("config", type=click.File("r"))
+@click.argument("config", type=str)
 @click.argument("pred_file", type=click.Path(file_okay=True))
 @click.option(
     "--annotator",
