@@ -43,7 +43,7 @@ class TestMetric(unittest.TestCase):
         )
         self.NON_TEXTUAL_CATEGORIES = "Figure,Table,ListItem"
 
-    def test_export_annotation_from_all_annotators(self):
+    def test_annotation_metric_from_all_annotators(self):
         runner = CliRunner()
         result = runner.invoke(
             metric,
@@ -58,7 +58,7 @@ class TestMetric(unittest.TestCase):
         )
         assert result.exit_code == 0
 
-    def test_export_annotation_from_specific_annotators(self):
+    def test_annotation_metric_from_specific_annotators(self):
         runner = CliRunner()
         result = runner.invoke(
             metric,
@@ -76,6 +76,24 @@ class TestMetric(unittest.TestCase):
             ],
         )
         assert result.exit_code == 0
+
+    def test_annotation_metric_save(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            result = runner.invoke(
+                metric,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    "--textual-categories",
+                    self.TEXTUAL_CATEGORIES,
+                    "--non-textual-categories",
+                    self.NON_TEXTUAL_CATEGORIES,
+                    "--save",
+                    tempdir,
+                ],
+            )
+            assert result.exit_code == 0
 
 
 if __name__ == "__main__":
