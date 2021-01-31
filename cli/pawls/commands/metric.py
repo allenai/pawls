@@ -35,7 +35,8 @@ def filter_annotation_with_image_ids(coco: COCO, image_ids: Set[int]) -> COCO:
     return coco
 
 
-def print_results(calculation_method_msg, df: pd.DataFrame):
+def print_results(calculation_method_msg, df: pd.DataFrame) -> pd.DataFrame:
+    # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
     cleaned_table = df[sorted(df.columns)].loc[sorted(df.columns)]
     print(calculation_method_msg)
     print("-" * 45)
@@ -157,7 +158,9 @@ class COCOEvaluator:
 
         return coco_results, coco_category_results
 
-    def show_results(self, results: Dict, metric_names: List[str] = None):
+    def show_results(
+        self, results: Dict, metric_names: List[str] = None
+    ) -> pd.DataFrame:
         """Show COCO Eval results for the given metric names.
 
         Args:
@@ -168,6 +171,7 @@ class COCOEvaluator:
                 Metric report of the specified `metric_names` will be displayed.
                 If not set, all metrics in `COCOEvaluator.COCO_METRICS` will be displayed.
         """
+        # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
         if metric_names is None:
             metric_names = self.COCO_METRICS
 
@@ -184,7 +188,9 @@ class COCOEvaluator:
 
         return cleaned_tables
 
-    def show_category_results(self, results: Dict, class_names: List[str] = None):
+    def show_category_results(
+        self, results: Dict, class_names: List[str] = None
+    ) -> pd.DataFrame:
         """Show COCO Eval results for the given class_names.
 
         Args:
@@ -195,6 +201,7 @@ class COCOEvaluator:
                 Metric report of the specified `class_names` will be displayed.
                 If not set, all classes in `self.class_names` will be displayed.
         """
+        # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
         if class_names is None:
             class_names = self.class_names
 
@@ -254,7 +261,7 @@ class TokenEvaluator:
         return table
 
     @staticmethod
-    def show_results(results: Dict):
+    def show_results(results: Dict) -> pd.DataFrame:
 
         df = pd.DataFrame(results)
 
