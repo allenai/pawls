@@ -19,3 +19,6 @@ pdfplumber
 
 # Used for calculating scores 
 pycocotools
+
+# Used for OCR
+pytesseract
