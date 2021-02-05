@@ -67,7 +67,7 @@ def assign(
 
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
-        shas.extend(extra_ids)
+        shas.update(extra_ids)
 
     diff = shas.difference(project_shas)
     if diff:
@@ -86,7 +86,7 @@ def assign(
 
     if sha_file is not None:
         extra_ids = [x.strip("\n") for x in open(sha_file, "r")]
-        shas.extend(extra_ids)
+        shas.update(extra_ids)
 
     result = re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", annotator)
 
