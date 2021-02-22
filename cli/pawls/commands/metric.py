@@ -12,6 +12,7 @@ import numpy as np
 from tabulate import tabulate
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+from sklearn.metrics import classification_report
 
 from pawls.commands.export import export
 
@@ -218,12 +219,12 @@ class COCOEvaluator:
             )
             cleaned_tables[class_name] = cleaned_table
 
-        return cleaned_table
 
 
 class TokenEvaluator:
 
     PDF_FEATURES_IN_SAVED_TABLES = ["pdf", "page_index", "index", "text"]
+    DUMMY_CATEGORY_NAME = "NO-LABEL"
 
     def __init__(self, token_save_path: str):
 
@@ -242,7 +243,21 @@ class TokenEvaluator:
 
         return acc
 
-    def calculate_token_accuracy(self):
+    def create_categorical_report(
+        self, annotator_gt: str, annotator_pred: str, table_per_category: dict
+    ):
+        gt = self.df[annotator_gt].fillna("").values
+        pred = self.df[annotator_pred].fillna("").values
+        labels= list(table_per_category.keys()) 
+
+        report = classification_report(gt, pred, labels= labels + [""], 
+                                       output_dict=True, zero_division=0)
+
+        for cat_name, table in table_per_category.items():
+            table[annotator_gt][annotator_pred] = report[cat_name]['f1-score']
+
+
+    def calculate_token_accuracy(self, categories: List=None):
         table = defaultdict(dict)
 
         for i, annotator_gt in enumerate(self.annotators):
@@ -257,8 +272,19 @@ class TokenEvaluator:
                 ] = self.calculate_scores_for_two_annotators(
                     annotator_gt, annotator_pred
                 )
+        
+        if categories is None:
+            return table
 
-        return table
+        table_per_category = {cat_name: defaultdict(dict) for cat_name in categories}
+
+        for i, annotator_gt in enumerate(self.annotators):
+            for j, annotator_pred in enumerate(self.annotators):
+                self.create_categorical_report(
+                    annotator_gt, annotator_pred, table_per_category
+                )
+
+        return table, table_per_category
 
     @staticmethod
     def show_results(results: Dict) -> pd.DataFrame:
@@ -274,6 +300,16 @@ class TokenEvaluator:
 
         return cleaned_table
 
+    @staticmethod
+    def show_category_results(token_category_results: Dict) -> pd.DataFrame:
+
+        for cat_name, results in token_category_results.items():
+            df = pd.DataFrame(results)
+            calculation_method_msg = (
+                f"We compute the category-level f1-scores for the category {cat_name}"
+            )
+
+            cleaned_table = print_results(calculation_method_msg, df)
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
@@ -394,9 +430,16 @@ def metric(
             )
 
             token_eval = TokenEvaluator(tempdir)
-            token_results = token_eval.calculate_token_accuracy()
 
-            save_table = token_eval.show_results(token_results)
+            if verbose:
+                # As calculating the classification report is slow, we only 
+                # do this if user specifies the verbose mode.
+                token_results, token_category_results = token_eval.calculate_token_accuracy(textual_categories)
+                save_table = token_eval.show_results(token_results)
+                token_eval.show_category_results(token_category_results)
+            else:
+                token_results = token_eval.calculate_token_accuracy()
+                save_table = token_eval.show_results(token_results)
 
             if save is not None:
                 save_table.to_csv(f"{save}/textual-eval.csv")
