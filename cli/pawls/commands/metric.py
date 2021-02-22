@@ -64,7 +64,7 @@ class PythonLiteralOption(click.Option):
 
     def type_cast_value(self, ctx, value):
         try:
-            return [ele.strip() for ele in value.split(",")]
+            return [ele.strip() for ele in value.split(",")] if value else []
         except:
             raise click.BadParameter(value)
 
@@ -220,7 +220,6 @@ class COCOEvaluator:
             cleaned_tables[class_name] = cleaned_table
 
 
-
 class TokenEvaluator:
 
     PDF_FEATURES_IN_SAVED_TABLES = ["pdf", "page_index", "index", "text"]
@@ -238,7 +237,11 @@ class TokenEvaluator:
         self, annotator_gt: str, annotator_pred: str
     ):
 
-        cur_df = self.df[[annotator_gt, annotator_pred]].dropna(subset=[annotator_gt]).fillna(-1)
+        cur_df = (
+            self.df[[annotator_gt, annotator_pred]]
+            .dropna(subset=[annotator_gt])
+            .fillna(-1)
+        )
         acc = (cur_df[annotator_gt] == cur_df[annotator_pred]).mean()
 
         return acc
@@ -248,31 +251,30 @@ class TokenEvaluator:
     ):
         gt = self.df[annotator_gt].fillna("").values
         pred = self.df[annotator_pred].fillna("").values
-        labels= list(table_per_category.keys()) 
+        labels = list(table_per_category.keys())
 
-        report = classification_report(gt, pred, labels= labels + [""], 
-                                       output_dict=True, zero_division=0)
+        report = classification_report(
+            gt, pred, labels=labels + [""], output_dict=True, zero_division=0
+        )
 
         for cat_name, table in table_per_category.items():
-            table[annotator_gt][annotator_pred] = report[cat_name]['f1-score']
+            table[annotator_gt][annotator_pred] = report[cat_name]["f1-score"]
 
-
-    def calculate_token_accuracy(self, categories: List=None):
+    def calculate_token_accuracy(self, categories: List = None):
         table = defaultdict(dict)
 
         for i, annotator_gt in enumerate(self.annotators):
             for j, annotator_pred in enumerate(self.annotators):
 
-                if j <= i:  # Skip the diagonal
+                if i == j:
                     continue
-
                 # The token_acc table is symmetric
-                table[annotator_pred][annotator_gt] = table[annotator_gt][
+                table[annotator_gt][
                     annotator_pred
                 ] = self.calculate_scores_for_two_annotators(
                     annotator_gt, annotator_pred
                 )
-        
+
         if categories is None:
             return table
 
@@ -280,6 +282,8 @@ class TokenEvaluator:
 
         for i, annotator_gt in enumerate(self.annotators):
             for j, annotator_pred in enumerate(self.annotators):
+                if i == j:
+                    continue
                 self.create_categorical_report(
                     annotator_gt, annotator_pred, table_per_category
                 )
@@ -310,6 +314,7 @@ class TokenEvaluator:
             )
 
             cleaned_table = print_results(calculation_method_msg, df)
+
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("path", type=click.Path(exists=True, file_okay=False))
@@ -353,8 +358,8 @@ def metric(
     path: click.Path,
     config: str,
     annotator: List,
-    textual_categories: List,
-    non_textual_categories: List,
+    textual_categories: List = [],
+    non_textual_categories: List = [],
     include_unfinished: bool = False,
     verbose: bool = False,
     save: click.Path = None,
@@ -432,9 +437,12 @@ def metric(
             token_eval = TokenEvaluator(tempdir)
 
             if verbose:
-                # As calculating the classification report is slow, we only 
+                # As calculating the classification report is slow, we only
                 # do this if user specifies the verbose mode.
-                token_results, token_category_results = token_eval.calculate_token_accuracy(textual_categories)
+                (
+                    token_results,
+                    token_category_results,
+                ) = token_eval.calculate_token_accuracy(textual_categories)
                 save_table = token_eval.show_results(token_results)
                 token_eval.show_category_results(token_category_results)
             else:
