@@ -384,7 +384,9 @@ def export(
     if len(categories) == 0:
         categories = config.categories
         print(f"Export annotations from all available categories {categories}")
-
+    else:
+        print(f"Export annotations from the following categories {categories}")
+        
     if format == "coco":
 
         coco_builder = COCOBuilder(categories, output)
