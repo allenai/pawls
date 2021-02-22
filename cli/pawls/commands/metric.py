@@ -238,7 +238,7 @@ class TokenEvaluator:
         self, annotator_gt: str, annotator_pred: str
     ):
 
-        cur_df = self.df[[annotator_gt, annotator_pred]].fillna(-1)
+        cur_df = self.df[[annotator_gt, annotator_pred]].dropna(subset=[annotator_gt]).fillna(-1)
         acc = (cur_df[annotator_gt] == cur_df[annotator_pred]).mean()
 
         return acc
