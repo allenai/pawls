@@ -8,6 +8,7 @@ import glob
 
 from pawls.preprocessors.grobid import process_grobid
 from pawls.preprocessors.pdfplumber import process_pdfplumber
+from pawls.preprocessors.tesseract import process_tesseract
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
@@ -24,7 +25,8 @@ def preprocess(preprocessor: str, path: click.Path):
         `pawls preprocess grobid ./`
     """
     print(f"Processing using the {preprocessor} preprocessor...")
-
+    if preprocessor == "ocr":
+        print("The ocr preprocessor may take several minutes to process each PDF.")
     if os.path.isdir(path):
         in_glob = os.path.join(path, "*/*.pdf")
         pdfs = glob.glob(in_glob)
@@ -43,6 +45,9 @@ def preprocess(preprocessor: str, path: click.Path):
             data = process_grobid(str(path))
         elif preprocessor == "pdfplumber":
             data = process_pdfplumber(str(path))
+        elif preprocessor == "ocr":
+            # Currently there's only a OCR preprocessor. 
+            data = process_tesseract(str(path))
         with open(path.parent / "pdf_structure.json", "w+") as f:
 
             json.dump(data, f)

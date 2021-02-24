@@ -1,7 +1,10 @@
 <div align="center">
     <img src="./ui/src/components/sidebar/pawlsLogo.png" width="400"/>
+
+[Demo Server](https://pawls.apps.allenai.org) | [Video Tutorial](https://www.youtube.com/watch?v=TB4kzh2H9og) | [Paper](https://arxiv.org/pdf/2101.10281v1.pdf)
 </div>
 
+------------------------------------------------
   PDF Annotations with Labels and Structure is software that makes it easy
   to collect a series of annotations associated with a PDF document. It was written
   specifically for annotating academic papers within the [Semantic Scholar](https://www.semanticscholar.org) corpus, but can be used with any collection of PDF documents.
@@ -164,5 +167,21 @@ location /docs/ {
     proxy_pass http://api:8000/;
 }
 ```
+
+### Cite PAWLS
+
+If you find PAWLS helpful for your research, please consider cite PAWLS. 
+```
+@misc{neumann2021pawls,
+      title={PAWLS: PDF Annotation With Labels and Structure}, 
+      author={Mark Neumann and Zejiang Shen and Sam Skjonsberg},
+      year={2021},
+      eprint={2101.10281},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+```
+
+---
 
 PAWLS is an open-source project developed by [the Allen Institute for Artificial Intelligence (AI2)](http://www.allenai.org). AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
