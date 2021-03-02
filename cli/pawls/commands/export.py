@@ -15,6 +15,7 @@ from pawls.commands.utils import (
     AnnotationFolder,
     AnnotationFiles,
 )
+from pawls.preprocessors.model import *
 
 ALL_SUPPORTED_EXPORT_TYPE = ["coco", "token"]
 
@@ -22,6 +23,23 @@ ALL_SUPPORTED_EXPORT_TYPE = ["coco", "token"]
 def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
     x1, y1, x2, y2 = bounds["left"], bounds["top"], bounds["right"], bounds["bottom"]
     return x1, y1, x2 - x1, y2 - y1
+
+
+def find_tokens_in_anno_block(
+    anno: Dict, page_token_data: List[Page]
+) -> List[Tuple[int, int]]:
+    """Given the annotated block, and page tokens, search for tokens within that block.
+    Used for searching text from free-form annotations.
+    TODO: This function ideally should be done in the UI rather than the cli. We need to
+    update this function in the future. 
+
+    Returns:
+        List[Tuple[int, int]]: [description]
+    """
+    tokens = page_token_data[anno["page"]].filter_tokens_by(
+        Block.from_annotation(anno), soft_margin=dict(left=2, top=2, bottom=2, right=2)
+    )
+    return [(anno["page"], tid) for tid in tokens.keys()]
 
 
 class COCOBuilder:
@@ -223,12 +241,13 @@ class TokenTableBuilder:
 
     def create_paper_data(self, annotation_folder: AnnotationFolder):
 
+        all_page_token_df = {}
         all_page_token_data = {}
+
         for pdf in annotation_folder.all_pdfs:
             all_page_tokens = annotation_folder.get_pdf_tokens(pdf)
-
             # Get page token data
-            page_token_data = []
+            page_token_dfs = []
             for page_tokens in all_page_tokens:
                 token_data = [
                     (page_tokens.page.index, idx, token.text)
@@ -236,49 +255,61 @@ class TokenTableBuilder:
                 ]
                 df = pd.DataFrame(token_data, columns=["page_index", "index", "text"])
                 df = df.set_index(["page_index", "index"])
-                page_token_data.append(df)
-            page_token_data = pd.concat(page_token_data)
+                page_token_dfs.append(df)
 
-            all_page_token_data[get_pdf_sha(pdf)] = page_token_data
+            page_token_dfs = pd.concat(page_token_dfs)
 
+            all_page_token_df[get_pdf_sha(pdf)] = page_token_dfs
+            all_page_token_data[get_pdf_sha(pdf)] = all_page_tokens
+
+        self.all_page_token_df = all_page_token_df
         self.all_page_token_data = all_page_token_data
 
     def create_annotation_for_annotator(self, anno_files: AnnotationFiles) -> None:
 
         # Firstly initialize the annotation tables with the annotator name
         annotator = anno_files.annotator
-        for token_data in self.all_page_token_data.values():
+        for token_data in self.all_page_token_df.values():
             token_data[annotator] = None
 
         pbar = tqdm(anno_files)
 
         for anno_file in pbar:
             paper_sha = anno_file["paper_sha"]
-            df = self.all_page_token_data[paper_sha]
+            df = self.all_page_token_df[paper_sha]
+            page_token_data = self.all_page_token_data[paper_sha]
 
             pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
             for anno in pawls_annotations:
-                if anno["tokens"] is None:
-                    continue
 
                 # Skip if current category is not in the specified categories
                 label = anno["label"]["text"]
                 if label not in self.categories:
                     continue
 
-                anno_token_indices = [
-                    (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
-                ]
+                # Try to find the tokens if they are in free-form annotation mode
+                if anno["tokens"] is None:
+                    anno_token_indices = find_tokens_in_anno_block(
+                        anno, page_token_data
+                    )
+
+                    if len(anno_token_indices) == 0:
+                        continue
+
+                else:
+                    anno_token_indices = [
+                        (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
+                    ]
 
                 df.loc[anno_token_indices, annotator] = label
 
     def export(self):
 
-        for pdf, df in self.all_page_token_data.items():
+        for pdf, df in self.all_page_token_df.items():
             df["pdf"] = pdf
 
         df = (
-            pd.concat(self.all_page_token_data.values())
+            pd.concat(self.all_page_token_df.values())
             .reset_index()
             .set_index(["pdf", "page_index", "index"])
         )
@@ -355,7 +386,9 @@ def export(
     if len(categories) == 0:
         categories = config.categories
         print(f"Export annotations from all available categories {categories}")
-
+    else:
+        print(f"Export annotations from the following categories {categories}")
+        
     if format == "coco":
 
         coco_builder = COCOBuilder(categories, output)
