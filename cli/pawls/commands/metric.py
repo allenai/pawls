@@ -234,23 +234,23 @@ class TokenEvaluator:
         # Assuming all users are stored in email address
 
     def calculate_scores_for_two_annotators(
-        self, annotator_gt: str, annotator_pred: str
+        self, ground_truth: str, predictions: str
     ):
 
         cur_df = (
-            self.df[[annotator_gt, annotator_pred]]
-            .dropna(subset=[annotator_gt])
+            self.df[[ground_truth, predictions]]
+            .dropna(subset=[ground_truth])
             .fillna(-1)
         )
-        acc = (cur_df[annotator_gt] == cur_df[annotator_pred]).mean()
+        acc = (cur_df[ground_truth] == cur_df[predictions]).mean()
 
         return acc
 
     def create_categorical_report(
-        self, annotator_gt: str, annotator_pred: str, table_per_category: dict
+        self, ground_truth: str, predictions: str, table_per_category: dict
     ):
-        gt = self.df[annotator_gt].fillna("").values
-        pred = self.df[annotator_pred].fillna("").values
+        gt = self.df[ground_truth].fillna("").values
+        pred = self.df[predictions].fillna("").values
         labels = list(table_per_category.keys())
 
         report = classification_report(
@@ -258,21 +258,21 @@ class TokenEvaluator:
         )
 
         for cat_name, table in table_per_category.items():
-            table[annotator_gt][annotator_pred] = report[cat_name]["f1-score"]
+            table[ground_truth][predictions] = report[cat_name]["f1-score"]
 
     def calculate_token_accuracy(self, categories: List = None):
         table = defaultdict(dict)
 
-        for i, annotator_gt in enumerate(self.annotators):
-            for j, annotator_pred in enumerate(self.annotators):
+        for i, ground_truth in enumerate(self.annotators):
+            for j, predictions in enumerate(self.annotators):
 
                 if i == j:
                     continue
                 # The token_acc table is symmetric
-                table[annotator_gt][
-                    annotator_pred
+                table[ground_truth][
+                    predictions
                 ] = self.calculate_scores_for_two_annotators(
-                    annotator_gt, annotator_pred
+                    ground_truth, predictions
                 )
 
         if categories is None:
@@ -280,12 +280,12 @@ class TokenEvaluator:
 
         table_per_category = {cat_name: defaultdict(dict) for cat_name in categories}
 
-        for i, annotator_gt in enumerate(self.annotators):
-            for j, annotator_pred in enumerate(self.annotators):
+        for i, ground_truth in enumerate(self.annotators):
+            for j, predictions in enumerate(self.annotators):
                 if i == j:
                     continue
                 self.create_categorical_report(
-                    annotator_gt, annotator_pred, table_per_category
+                    ground_truth, predictions, table_per_category
                 )
 
         return table, table_per_category

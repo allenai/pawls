@@ -25,17 +25,19 @@ def _convert_bounds_to_coco_bbox(bounds: Dict[str, Union[int, float]]):
     return x1, y1, x2 - x1, y2 - y1
 
 
-def try_find_tokens_in_anno_block(
+def find_tokens_in_anno_block(
     anno: Dict, page_token_data: List[Page]
 ) -> List[Tuple[int, int]]:
     """Given the annotated block, and page tokens, search for tokens within that block.
     Used for searching text from free-form annotations.
+    TODO: This function ideally should be done in the UI rather than the cli. We need to
+    update this function in the future. 
 
     Returns:
         List[Tuple[int, int]]: [description]
     """
     tokens = page_token_data[anno["page"]].filter_tokens_by(
-        Block.from_anno(anno), soft_margin=dict(left=2, top=2, bottom=2, right=2)
+        Block.from_annotation(anno), soft_margin=dict(left=2, top=2, bottom=2, right=2)
     )
     return [(anno["page"], tid) for tid in tokens.keys()]
 
@@ -287,7 +289,7 @@ class TokenTableBuilder:
 
                 # Try to find the tokens if they are in free-form annotation mode
                 if anno["tokens"] is None:
-                    anno_token_indices = try_find_tokens_in_anno_block(
+                    anno_token_indices = find_tokens_in_anno_block(
                         anno, page_token_data
                     )
 

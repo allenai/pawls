@@ -128,7 +128,7 @@ class Block(Box):
     label: str
 
     @classmethod
-    def from_anno(cls, anno) -> "Box":
+    def from_annotation(cls, anno) -> "Box":
         """Create a box based on the given annotation."""
         bounds = anno["bounds"]
         return cls(
