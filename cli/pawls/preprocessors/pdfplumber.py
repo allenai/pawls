@@ -68,7 +68,9 @@ class PDFPlumberTokenExtractor:
             vertical_ttb=True,
             extra_attrs=["fontname", "size"],
         )
-
+        if len(words) == 0:
+            return []
+            
         df = pd.DataFrame(words)
 
         # Avoid boxes outside the page
