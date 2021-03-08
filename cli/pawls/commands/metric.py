@@ -336,6 +336,12 @@ class TokenEvaluator:
     help="The annotations of non-textual categories will be evaluated based on AP scores based on box overlapping.",
 )
 @click.option(
+    "--pdf-shas",
+    multiple=True,
+    default=[],
+    help="Specify only exporting the selected PDF shas.",
+)
+@click.option(
     "--include-unfinished",
     "-i",
     is_flag=True,
@@ -360,6 +366,7 @@ def metric(
     annotator: List,
     textual_categories: List = [],
     non_textual_categories: List = [],
+    pdf_shas: List = [],
     include_unfinished: bool = False,
     verbose: bool = False,
     save: click.Path = None,
@@ -396,6 +403,7 @@ def metric(
         format=format,
         annotator=annotator,
         categories=categories,
+        pdf_shas=pdf_shas,
         include_unfinished=include_unfinished,
         export_images=False,
     )

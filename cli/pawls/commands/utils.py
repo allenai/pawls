@@ -65,14 +65,28 @@ class LabelingConfiguration:
 class AnnotationFolder:
     DEFAULT_PDF_STRUCTURE_NAME = "pdf_structure.json"
 
-    def __init__(self, path, pdf_structure_name=None):
+    def __init__(self, path:str, pdf_structure_name:str=None, pdf_shas: List[str] = None):
+        """
+        Args:
+            path (str): path to the annotation folder.
+            pdf_structure_name (str, optional):
+                The name of the pdf_token file name for each pdf file.
+                Defaults to pdf_structure.json.
+            pdf_shas (List[str], optional):
+                Only find pdf annotation from the given list of pdf_shas.
+                Defaults to None.
+        """
 
         self.path = path
         self.pdf_structure_name = pdf_structure_name or self.DEFAULT_PDF_STRUCTURE_NAME
-        
+
         self.all_pdf_paths = [pdf_path for pdf_path in glob(f"{self.path}/*/*.pdf")]
+        if pdf_shas is not None:
+            self.all_pdf_paths = [
+                ele for ele in self.all_pdf_paths if ele.split("/")[-2] in pdf_shas
+            ]
         self.all_pdfs = [os.path.basename(pdf_path) for pdf_path in self.all_pdf_paths]
-        
+
     @property
     def all_annotators(self) -> List[str]:
         """Fetch all annotators in the labeling folder,
@@ -186,7 +200,11 @@ class AnnotationFile:
 
 class AnnotationFiles:
     def __init__(
-        self, labeling_folder: str, annotator: str, include_unfinished: bool = True
+        self,
+        labeling_folder: str,
+        annotator: str,
+        include_unfinished: bool = True,
+        pdf_shas: List[str] = None,
     ):
         """AnnotationFiles is an iterator for selected annotation files
         given the selected annotators and configurations.
@@ -202,21 +220,34 @@ class AnnotationFiles:
             include_unfinished (bool, optional):
                 Whether output unfinished annotations of the given user.
                 Defaults to True.
+            pdf_shas (List[str], optional):
+                Only find pdf annotation from the given list of pdf_shas.
+                Defaults to None.
         """
         self.labeling_folder = labeling_folder
 
         self.annotator = annotator
         self.include_unfinished = include_unfinished
 
-        if self.include_unfinished:
-            self._files = self.get_all_annotation_files()
+        if pdf_shas is not None:
+            self._files = self.get_annotation_files_from_pdf_shas(pdf_shas)
         else:
-            self._files = self.get_finished_annotation_files()
+            if self.include_unfinished:
+                self._files = self.get_all_annotation_files()
+            else:
+                self._files = self.get_finished_annotation_files()
 
     def get_all_annotation_files(self) -> List[str]:
         return glob(
             os.path.join(f"{self.labeling_folder}/*/{self.annotator}_annotations.json")
         )
+
+    def get_annotation_files_from_pdf_shas(self, pdf_shas: List) -> List[str]:
+        return [
+            file
+            for file in self.get_all_annotation_files()
+            if file.split("/")[-2] in pdf_shas
+        ]
 
     def get_finished_annotation_files(self) -> List[str]:
 
@@ -238,11 +269,11 @@ class AnnotationFiles:
     def __iter__(self) -> Iterable[Dict]:
 
         for _file in self._files:
-            paper_sha = _file.split("/")[-2]
-            pdf_path = f"{self.labeling_folder}/{paper_sha}/{paper_sha}.pdf"
+            pdf_sha = _file.split("/")[-2]
+            pdf_path = f"{self.labeling_folder}/{pdf_sha}/{pdf_sha}.pdf"
 
             yield dict(
-                paper_sha=paper_sha,
+                paper_sha=pdf_sha,
                 pdf_path=pdf_path,
                 annotation_path=_file,
             )

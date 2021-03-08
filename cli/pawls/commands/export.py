@@ -336,6 +336,12 @@ class TokenTableBuilder:
     help="Export specified categories in the annotations.",
 )
 @click.option(
+    "--pdf-shas",
+    multiple=True,
+    default=[],
+    help="Specify only exporting the selected PDF shas.",
+)
+@click.option(
     "--include-unfinished",
     "-i",
     is_flag=True,
@@ -353,6 +359,7 @@ def export(
     format: str,
     annotator: List,
     categories: List,
+    pdf_shas: List,
     include_unfinished: bool = False,
     export_images: bool = True,
 ):
@@ -374,8 +381,13 @@ def export(
     ), f"Invalid export format {format}. Should be one of {ALL_SUPPORTED_EXPORT_TYPE}."
     print(f"Export the annotations to the {format} format.")
 
+    if len(pdf_shas) != 0:
+        print(f"Export annotations from the following PDFs {pdf_shas}")
+    else:
+        pdf_shas = None
+
     config = LabelingConfiguration(config)
-    annotation_folder = AnnotationFolder(path)
+    annotation_folder = AnnotationFolder(path, pdf_shas=pdf_shas)
 
     if len(annotator) == 0:
         all_annotators = annotation_folder.all_annotators
@@ -388,7 +400,7 @@ def export(
         print(f"Export annotations from all available categories {categories}")
     else:
         print(f"Export annotations from the following categories {categories}")
-        
+
     if format == "coco":
 
         coco_builder = COCOBuilder(categories, output)
@@ -398,7 +410,7 @@ def export(
         for annotator in all_annotators:
             print(f"Export annotations from annotators {annotator}")
 
-            anno_files = AnnotationFiles(path, annotator, include_unfinished)
+            anno_files = AnnotationFiles(path, annotator, include_unfinished, pdf_shas)
 
             coco_builder.build_annotations(anno_files)
 
@@ -418,7 +430,7 @@ def export(
         for annotator in all_annotators:
 
             # print(f"Export annotations from annotators {annotator}")
-            anno_files = AnnotationFiles(path, annotator, include_unfinished)
+            anno_files = AnnotationFiles(path, annotator, include_unfinished, pdf_shas)
             token_builder.create_annotation_for_annotator(anno_files)
 
         df = token_builder.export()
