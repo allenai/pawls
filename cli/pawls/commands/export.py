@@ -250,10 +250,10 @@ class TokenTableBuilder:
             page_token_dfs = []
             for page_tokens in all_page_tokens:
                 token_data = [
-                    (page_tokens.page.index, idx, token.text)
+                    (page_tokens.page.index, idx, token.text, *token.coordinates)
                     for idx, token in enumerate(page_tokens.tokens)
                 ]
-                df = pd.DataFrame(token_data, columns=["page_index", "index", "text"])
+                df = pd.DataFrame(token_data, columns=["page_index", "index", "text", "x1", "y1", "x2", "y2"])
                 df = df.set_index(["page_index", "index"])
                 page_token_dfs.append(df)
 
