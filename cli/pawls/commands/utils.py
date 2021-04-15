@@ -97,7 +97,7 @@ class AnnotationFolder:
             os.path.splitext(e)[0] for e in os.listdir(f"{self.path}/status")
         ]
 
-    def get_pdf_tokens(self, pdf_name: str) -> str:
+    def get_pdf_tokens(self, pdf_name: str) -> List["Page"]:
         """Get the pdf tokens for a pdf name by loading from the corresponding pdf_structure file.
 
         Args:
