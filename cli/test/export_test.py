@@ -157,7 +157,35 @@ class TestExportCOCO(unittest.TestCase):
             anno = _load_json(os.path.join(tempdir, f"{self.USERS[0]}.json"))
 
             assert len(anno["categories"]) == 1
-            assert anno["categories"][0]['name'] == self.TEST_SELECTED_CATEGORY
+            assert anno["categories"][0]["name"] == self.TEST_SELECTED_CATEGORY
+
+    def test_export_annotation_with_specific_pdf_shas(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            result = runner.invoke(
+                export,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    tempdir,
+                    "coco",
+                    "-u",
+                    self.USERS[0],
+                    "-c",
+                    self.TEST_SELECTED_CATEGORY,
+                    "--pdf-shas",
+                    self.PDF_SHAS[0],
+                    "--pdf-shas",
+                    self.PDF_SHAS[1],
+                ],
+            )
+            assert result.exit_code == 0
+
+            anno = _load_json(os.path.join(tempdir, f"{self.USERS[0]}.json"))
+            paper_shas = [ele["paper_sha"] for ele in anno["papers"]]
+            assert len(paper_shas) == 2
+            assert self.PDF_SHAS[2] not in paper_shas
+
 
 class TestExportToken(TestExportCOCO):
     def test_export_annotation_from_all_annotators(self):
@@ -197,9 +225,9 @@ class TestExportToken(TestExportCOCO):
             df = pd.read_csv(saved_path)
             for annotator in self.USERS:
                 assert annotator in df.columns
-    
+
     def test_export_annotation_with_specific_category(self):
-        
+
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tempdir:
             saved_path = f"{tempdir}/annotations.csv"
@@ -213,16 +241,47 @@ class TestExportToken(TestExportCOCO):
                     "-u",
                     self.USERS[0],
                     "-c",
-                    self.TEST_SELECTED_CATEGORY
-                ]
+                    self.TEST_SELECTED_CATEGORY,
+                ],
             )
             assert result.exit_code == 0
 
             df = pd.read_csv(saved_path)
-            
+
             all_exported_labels = df[self.USERS[0]].dropna().unique()
             assert len(all_exported_labels) == 1
-            assert self.TEST_SELECTED_CATEGORY in all_exported_labels[0] 
+            assert self.TEST_SELECTED_CATEGORY in all_exported_labels[0]
+
+    def test_export_annotation_with_specific_pdf_shas(self):
+
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tempdir:
+            saved_path = f"{tempdir}/annotations.csv"
+            result = runner.invoke(
+                export,
+                [
+                    self.TEST_ANNO_DIR,
+                    self.TEST_CONFIG_FILE,
+                    saved_path,
+                    "token",
+                    "-u",
+                    self.USERS[0],
+                    "-c",
+                    self.TEST_SELECTED_CATEGORY,
+                    "--pdf-shas",
+                    self.PDF_SHAS[0],
+                    "--pdf-shas",
+                    self.PDF_SHAS[1],
+                ],
+            )
+            assert result.exit_code == 0
+
+            df = pd.read_csv(saved_path)
+
+            unique_pdf_shas = df["pdf"].unique()
+            assert len(unique_pdf_shas) == 2
+            assert self.PDF_SHAS[2] not in unique_pdf_shas
+
 
 if __name__ == "__main__":
     unittest.main()
