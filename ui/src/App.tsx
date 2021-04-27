@@ -10,43 +10,42 @@
 
 import React, { useEffect, useState } from 'react';
 import { createGlobalStyle } from 'styled-components';
-import { Spin } from "@allenai/varnish";
-import { BrowserRouter, Route, Redirect} from 'react-router-dom';
+import { Spin } from '@allenai/varnish';
+import { BrowserRouter, Route, Redirect } from 'react-router-dom';
 
 import { PDFPage } from './pages';
-import { CenterOnPage } from "./components"
-import { getAllocatedPaperStatus } from "./api"
-
+import { CenterOnPage } from './components';
+import { getAllocatedPaperStatus } from './api';
 
 const RedirectToFirstPaper = () => {
     const [sha, setSha] = useState<string>();
     useEffect(() => {
         getAllocatedPaperStatus().then((allocation) => {
-            const first = allocation.papers[0]
-            setSha(first.sha)
-        })
-    },[])
+            const first = allocation.papers[0];
+            setSha(first.sha);
+        });
+    }, []);
 
-    return sha ? <Redirect to={`/pdf/${sha}`} /> : (
+    return sha ? (
+        <Redirect to={`/pdf/${sha}`} />
+    ) : (
         <CenterOnPage>
-            <Spin size="large"/>
+            <Spin size="large" />
         </CenterOnPage>
-    )
-}
-
+    );
+};
 
 const App = () => {
     return (
         <>
             <BrowserRouter>
-                <Route path="/" exact component={RedirectToFirstPaper}/>
+                <Route path="/" exact component={RedirectToFirstPaper} />
                 <Route path="/pdf/:sha" component={PDFPage} />
             </BrowserRouter>
             <GlobalStyles />
         </>
-        )
-    };
-
+    );
+};
 
 // Setup the viewport so it takes up all available real-estate.
 const GlobalStyles = createGlobalStyle`

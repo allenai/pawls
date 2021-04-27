@@ -1,12 +1,12 @@
-
-import styled from "styled-components"
+import styled from 'styled-components';
 import { Link, Button } from '@allenai/varnish';
 
 interface HasWidth {
     width: string;
 }
 
-export const SidebarContainer = styled.div<HasWidth>(({ theme, width }) => `
+export const SidebarContainer = styled.div<HasWidth>(
+    ({ theme, width }) => `
     width: ${width};
     position: fixed;
     left: 0;
@@ -18,10 +18,11 @@ export const SidebarContainer = styled.div<HasWidth>(({ theme, width }) => `
     * {
         color: ${theme.color.N2};
     }
-`);
+`
+);
 
-
-export const SidebarItem = styled.div(({ theme }) => `
+export const SidebarItem = styled.div(
+    ({ theme }) => `
     min-height: 200px;
     max-height: 400px;
     overflow-y: scroll;
@@ -30,26 +31,28 @@ export const SidebarItem = styled.div(({ theme }) => `
     padding: ${theme.spacing.xxs} ${theme.spacing.sm};
     border-radius: 5px;
 
-`);
-
+`
+);
 
 // text-transform is necessary because h5 is all caps in antd/varnish.
-export const SidebarItemTitle = styled.h5(({ theme }) => `
+export const SidebarItemTitle = styled.h5(
+    ({ theme }) => `
     margin: ${theme.spacing.xs} 0;
     text-transform: capitalize;
     padding-bottom: ${theme.spacing.xs};
     border-bottom: 2px solid ${theme.color.N8};
-`);
+`
+);
 
 export const Contrast = styled.div`
-  a[href] {
-    ${Link.contrastLinkColorStyles()};
-  }
-  line-height: 1;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+    a[href] {
+        ${Link.contrastLinkColorStyles()};
+    }
+    line-height: 1;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 `;
 
 export const SmallButton = styled(Button)`
@@ -57,4 +60,4 @@ export const SmallButton = styled(Button)`
     height: auto;
     font-size: 0.85rem;
     margin-left: 10px;
-`
+`;
