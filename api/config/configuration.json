@@ -2,92 +2,60 @@
     "output_directory": "/skiff_files/apps/pawls/ai2-test-set/",
     "labels": [
         {
-            "text": "Title",
-            "color": "#70DDBA"
+            "text": "equation",
+            "color": "#ff0000"
         },
         {
-            "text": "Author",
-            "color": "#B8DE6F"
+            "text": "paragraph",
+            "color": "#b0c4de"
         },
         {
-            "text": "Abstract",
-            "color": "#A8DDA8"
+            "text": "abstract",
+            "color": "#ffb6c1"
         },
         {
-            "text": "Keywords",
-            "color": "#64ED96"
+            "text": "author",
+            "color": "#02028b"
         },
         {
-            "text": "Section",
-            "color": "#FFDA77"
+            "text": "caption",
+            "color": "#00ff03"
         },
         {
-            "text": "Paragraph",
-            "color": "#D9E4DD"
+            "text": "date",
+            "color": "#0f0000"
         },
         {
-            "text": "List",
-            "color": "#CEEBFC"
+            "text": "figure",
+            "color": "#ff01ff"
         },
         {
-            "text": "Bibliography",
-            "color": "#C6CC82"
+            "text": "footer",
+            "color": "#C2C2C2"
         },
         {
-            "text": "Equation",
-            "color": "#D6D2C4"
+            "text": "list",
+            "color": "#302070"
         },
         {
-            "text": "Algorithm",
-            "color": "#CFD4DF"
+            "text": "text",
+            "color": "#b0c4de"
         },
         {
-            "text": "Figure",
-            "color": "#EFDDF5"
+            "text": "reference",
+            "color": "#309000"
         },
         {
-            "text": "Table",
-            "color": "#C7C2EB"
+            "text": "section",
+            "color": "#0603ff"
         },
         {
-            "text": "Caption",
-            "color": "#2F85F7"
+            "text": "table",
+            "color": "#01ffff"
         },
         {
-            "text": "Header",
-            "color": "#FFB2A7"
-        },
-        {
-            "text": "Footer",
-            "color": "#FFB2A7"
-        },
-        {
-            "text": "Footnote",
-            "color": "#FFB2A7"
-        },
-        {
-            "text": "NotThisPaper",
-            "color": "#BFBFBF"
-        },
-        {
-            "text": "Author/Name",
-            "color": "#F5A25D"
-        },
-        {
-            "text": "Author/Affiliation",
-            "color": "#28ABB9"
-        },
-        {
-            "text": "Author/Email",
-            "color": "#706897"
-        },
-        {
-            "text": "Paper/Venue",
-            "color": "#00D1FF"
-        },
-        {
-            "text": "Paper/DOI",
-            "color": "#00D1FF"
+            "text": "title",
+            "color": "#00bfff"
         }
     ],
     "relations": [],
