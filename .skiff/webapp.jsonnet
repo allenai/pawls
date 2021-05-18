@@ -57,6 +57,11 @@ function(
         env: env
     };
 
+    local selectorLabels = {
+        app: config.appName,
+        env: env
+    };
+
     // By default multiple instances of your application could get scheduled
     // to the same node. This means if that node goes down your application
     // does too. We use the label below to avoid that.
@@ -160,7 +165,7 @@ function(
             revisionHistoryLimit: 3,
             replicas: replicas,
             selector: {
-                matchLabels: labels
+                matchLabels: selectorLabels
             },
             template: {
                 metadata: {
@@ -334,7 +339,7 @@ function(
             annotations: annotations
         },
         spec: {
-            selector: labels,
+            selector: selectorLabels,
             ports: [
                 {
                     port: proxyPort,
