@@ -94,7 +94,13 @@ if __name__ == "__main__":
     label_map = DEFAULT_MODEL_LABEL_MAP
     if args.label_map_path:
         with open(args.label_map_path) as in_file:
-            label_map = json.load(in_file)
+            saved_map = json.load(in_file)
+            converted_map = {}
+            # The saved map is json, which forces string keys, however detectron2 requires numeric keys in the label map
+            # Do a quick conversion of the keys to int to work around this issue
+            for key in saved_map.keys():
+                converted_map[int(key)] = saved_map[key]
+            label_map = converted_map
 
     model = lp.Detectron2LayoutModel(
         config_path=config_path,
