@@ -182,6 +182,16 @@ If you find PAWLS helpful for your research, please consider cite PAWLS.
 }
 ```
 
+### Troubleshooting
+
+1. Windows EOL format (CRLF) vs Linux (LF)
+
+Sometimes you may wondering why building docker image is not working and `ui` part is taking down. It's because some files were saved in incorrect format. To healing such files just go to the repo's root and paste following in terminal.
+
+```bash
+~ (cd ./ui && yarn lint:fix) # with brackets, to stay in same directory
+```
+
 ---
 
 PAWLS is an open-source project developed by [the Allen Institute for Artificial Intelligence (AI2)](http://www.allenai.org). AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.

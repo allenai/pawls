@@ -22,7 +22,7 @@ const RedirectToFirstPaper = () => {
     useEffect(() => {
         getAllocatedPaperStatus().then((allocation) => {
             const first = allocation.papers[0];
-            setSha(first.sha);
+            if (first) setSha(first.sha);
         });
     }, []);
 
