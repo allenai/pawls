@@ -189,7 +189,7 @@ If you find PAWLS helpful for your research, please consider cite PAWLS.
 Sometimes you may wondering why building docker image is not working and `ui` part is taking down. It's because some files were saved in incorrect format. To healing such files just go to the repo's root and paste following in terminal.
 
 ```bash
-~ (cd ./ui && yarn lint:fix) # with brackets, to stay in same directory
+~ (cd ./ui && yarn && yarn lint:fix) # with brackets, to stay in same directory
 ```
 
 ---
