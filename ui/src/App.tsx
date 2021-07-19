@@ -8,31 +8,47 @@
  * @see https://github.com/reactjs/react-router-tutorial/tree/master/lessons
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createGlobalStyle } from 'styled-components';
-import { Spin } from '@allenai/varnish';
+import { Result, Spin } from '@allenai/varnish';
 import { BrowserRouter, Route, Redirect } from 'react-router-dom';
 
 import { PDFPage } from './pages';
 import { CenterOnPage } from './components';
-import { getAllocatedPaperStatus } from './api';
+import { getAllocatedPaperStatus, PaperStatus } from './api';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 const RedirectToFirstPaper = () => {
-    const [sha, setSha] = useState<string>();
+    const [papers, setPapers] = useState<PaperStatus[] | null>(null);
+
     useEffect(() => {
-        getAllocatedPaperStatus().then((allocation) => {
-            const first = allocation.papers[0];
-            setSha(first.sha);
-        });
+        getAllocatedPaperStatus().then((allocation) => setPapers(allocation?.papers || []));
     }, []);
 
-    return sha ? (
-        <Redirect to={`/pdf/${sha}`} />
-    ) : (
-        <CenterOnPage>
-            <Spin size="large" />
-        </CenterOnPage>
-    );
+    const content = useMemo(() => {
+        if (!papers) {
+            return (
+                <CenterOnPage>
+                    <Spin size="large" />
+                </CenterOnPage>
+            );
+        }
+
+        /** First available sha */
+        const sha = papers.find((p) => !!p.sha)?.sha;
+
+        if (!papers.length || !sha) {
+            return (
+                <CenterOnPage>
+                    <Result icon={<QuestionCircleOutlined />} title="PDFs Not Found" />
+                </CenterOnPage>
+            );
+        }
+
+        return <Redirect to={`/pdf/${sha}`} />;
+    }, [papers]);
+
+    return content;
 };
 
 const App = () => {
