@@ -182,6 +182,18 @@ If you find PAWLS helpful for your research, please consider cite PAWLS.
 }
 ```
 
+### Troubleshooting
+
+#### Windows EOL format (CRLF) vs Linux (LF)
+
+The application was developed for Linux, and might fail to start on Windows because of line-ending differences.
+
+To fix this, run this command from the root of the repository:
+
+```bash
+~ (cd ./ui && yarn && yarn lint:fix) # with parenthesis, to stay in same directory
+```
+
 ---
 
 PAWLS is an open-source project developed by [the Allen Institute for Artificial Intelligence (AI2)](http://www.allenai.org). AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
