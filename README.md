@@ -191,7 +191,7 @@ The application was developed for Linux, and might fail to start on Windows beca
 To fix this, run this command from the root of the repository:
 
 ```bash
-~ (cd ./ui && yarn && yarn lint:fix) # with brackets, to stay in same directory
+~ (cd ./ui && yarn && yarn lint:fix) # with parenthesis, to stay in same directory
 ```
 
 ---
