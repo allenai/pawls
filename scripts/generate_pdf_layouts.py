@@ -22,15 +22,21 @@ from pdf2image import convert_from_path
 import argparse
 
 DEFAULT_MODEL_CONFIG = "lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config"
-DEFAULT_MODEL_WEIGHTS = None # downloaded automatically from zoo
-
-LABEL_MAP = {0: "Paragraph", 1: "Title", 2: "ListItem", 3: "Table", 4: "Figure"} # update this if your custom model has a different label map
+DEFAULT_MODEL_WEIGHTS = None  # downloaded automatically from zoo
+DEFAULT_MODEL_LABEL_MAP = {
+    0: "Paragraph",
+    1: "Title",
+    2: "ListItem",
+    3: "Table",
+    4: "Figure",
+}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--annotation_folder", type=str, required=True)
 parser.add_argument("--save_path", type=str, required=True)
 parser.add_argument("--config_path", type=str, required=False)
 parser.add_argument("--model_path", type=str, required=False)
+parser.add_argument("--label_map_path", type=str, required=False)
 
 
 def run_prediction(pdf_filename: str) -> List:
@@ -85,6 +91,18 @@ if __name__ == "__main__":
     if args.model_path:
         model_path = args.model_path
 
+    label_map = DEFAULT_MODEL_LABEL_MAP
+    if args.label_map_path:
+        with open(args.label_map_path) as in_file:
+            saved_map = json.load(in_file)
+            converted_map = {}
+            # The saved map is json, which forces string keys, however detectron2 requires
+            # numeric keys in the label map. Do a quick conversion of the keys to int to 
+            # work around this issue.
+            for key in saved_map.keys():
+                converted_map[int(key)] = saved_map[key]
+            label_map = converted_map
+
     model = lp.Detectron2LayoutModel(
         config_path=config_path,
         model_path=model_path,
@@ -94,7 +112,7 @@ if __name__ == "__main__":
             "MODEL.ROI_HEADS.NMS_THRESH_TEST",
             0.4,
         ],
-        label_map=LABEL_MAP,
+        label_map=label_map,
     )
 
     all_pdf_data = {}
@@ -106,4 +124,3 @@ if __name__ == "__main__":
 
     with open(args.save_path, "w") as fp:
         json.dump(all_pdf_data, fp)
-        
