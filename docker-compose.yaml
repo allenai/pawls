@@ -20,7 +20,9 @@ services:
             - LOG_LEVEL=DEBUG
         command: ["main:app", "--host", "0.0.0.0", "--reload"]
     ui:
-        build: ./ui
+        build:
+          context: ./ui
+          dockerfile: Dockerfile-local
         # We can't mount the entire UI directory, since JavaScript dependencies
         # (`node_modules`) live at that location.
         volumes:
