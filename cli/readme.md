@@ -19,7 +19,7 @@ Please follow the [instructions here](https://tesseract-ocr.github.io/tessdoc/In
 
 ### Usage
 
-1. Download PDFs based on <PDF_SHA>s into the <SAVE_PATH> (e.g., `skiff_files/apps/pawls/papers` ). If you work at AI2, see the internal usage script for doing this [here](../../scripts/ai2-internal). Otherwise, pdfs are expected to be in a directory structure with a single pdf per folder, where each folder's name is a unique id corresponding to that pdf. For example:
+1. Place or download PDFs into `skiff_files/apps/pawls/papers` as described below. If you work at AI2, see the internal usage script for doing this [here](../../scripts/ai2-internal). Otherwise, PDFs are expected to be in a directory structure with a single PDF per folder, where each folder's name is a unique ID corresponding to that PDF. For example:
 ```
     top_level/
     ├───pdf1/
@@ -27,7 +27,7 @@ Please follow the [instructions here](https://tesseract-ocr.github.io/tessdoc/In
     └───pdf2/
           └───pdf2.pdf
 ```
-By default, pawls will use the name of the containing directory to refer to the pdf in the ui.
+By default, pawls will use the name of the containing directory to refer to the PDF in the UI.
 
 2. [preprocess] Process the token information for each PDF document with the given PDF preprocessor.
     ```bash
@@ -43,8 +43,8 @@ By default, pawls will use the name of the containing directory to refer to the 
     pawls assign ./skiff_files/apps/pawls/papers <user> <PDF_SHA>
     ```
     Optionally at this stage, you can provide a `--name-file` argument to `pawls assign`,
-    which allows you to specify a name for a given pdf (for example the title of a paper).
-    This file should be a json file containing `sha:name` mappings.
+    which allows you to specify a name for a given PDF (for example the title of a paper).
+    This file should be a JSON file containing `sha:name` mappings.
 
 4. (optional) [preannotate] Create pre-annotations for the PDFs based on some model predictions `anno.json`:
     ```bash
