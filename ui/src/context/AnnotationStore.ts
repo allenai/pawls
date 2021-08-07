@@ -4,12 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Bounds } from './PDFStore';
 import { Label } from '../api';
 
-export class TokenId {
-    constructor(public readonly pageIndex: number, public readonly tokenIndex: number) {}
-
-    toString() {
-        return [this.pageIndex.toString(), this.tokenIndex.toString()].join('-');
-    }
+export interface TokenId {
+    pageIndex: number;
+    tokenIndex: number;
 }
 
 export class RelationGroup {
@@ -67,6 +64,20 @@ export class Annotation {
 
     toString() {
         return this.id;
+    }
+
+    /**
+     * Returns a deep copy of the provided Annotation with the applied
+     * changes.
+     */
+    update(delta: Partial<Annotation> = {}) {
+        return new Annotation(
+            delta.bounds ?? Object.assign({}, this.bounds),
+            delta.page ?? this.page,
+            delta.label ?? Object.assign({}, this.label),
+            delta.tokens ?? this.tokens?.map((t) => Object.assign({}, t)),
+            this.id
+        );
     }
 
     static fromObject(obj: Annotation) {

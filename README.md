@@ -50,7 +50,7 @@ For instance, you can run the following commands to download, preprocess, and as
   # ensure that the papers are pre-processed with grobid so that they have token information.
   pawls preprocess grobid skiff_files/apps/pawls/papers
   # Assign the development user to all the papers we've downloaded.
-  pawls assign skiff_files/apps/pawls/papers development_user --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
+  pawls assign skiff_files/apps/pawls/papers development_user@example.com --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
 ```
 
 and then open up the UI locally by running `docker-compose up`.
