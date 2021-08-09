@@ -1,8 +1,9 @@
-import React, { useContext } from 'react';
+import React, { MouseEvent, useContext, useState } from 'react';
 import styled, { ThemeContext } from 'styled-components';
+import { Modal, Select } from '@allenai/varnish';
 
 import { Bounds, TokenId, PDFPageInfo, Annotation, AnnotationStore } from '../context';
-import { CloseCircleFilled } from '@ant-design/icons';
+import { CloseCircleFilled, EditFilled } from '@ant-design/icons';
 
 function hexToRgb(hex: string) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -129,6 +130,62 @@ export const SelectionTokens = ({ pageInfo, tokens }: SelectionTokenProps) => {
     );
 };
 
+interface EditLabelModalProps {
+    annotation: Annotation;
+    onHide: () => void;
+}
+
+const EditLabelModal = ({ annotation, onHide }: EditLabelModalProps) => {
+    const annotationStore = useContext(AnnotationStore);
+
+    const [selectedLabel, setSelectedLabel] = useState(annotation.label);
+
+    // There are onMouseDown listeners on the <canvas> that handle the
+    // creation of new annotations. We use this function to prevent that
+    // from being triggered when the user engages with other UI elements.
+    const onMouseDown = (e: MouseEvent) => {
+        e.stopPropagation();
+    };
+
+    return (
+        <Modal
+            title="Edit Label"
+            onCancel={onHide}
+            onOk={() => {
+                // Remove the annotation and add a copy with the updated label.
+                // TODO: This might have side-effects to the relation mechanism.
+                // Some additional testing is warranted.
+                annotationStore.setPdfAnnotations(
+                    annotationStore.pdfAnnotations
+                        .deleteAnnotation(annotation)
+                        .withNewAnnotation(annotation.update({ label: selectedLabel }))
+                );
+                onHide();
+            }}
+            cancelButtonProps={{ onMouseDown }}
+            okButtonProps={{ onMouseDown }}
+            visible>
+            <Select<string>
+                value={selectedLabel.text}
+                onMouseDown={onMouseDown}
+                onChange={(labelText) => {
+                    const label = annotationStore.labels.find((l) => l.text === labelText);
+                    if (!label) {
+                        return;
+                    }
+                    setSelectedLabel(label);
+                }}
+                style={{ display: 'block' }}>
+                {annotationStore.labels.map((l) => (
+                    <Select.Option value={l.text} key={l.text}>
+                        {l.text}
+                    </Select.Option>
+                ))}
+            </Select>
+        </Modal>
+    );
+};
+
 interface SelectionProps {
     pageInfo: PDFPageInfo;
     annotation: Annotation;
@@ -138,7 +195,11 @@ interface SelectionProps {
 export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionProps) => {
     const label = annotation.label;
     const theme = useContext(ThemeContext);
+
+    const [isEditLabelModalVisible, setIsEditLabelModalVisible] = useState(false);
+
     const annotationStore = useContext(AnnotationStore);
+
     let color;
     if (!label) {
         color = theme.color.N4.hex; // grey as the default.
@@ -181,6 +242,15 @@ export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionPr
                 {showInfo && !annotationStore.hideLabels ? (
                     <SelectionInfo border={border} color={color}>
                         <span>{label.text}</span>
+                        <EditFilled
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsEditLabelModalVisible(true);
+                            }}
+                            onMouseDown={(e) => {
+                                e.stopPropagation();
+                            }}
+                        />
                         <CloseCircleFilled
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -206,6 +276,12 @@ export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionPr
                     <SelectionTokens pageInfo={pageInfo} tokens={annotation.tokens} />
                 ) : null
             }
+            {isEditLabelModalVisible ? (
+                <EditLabelModal
+                    annotation={annotation}
+                    onHide={() => setIsEditLabelModalVisible(false)}
+                />
+            ) : null}
         </>
     );
 };
@@ -219,17 +295,18 @@ interface SelectionInfoProps {
 }
 const SelectionInfo = styled.div<SelectionInfoProps>(
     ({ border, color }) => `
-    position: absolute;
-    right: -${border}px;
-    transform:translateY(-100%);
-    border: ${border} solid  ${color};
-    background: ${color};
-    font-weight: bold;
-    font-size: 12px;
-    user-select: none;
-    * {
-        margin: 2px;
-        vertical-align: middle;
-    }
-`
+        position: absolute;
+        right: -${border}px;
+        transform:translateY(-100%);
+        border: ${border} solid  ${color};
+        background: ${color};
+        font-weight: bold;
+        font-size: 12px;
+        user-select: none;
+
+        * {
+            margin: 2px;
+            vertical-align: middle;
+        }
+    `
 );

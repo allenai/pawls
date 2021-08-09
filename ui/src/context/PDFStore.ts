@@ -136,12 +136,12 @@ export class PDFPageInfo {
            grobid token spans associated with a pdf. The complexity here is
            that grobid spans are relative to an absolute scale of the pdf,
            but our user's bounding box is relative to the pdf rendered in their
-           client. 
+           client.
 
            The critical key here is that anything we *store* must be relative
            to the underlying pdf. So for example, inside the for loop, we are
-           computing: 
-           
+           computing:
+
            whether a grobid token (tokenBound), scaled to the current scale of the
            pdf in the client (scaled(tokenBound, this.scale)), is overlapping with
            the bounding box drawn by the user (selection).
@@ -161,7 +161,7 @@ export class PDFPageInfo {
         for (let i = 0; i < this.tokens.length; i++) {
             const tokenBound = this.getTokenBounds(this.tokens[i]);
             if (doOverlap(scaled(tokenBound, this.scale), selection)) {
-                ids.push(new TokenId(this.page.pageNumber - 1, i));
+                ids.push({ pageIndex: this.page.pageNumber - 1, tokenIndex: i });
                 tokenBounds.push(tokenBound);
             }
         }
