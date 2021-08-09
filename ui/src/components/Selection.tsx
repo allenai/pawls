@@ -1,4 +1,4 @@
-import React, { MouseEvent, useContext, useState } from 'react';
+import React, { MouseEvent, useContext, useState, useEffect } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { Modal, Select } from '@allenai/varnish';
 
@@ -146,6 +146,29 @@ const EditLabelModal = ({ annotation, onHide }: EditLabelModalProps) => {
     const onMouseDown = (e: MouseEvent) => {
         e.stopPropagation();
     };
+
+    useEffect(() => {
+        const onKeyPress = (e: KeyboardEvent) => {
+            // Ref to https://github.com/allenai/pawls/blob/0f3e5153241502eb68e46f582ed4b28112e2f765/ui/src/components/sidebar/Labels.tsx#L20
+            // Numeric keys 1-9
+            if (e.keyCode >= 49 && e.keyCode <= 57) {
+                const index = Number.parseInt(e.key) - 1;
+                if (index < annotationStore.labels.length) {
+                    const selectedLabel = annotationStore.labels[index];
+                    annotationStore.setPdfAnnotations(
+                        annotationStore.pdfAnnotations
+                            .deleteAnnotation(annotation)
+                            .withNewAnnotation(annotation.update({ label: selectedLabel }))
+                    );
+                    onHide();
+                }
+            }
+        };
+        window.addEventListener('keydown', onKeyPress);
+        return () => {
+            window.removeEventListener('keydown', onKeyPress);
+        };
+    }, [annotationStore, annotation]);
 
     return (
         <Modal
