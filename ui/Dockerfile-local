@@ -21,9 +21,6 @@ ENV NODE_ENV $NODE_ENV
 ARG BABEL_ENV=development
 ENV BABEL_ENV $BABEL_ENV
 
-# Build the UI
-RUN yarn build
-
 # Tell `react-scripts` that it's not supposed to open a browser for us, since
 # it's not running on the host machine.
 ENV BROWSER none

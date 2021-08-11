@@ -107,6 +107,16 @@ class Box:
             "bottom": self.y + self.height,
         }
 
+    @classmethod
+    def from_bounds(cls, bounds) -> "Box":
+        """Create a box based on the given bounds."""
+        return cls(
+            x=bounds["left"],
+            y=bounds["top"],
+            width=bounds["right"] - bounds["left"],
+            height=bounds["bottom"] - bounds["top"],
+        )
+
 
 @dataclass
 class Token(Box):
@@ -116,6 +126,18 @@ class Token(Box):
 @dataclass
 class Block(Box):
     label: str
+
+    @classmethod
+    def from_annotation(cls, anno) -> "Box":
+        """Create a box based on the given annotation."""
+        bounds = anno["bounds"]
+        return cls(
+            x=bounds["left"],
+            y=bounds["top"],
+            width=bounds["right"] - bounds["left"],
+            height=bounds["bottom"] - bounds["top"],
+            label=anno["label"]["text"],
+        )
 
 
 @dataclass

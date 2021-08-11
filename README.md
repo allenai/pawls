@@ -11,7 +11,7 @@
 
 ### Quick Start
 
-*Quick start will download some pre-processed PDFs and get the UI set up so that you can see them. If you want to pre-process your own pdfs, keep reading! If it's your first time working with PAWLS, we recommend you try the quick start first though.*
+*Quick start will download some pre-processed PDFs and get the UI set up so that you can see them. If you want to pre-process your own PDFs, keep reading! If it's your first time working with PAWLS, we recommend you try the quick start first though.*
 
 First, we need to download some processed PDFs to view in the UI. PAWLS uses the PDFs themselves to render in the browser, as well as using a JSON file of extracted token bounding boxes per page, called `pdf_structure.json`. The [PAWLS CLI](cli/readme.md) can be used to do this pre-processing, but for the quick start, we have done it for you. Download them from the provided AWS S3 Bucket like so:
 
@@ -19,7 +19,7 @@ First, we need to download some processed PDFs to view in the UI. PAWLS uses the
 aws s3 sync s3://ai2-s2-pawls-public/example-data ./skiff_files/apps/pawls/papers/
 ```
 
-Configuration in PAWLS is controlled by a json file, located in the [`api/config`](./api/config/configuration.json) directory. The location that we downloaded the pdfs to above corresponds to the location in the config file, where it is mounted in using [`docker-compose.yaml`](./docker-compose.yaml). So, when PAWLS starts up, the API knows where to look to serve the PDFs we want.
+Configuration in PAWLS is controlled by a JSON file, located in the [`api/config`](./api/config/configuration.json) directory. The location that we downloaded the PDFs to above corresponds to the location in the config file, where it is mounted in using [`docker-compose.yaml`](./docker-compose.yaml). So, when PAWLS starts up, the API knows where to look to serve the PDFs we want.
 
 Next, we can start the services required to use PAWLS using `docker-compose`:
 
@@ -40,17 +40,17 @@ Once all of these have come up, navigate to `localhost:8080` in your browser and
 
 ### Getting Started
 
-In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to download the PDFs and metadata you want to serve. The PDFs should be put in `skiff_files/apps/pawls`.
+In order to run a local environment, you'll need to use the [PAWLS CLI](cli/readme.md) to preprocess and assign the PDFs you want to serve. When using PDFs from semantic scholar, the CLI is also used to download the PDFs. The PDFs have to be put in a directory structure within `skiff_files/apps/pawls` (see [PAWLS CLI usage](cli/readme.md#usage) for details).
 
-For instance, you can run this command to download the specified PDF:
+For instance, you can run the following commands to download, preprocess, and assign PDFs:
 
 ```bash
-  # Fetches pdfs from semantic scholar's S3 buckets.
+  # Fetches PDFs from semantic scholar's S3 buckets.
   python scripts/ai2-internal/fetch_pdfs.py skiff_files/apps/pawls/papers 34f25a8704614163c4095b3ee2fc969b60de4698 3febb2bed8865945e7fddc99efd791887bb7e14f 553c58a05e25f794d24e8db8c2b8fdb9603e6a29
   # ensure that the papers are pre-processed with grobid so that they have token information.
   pawls preprocess grobid skiff_files/apps/pawls/papers
   # Assign the development user to all the papers we've downloaded.
-  pawls assign skiff_files/apps/pawls/papers development_user --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
+  pawls assign skiff_files/apps/pawls/papers development_user@example.com --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
 ```
 
 and then open up the UI locally by running `docker-compose up`.
@@ -180,6 +180,18 @@ If you find PAWLS helpful for your research, please consider cite PAWLS.
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }
+```
+
+### Troubleshooting
+
+#### Windows EOL format (CRLF) vs Linux (LF)
+
+The application was developed for Linux, and might fail to start on Windows because of line-ending differences.
+
+To fix this, run this command from the root of the repository:
+
+```bash
+~ (cd ./ui && yarn && yarn lint:fix) # with parenthesis, to stay in same directory
 ```
 
 ---
