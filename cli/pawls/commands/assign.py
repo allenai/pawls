@@ -108,7 +108,7 @@ def assign(
     else:
         print("Warning: --name-file was not provided, using shas as pdf names.")
 
-    for sha in shas:
+    for sha in sorted(shas):
         if sha in pdf_status:
             continue
         else:
