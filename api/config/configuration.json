@@ -1,61 +1,17 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/ai2-test-set/",
+    "output_directory": "/skiff_files/apps/pawls/symbols/",
     "labels": [
         {
-            "text": "equation",
-            "color": "#ff0000"
+            "text": "Identifier",
+            "color": "#EA3961"
         },
         {
-            "text": "paragraph",
-            "color": "#b0c4de"
+            "text": "Operator",
+            "color": "#B8DE6F"
         },
         {
-            "text": "abstract",
-            "color": "#ffb6c1"
-        },
-        {
-            "text": "author",
-            "color": "#02028b"
-        },
-        {
-            "text": "caption",
-            "color": "#00ff03"
-        },
-        {
-            "text": "date",
-            "color": "#0f0000"
-        },
-        {
-            "text": "figure",
-            "color": "#ff01ff"
-        },
-        {
-            "text": "footer",
-            "color": "#C2C2C2"
-        },
-        {
-            "text": "list",
-            "color": "#302070"
-        },
-        {
-            "text": "text",
-            "color": "#b0c4de"
-        },
-        {
-            "text": "reference",
-            "color": "#309000"
-        },
-        {
-            "text": "section",
-            "color": "#0603ff"
-        },
-        {
-            "text": "table",
-            "color": "#01ffff"
-        },
-        {
-            "text": "title",
-            "color": "#00bfff"
+            "text": "None",
+            "color": "#B8DE6F"
         }
     ],
     "relations": [],
