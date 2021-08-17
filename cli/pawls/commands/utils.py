@@ -93,9 +93,9 @@ class AnnotationFolder:
         including the default DEVELOPMENT_USER.
         """
 
-        return [DEVELOPMENT_USER] + [
+        return set([DEVELOPMENT_USER] + [
             os.path.splitext(e)[0] for e in os.listdir(f"{self.path}/status")
-        ]
+        ]) # The DEVELOPMENT_USER annotator might be duplicated 
 
     def get_pdf_tokens(self, pdf_name: str) -> List["Page"]:
         """Get the pdf tokens for a pdf name by loading from the corresponding pdf_structure file.
