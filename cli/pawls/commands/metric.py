@@ -12,6 +12,7 @@ import numpy as np
 from tabulate import tabulate
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+from sklearn.metrics import classification_report
 
 from pawls.commands.export import export
 
@@ -35,8 +36,9 @@ def filter_annotation_with_image_ids(coco: COCO, image_ids: Set[int]) -> COCO:
     return coco
 
 
-def print_results(calculation_method_msg, df: pd.DataFrame):
-
+def print_results(calculation_method_msg, df: pd.DataFrame) -> pd.DataFrame:
+    # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
+    cleaned_table = df[sorted(df.columns)].loc[sorted(df.columns)]
     print(calculation_method_msg)
     print("-" * 45)
     print(
@@ -45,12 +47,13 @@ def print_results(calculation_method_msg, df: pd.DataFrame):
     )
     print(
         tabulate(
-            df[sorted(df.columns)].loc[sorted(df.columns)],
+            cleaned_table,
             headers="keys",
             tablefmt="psql",
         )
     )
     print("\n")
+    return cleaned_table
 
 
 class PythonLiteralOption(click.Option):
@@ -61,7 +64,7 @@ class PythonLiteralOption(click.Option):
 
     def type_cast_value(self, ctx, value):
         try:
-            return [ele.strip() for ele in value.split(",")]
+            return [ele.strip() for ele in value.split(",")] if value else []
         except:
             raise click.BadParameter(value)
 
@@ -156,7 +159,9 @@ class COCOEvaluator:
 
         return coco_results, coco_category_results
 
-    def show_results(self, results: Dict, metric_names: List[str] = None):
+    def show_results(
+        self, results: Dict, metric_names: List[str] = None
+    ) -> pd.DataFrame:
         """Show COCO Eval results for the given metric names.
 
         Args:
@@ -167,18 +172,26 @@ class COCOEvaluator:
                 Metric report of the specified `metric_names` will be displayed.
                 If not set, all metrics in `COCOEvaluator.COCO_METRICS` will be displayed.
         """
+        # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
         if metric_names is None:
             metric_names = self.COCO_METRICS
+
+        cleaned_tables = {}
 
         for metric_name in metric_names:
             df = pd.DataFrame(results).applymap(
                 lambda ele: ele.get(metric_name) if not pd.isna(ele) else ele
             )
-            print_results(
+            cleaned_table = print_results(
                 f"Inter-annotator agreement based on {metric_name} scores.", df
             )
+            cleaned_tables[metric_name] = cleaned_table
 
-    def show_category_results(self, results: Dict, class_names: List[str] = None):
+        return cleaned_tables
+
+    def show_category_results(
+        self, results: Dict, class_names: List[str] = None
+    ) -> pd.DataFrame:
         """Show COCO Eval results for the given class_names.
 
         Args:
@@ -189,23 +202,28 @@ class COCOEvaluator:
                 Metric report of the specified `class_names` will be displayed.
                 If not set, all classes in `self.class_names` will be displayed.
         """
+        # TODO: Might need to change the function name, see in https://github.com/allenai/pawls/pull/112
         if class_names is None:
             class_names = self.class_names
+
+        cleaned_tables = {}
 
         for class_name in class_names:
             df = pd.DataFrame(results).applymap(
                 lambda ele: ele.get(class_name) if not pd.isna(ele) else ele
             )
 
-            print_results(
+            cleaned_table = print_results(
                 f"Inter-annotator agreement of the {class_name} class based on AP scores.",
                 df,
             )
+            cleaned_tables[class_name] = cleaned_table
 
 
 class TokenEvaluator:
 
     PDF_FEATURES_IN_SAVED_TABLES = ["pdf", "page_index", "index", "text"]
+    DUMMY_CATEGORY_NAME = "NO-LABEL"
 
     def __init__(self, token_save_path: str):
 
@@ -216,34 +234,64 @@ class TokenEvaluator:
         # Assuming all users are stored in email address
 
     def calculate_scores_for_two_annotators(
-        self, annotator_gt: str, annotator_pred: str
+        self, ground_truth: str, predictions: str
     ):
 
-        cur_df = self.df[[annotator_gt, annotator_pred]].fillna(-1)
-        acc = (cur_df[annotator_gt] == cur_df[annotator_pred]).mean()
+        cur_df = (
+            self.df[[ground_truth, predictions]]
+            .dropna(subset=[ground_truth])
+            .fillna(-1)
+        )
+        acc = (cur_df[ground_truth] == cur_df[predictions]).mean()
 
         return acc
 
-    def calculate_token_accuracy(self):
+    def create_categorical_report(
+        self, ground_truth: str, predictions: str, table_per_category: dict
+    ):
+        gt = self.df[ground_truth].fillna("").values
+        pred = self.df[predictions].fillna("").values
+        labels = list(table_per_category.keys())
+
+        report = classification_report(
+            gt, pred, labels=labels + [""], output_dict=True, zero_division=0
+        )
+
+        for cat_name, table in table_per_category.items():
+            table[ground_truth][predictions] = report[cat_name]["f1-score"]
+
+    def calculate_token_accuracy(self, categories: List = None):
         table = defaultdict(dict)
 
-        for i, annotator_gt in enumerate(self.annotators):
-            for j, annotator_pred in enumerate(self.annotators):
+        for i, ground_truth in enumerate(self.annotators):
+            for j, predictions in enumerate(self.annotators):
 
-                if j <= i:  # Skip the diagonal
+                if i == j:
                     continue
-
                 # The token_acc table is symmetric
-                table[annotator_pred][annotator_gt] = table[annotator_gt][
-                    annotator_pred
+                table[ground_truth][
+                    predictions
                 ] = self.calculate_scores_for_two_annotators(
-                    annotator_gt, annotator_pred
+                    ground_truth, predictions
                 )
 
-        return table
+        if categories is None:
+            return table
+
+        table_per_category = {cat_name: defaultdict(dict) for cat_name in categories}
+
+        for i, ground_truth in enumerate(self.annotators):
+            for j, predictions in enumerate(self.annotators):
+                if i == j:
+                    continue
+                self.create_categorical_report(
+                    ground_truth, predictions, table_per_category
+                )
+
+        return table, table_per_category
 
     @staticmethod
-    def show_results(results: Dict):
+    def show_results(results: Dict) -> pd.DataFrame:
 
         df = pd.DataFrame(results)
 
@@ -252,7 +300,20 @@ class TokenEvaluator:
             "the compatibility of tokens labels agasin two annotators."
         )
 
-        print_results(calculation_method_msg, df)
+        cleaned_table = print_results(calculation_method_msg, df)
+
+        return cleaned_table
+
+    @staticmethod
+    def show_category_results(token_category_results: Dict) -> pd.DataFrame:
+
+        for cat_name, results in token_category_results.items():
+            df = pd.DataFrame(results)
+            calculation_method_msg = (
+                f"We compute the category-level f1-scores for the category {cat_name}"
+            )
+
+            cleaned_table = print_results(calculation_method_msg, df)
 
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -275,6 +336,12 @@ class TokenEvaluator:
     help="The annotations of non-textual categories will be evaluated based on AP scores based on box overlapping.",
 )
 @click.option(
+    "--pdf-shas",
+    multiple=True,
+    default=[],
+    help="Specify only exporting the selected PDF shas.",
+)
+@click.option(
     "--include-unfinished",
     "-i",
     is_flag=True,
@@ -286,16 +353,23 @@ class TokenEvaluator:
     is_flag=True,
     help="A flag to show detailed reports.",
 )
+@click.option(
+    "--save",
+    type=click.Path(),
+    help="If set, PAWLS will save the reports in the given folder.",
+)
 @click.pass_context
 def metric(
     ctx,
     path: click.Path,
     config: str,
     annotator: List,
-    textual_categories: List,
-    non_textual_categories: List,
+    textual_categories: List = [],
+    non_textual_categories: List = [],
+    pdf_shas: List = [],
     include_unfinished: bool = False,
     verbose: bool = False,
+    save: click.Path = None,
 ):
     """Calculate the inter-annotator agreement for the annotation project for both textual-categories
 
@@ -316,6 +390,11 @@ def metric(
 
     """
 
+    if save is not None:
+        save = str(save)
+        if not os.path.exists(save):
+            os.makedirs(save)
+
     invoke_export = lambda tempdir, format, categories: ctx.invoke(
         export,
         path=path,
@@ -324,6 +403,7 @@ def metric(
         format=format,
         annotator=annotator,
         categories=categories,
+        pdf_shas=pdf_shas,
         include_unfinished=include_unfinished,
         export_images=False,
     )
@@ -343,10 +423,13 @@ def metric(
             coco_results, coco_category_results = coco_eval.calculate_ap_scores()
 
             if verbose:
-                coco_eval.show_results(coco_results)
+                save_table = coco_eval.show_results(coco_results)
                 coco_eval.show_category_results(coco_category_results)
             else:
-                coco_eval.show_results(coco_results, ["AP"])
+                save_table = coco_eval.show_results(coco_results, ["AP"])
+
+            if save is not None:
+                save_table["AP"].to_csv(f"{save}/block-eval.csv")
 
     if len(textual_categories) > 0:
         print(f"Generating Accuracy report for textual categories {textual_categories}")
@@ -360,6 +443,19 @@ def metric(
             )
 
             token_eval = TokenEvaluator(tempdir)
-            token_results = token_eval.calculate_token_accuracy()
 
-            token_eval.show_results(token_results)
+            if verbose:
+                # As calculating the classification report is slow, we only
+                # do this if user specifies the verbose mode.
+                (
+                    token_results,
+                    token_category_results,
+                ) = token_eval.calculate_token_accuracy(textual_categories)
+                save_table = token_eval.show_results(token_results)
+                token_eval.show_category_results(token_category_results)
+            else:
+                token_results = token_eval.calculate_token_accuracy()
+                save_table = token_eval.show_results(token_results)
+
+            if save is not None:
+                save_table.to_csv(f"{save}/textual-eval.csv")

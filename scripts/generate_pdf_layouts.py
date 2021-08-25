@@ -13,7 +13,7 @@ layout detection model. See https://github.com/layout-Parser/layout-parser#insta
 import os
 import json
 from glob import glob
-from typing import List, Union, Dict, Dict, Any
+from typing import List
 
 from tqdm import tqdm
 import layoutparser as lp
@@ -21,9 +21,22 @@ from pdf2image import convert_from_path
 
 import argparse
 
+DEFAULT_MODEL_CONFIG = "lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config"
+DEFAULT_MODEL_WEIGHTS = None  # downloaded automatically from zoo
+DEFAULT_MODEL_LABEL_MAP = {
+    0: "Paragraph",
+    1: "Title",
+    2: "ListItem",
+    3: "Table",
+    4: "Figure",
+}
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--annotation_folder", type=str)
-parser.add_argument("--save_path", type=str)
+parser.add_argument("--annotation_folder", type=str, required=True)
+parser.add_argument("--save_path", type=str, required=True)
+parser.add_argument("--config_path", type=str, required=False)
+parser.add_argument("--model_path", type=str, required=False)
+parser.add_argument("--label_map_path", type=str, required=False)
 
 
 def run_prediction(pdf_filename: str) -> List:
@@ -70,19 +83,42 @@ def run_prediction(pdf_filename: str) -> List:
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    config_path = DEFAULT_MODEL_CONFIG
+    if args.config_path:
+        config_path = args.config_path
+
+    model_path = DEFAULT_MODEL_WEIGHTS
+    if args.model_path:
+        model_path = args.model_path
+
+    label_map = DEFAULT_MODEL_LABEL_MAP
+    if args.label_map_path:
+        with open(args.label_map_path) as in_file:
+            saved_map = json.load(in_file)
+            converted_map = {}
+            # The saved map is json, which forces string keys, however detectron2 requires
+            # numeric keys in the label map. Do a quick conversion of the keys to int to 
+            # work around this issue.
+            for key in saved_map.keys():
+                converted_map[int(key)] = saved_map[key]
+            label_map = converted_map
+
     model = lp.Detectron2LayoutModel(
-        "lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config",
+        config_path=config_path,
+        model_path=model_path,
         extra_config=[
             "MODEL.ROI_HEADS.SCORE_THRESH_TEST",
             0.55,
             "MODEL.ROI_HEADS.NMS_THRESH_TEST",
             0.4,
         ],
-        label_map={0: "Paragraph", 1: "Title", 2: "ListItem", 3: "Table", 4: "Figure"},
+        label_map=label_map,
     )
 
     all_pdf_data = {}
-    for pdf_filename in tqdm(sorted(glob(f"{args.annotation_folder}/*/*.pdf"))):
+    for pdf_filename in tqdm(
+        sorted(glob(f"{args.annotation_folder}/**/*.pdf", recursive=True))
+    ):
         pdf_data = run_prediction(pdf_filename)
         all_pdf_data[os.path.basename(pdf_filename)] = pdf_data
 

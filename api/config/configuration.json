@@ -86,6 +86,15 @@
             "color": "#34626C"
         }
     ],
-    "relations": [],
+    "relations": [
+        {
+            "text": "Caption of",
+            "color": "#D9E4DD"
+        },
+        {
+            "text": "Affiliated with",
+            "color": "#D9E4DD"
+        }
+    ],
     "users_file": "/users/allowed.txt"
 }

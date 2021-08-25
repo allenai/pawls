@@ -11,65 +11,6 @@
     "build": "react-scripts build",
     "test": "react-scripts test"
   },
-  "eslintConfig": {
-    "env": {
-      "browser": true,
-      "es6": true
-    },
-    "extends": [
-      "standard",
-      "plugin:prettier/recommended"
-    ],
-    "globals": {
-      "Atomics": "readonly",
-      "SharedArrayBuffer": "readonly"
-    },
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "ecmaFeatures": {
-        "jsx": true
-      },
-      "ecmaVersion": 2018,
-      "sourceType": "module"
-    },
-    "plugins": [
-      "react",
-      "@typescript-eslint",
-      "prettier"
-    ],
-    "rules": {
-      "prettier/prettier": [
-        "error",
-        {
-          "printWidth": 100,
-          "tabWidth": 4,
-          "singleQuote": true,
-          "jsxBracketSameLine": true,
-          "jsxSingleQuote": false
-        }
-      ],
-      "react/jsx-uses-react": 1,
-      "react/jsx-uses-vars": 1,
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          "vars": "all",
-          "args": "after-used",
-          "ignoreRestSiblings": false,
-          "argsIgnorePattern": "^_"
-        }
-      ],
-      "no-useless-constructor": "off",
-      "@typescript-eslint/no-useless-constructor": "error"
-    }
-  },
-  "eslintIgnore": [
-    "build/",
-    "*.log",
-    "package.json",
-    "tsconfig.json"
-  ],
   "browserslist": [
     ">0.2%",
     "not dead",
@@ -77,39 +18,40 @@
     "not op_mini all"
   ],
   "dependencies": {
+    "@allenai/eslint-config-varnish": "^1.0.3",
     "@allenai/varnish": "^1.0.0",
     "@allenai/varnish-react-router": "^1.0.4",
     "@ant-design/icons": "^4.2.1",
     "@types/jest": "^24.0.9",
     "@types/node": "11.9.5",
-    "@types/pdfjs-dist": "^2.1.5",
     "@types/react": "^16.9.0",
     "@types/react-dom": "^16.9.0",
     "@types/react-router-dom": "^5.0.1",
     "@types/styled-components": "^5.1.2",
     "@types/uuid": "^8.3.0",
-    "@typescript-eslint/eslint-plugin": "^2.3.1",
-    "@typescript-eslint/parser": "^2.3.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
     "axios": "^0.21.1",
-    "eslint": "^6.7.2",
-    "eslint-config-prettier": "^6.3.0",
-    "eslint-config-standard": "^14.1.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-node": "^10.0.0",
-    "eslint-plugin-prettier": "^3.1.1",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-react": "^7.14.3",
-    "eslint-plugin-standard": "^4.0.1",
-    "pdfjs-dist": "^2.4.456",
-    "prettier": "^1.18.2",
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-mdx": "^1.12.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-react": "^7.23.2",
+    "eslint-plugin-standard": "^5.0.0",
+    "pdfjs-dist": "^2.7.570",
+    "prettier": "^2.2.1",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-is": "^16.13.1",
     "react-router-dom": "^5.0.1",
-    "react-scripts": "3.4.0",
+    "react-scripts": "4.0.3",
     "react-test-renderer": "^16.8.3",
     "styled-components": "^5.1.1",
-    "typescript": "3.6.3",
+    "typescript": "4.2.4",
     "uuid": "^8.3.0",
     "webpack": "^4.41.3"
   },
