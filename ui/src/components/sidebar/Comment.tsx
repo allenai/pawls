@@ -15,7 +15,7 @@ export const Comment = ({ sha, paperStatus }: CommentProps) => {
 
     return (
         <SidebarItem>
-            <SidebarItemTitle>Comments</SidebarItemTitle>
+            <SidebarItemTitle>Fields</SidebarItemTitle>
             <DarkTextArea
                 defaultValue={paperStatus.comments}
                 onChange={(e) => setComment(e.target.value)}

@@ -267,6 +267,9 @@ export const PDFPage = () => {
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header />
                                     <Labels />
+                                    {activePaperStatus ? (
+                                        <Comment sha={sha} paperStatus={activePaperStatus} />
+                                    ) : null}
                                     <AssignedPaperList papers={assignedPaperStatuses} />
                                     {activePaperStatus ? (
                                         <Annotations
@@ -276,9 +279,6 @@ export const PDFPage = () => {
                                     ) : null}
                                     {activeRelationLabel ? (
                                         <Relations relations={pdfAnnotations.relations} />
-                                    ) : null}
-                                    {activePaperStatus ? (
-                                        <Comment sha={sha} paperStatus={activePaperStatus} />
                                     ) : null}
                                 </SidebarContainer>
                                 <PDFContainer>
