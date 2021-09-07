@@ -63,7 +63,7 @@ class PDFPlumberTokenExtractor:
             x_tolerance=1.5,
             y_tolerance=3,
             keep_blank_chars=False,
-            use_text_flow=False,
+            use_text_flow=True,
             horizontal_ltr=True,
             vertical_ttb=True,
             extra_attrs=["fontname", "size"],
