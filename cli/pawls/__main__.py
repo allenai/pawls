@@ -20,7 +20,8 @@ subcommands = [
     commands.export,
     commands.status,
     commands.preannotate,
-    commands.metric
+    commands.metric,
+    commands.add
 ]
 
 for subcommand in subcommands:
