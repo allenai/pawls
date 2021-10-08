@@ -19,15 +19,15 @@ Please follow the [instructions here](https://tesseract-ocr.github.io/tessdoc/In
 
 ### Usage
 
-1. Place or download PDFs into `skiff_files/apps/pawls/papers` as described below. If you work at AI2, see the internal usage script for doing this [here](../../scripts/ai2-internal). Otherwise, PDFs are expected to be in a directory structure with a single PDF per folder, where each folder's name is a unique ID corresponding to that PDF. For example:
+1. Place or download PDFs into `skiff_files/apps/pawls/papers` as described below. If you work at AI2, see the internal usage script for doing this [here](../../scripts/ai2-internal). 
+
+Otherwise, you can add PDFs using the command:
+```bash
+pawls add <pdf-or-directory>
 ```
-    top_level/
-    ├───pdf1/
-    │     └───pdf1.pdf
-    └───pdf2/
-          └───pdf2.pdf
-```
-By default, pawls will use the name of the containing directory to refer to the PDF in the UI.
+
+By default, pawls will create a unique id per PDF by hashing the PDF, and use that hash to refer to the PDF in the UI.
+You can instead retain the original PDF name by passing the `--no-hash` flag to `pawls add`.
 
 2. [preprocess] Process the token information for each PDF document with the given PDF preprocessor.
     ```bash
@@ -113,3 +113,16 @@ By default, pawls will use the name of the containing directory to refer to the 
         ```bash
         pawls export <labeling_folder> <labeling_config> <output_path> <format> -u markn --include-unfinished
         ```
+
+## Dataset structure
+
+PDFs are expected to be in a directory structure with a single PDF per folder, where each folder's name is a unique ID corresponding to that PDF. For example:
+```
+    top_level/
+    ├───pdf1/
+    │     └───pdf1.pdf
+    └───pdf2/
+          └───pdf2.pdf
+```
+
+Using only `pawls add` to add PDFs will maintain this structure by default.
