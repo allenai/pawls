@@ -3,6 +3,7 @@ tqdm
 pdfminer
 pdf2image
 pandas 
+scikit-learn
 tabulate
 
 # S3 access
