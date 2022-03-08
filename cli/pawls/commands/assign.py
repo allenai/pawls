@@ -60,7 +60,7 @@ def assign(
     shas = set(shas)
 
     pdfs = glob.glob(os.path.join(path, "*/*.pdf"))
-    project_shas = {p.split("/")[-2] for p in pdfs}
+    project_shas = {os.path.split(p)[-2] for p in pdfs}
     if all:
         # If --all flag, we use all pdfs in the current project.
         shas.update(project_shas)
