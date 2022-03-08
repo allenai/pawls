@@ -85,7 +85,7 @@ def user_is_allowed(user_email: str) -> bool:
 
 def all_pdf_shas() -> List[str]:
     pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
-    return [p.split("/")[-2] for p in pdfs]
+    return [os.path.split(p)[-2] for p in pdfs]
 
 
 def update_status_json(status_path: str, sha: str, data: Dict[str, Any]):
