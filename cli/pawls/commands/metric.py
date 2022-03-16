@@ -93,7 +93,7 @@ class COCOEvaluator:
         annotators = []
         for userfile in sorted(glob(f"{coco_save_path}/*.json")):
             with HiddenPrints():
-                username = userfile.split("/")[-1].replace(".json", "")
+                username = os.path.split(userfile)[-1].replace(".json", "")
                 annotators.append(username)
                 all_cocos[username] = COCO(userfile)
 
