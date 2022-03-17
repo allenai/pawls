@@ -83,7 +83,7 @@ class AnnotationFolder:
         self.all_pdf_paths = [pdf_path for pdf_path in glob(f"{self.path}/*/*.pdf")]
         if pdf_shas is not None:
             self.all_pdf_paths = [
-                ele for ele in self.all_pdf_paths if os.path.split(ele)[-2] in pdf_shas
+                ele for ele in self.all_pdf_paths if ele.split("/")[-2] in pdf_shas
             ]
         self.all_pdfs = [os.path.basename(pdf_path) for pdf_path in self.all_pdf_paths]
 
@@ -246,7 +246,7 @@ class AnnotationFiles:
         return [
             file
             for file in self.get_all_annotation_files()
-            if os.path.split(file)[-2] in pdf_shas
+            if file.split("/")[-2] in pdf_shas
         ]
 
     def get_finished_annotation_files(self) -> List[str]:
@@ -269,7 +269,7 @@ class AnnotationFiles:
     def __iter__(self) -> Iterable[Dict]:
 
         for _file in self._files:
-            pdf_sha = os.path.split(_file)[-2]
+            pdf_sha = _file.split("/")[-2]
             pdf_path = f"{self.labeling_folder}/{pdf_sha}/{pdf_sha}.pdf"
 
             yield dict(
