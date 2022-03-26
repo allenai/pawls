@@ -8,9 +8,13 @@ services:
             - proxy
     api:
         build:
-          context: ./api
+            # need to build from root directory because I need accrees to
+            # the CLI files.
+            context: ./
+            dockerfile: ./api/Dockerfile
         volumes:
             - ./api:/usr/local/src/skiff/app/api
+            # - ./cli:/usr/local/src/skiff/app/cli
             - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
             - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
         environment:
@@ -44,6 +48,7 @@ services:
     # which the CLI can use for pre-processing PDFs, using grobid to provide
     # the detailed token information.
     grobid:
+        hostname: grobid-pawls
         image: 'allenai/grobid:0.5.6-pdf-structure'
         ports:
             - '8070:8070'

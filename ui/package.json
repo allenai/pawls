@@ -21,6 +21,7 @@
     "@allenai/eslint-config-varnish": "^1.0.3",
     "@allenai/varnish": "^1.0.0",
     "@allenai/varnish-react-router": "^1.0.4",
+    "antd": "4.19.3",
     "@ant-design/icons": "^4.2.1",
     "@types/jest": "^24.0.9",
     "@types/node": "11.9.5",

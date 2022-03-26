@@ -1,17 +1,21 @@
+import tempfile
 from typing import List, Optional, Dict, Any
 import logging
 import os
 import json
 import glob
 
-from fastapi import FastAPI, HTTPException, Header, Response, Body
+from fastapi import \
+    FastAPI, HTTPException, Header, Response, Body, Request, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
+from app.utils import save_upload_file_tmp
 from app.metadata import PaperStatus, Allocation
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
+from app.pawls_cli import add_pdf, assign_pdf_to_user, preprocess_pdf
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
@@ -319,3 +323,25 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
         response = Allocation(papers=papers, hasAllocatedPapers=True)
 
     return response
+
+
+@app.post("/api/upload")
+def upload_paper_ui(request: Request, file: UploadFile = File(...)):
+    user = request.headers.get('X-Auth-Request-User', None)
+    email = request.headers.get('X-Auth-Request-Email', None)
+
+    pdf_name = file.filename
+    temp_loc = save_upload_file_tmp(file)
+    pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
+    preprocess_pdf(pdf_hash=pdf_hash)
+    assign_pdf_to_user(email, pdf_hash)
+
+    logger.info({'user': user,
+                 'email': email,
+                 'pdf_hash': pdf_hash,
+                 'file': pdf_name,
+                 'tmpfile': temp_loc})
+
+    os.remove(temp_loc)
+
+    return 200

@@ -18,7 +18,7 @@ ui/*.log
 # Ignore any files in ./skiff_files
 skiff_files/*
 
-### Python Build Related ### 
+### Python Build Related ###
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -158,3 +158,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# macOS
+.DS_Store
+node_modules/
