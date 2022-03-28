@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import Optional, Union
+import aiofiles
 
 from pawls.preprocessors.grobid import process_grobid
 from pawls.preprocessors.pdfplumber import process_pdfplumber
@@ -64,14 +65,17 @@ class PDFsMetadata:
     def _has_updated(self):
         return self.timestamp != os.path.getmtime(self.path)
 
-    def _update(self):
-        with open(self.path, mode='r', encoding='utf-8') as f:
-            new_metadata = json.load(f)
+    async def _update(self):
+        if self.path.exists():
+            async with aiopen.open(self.path, mode='r', encoding='utf-8') as f:
+                new_metadata = json.load(await f.read())
+        else:
+            new_metadata = {}
 
         self.metadata.update(new_metadata)
 
-        with open(self.path, mode='w', encoding='utf-8') as f:
-            json.dump(self.metadata, f)
+        async with open(self.path, mode='w', encoding='utf-8') as f:
+            await f.write(json.dumps(self.metadata))
 
     def get_name(self, hash):
         return self.metadata.get(hash, hash)

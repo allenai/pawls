@@ -1,0 +1,33 @@
+.ant-upload.ant-upload-drag {
+  background-color: #f0f2f5;
+  padding: 1em;
+  border: 0.2em dashed #40a9ff;
+  border-radius: 1em;
+  margin-top: 3em;
+}
+
+.ant-page-header-heading-title {
+  font-size: 2em;
+}
+
+.ant-upload-btn {
+  margin: auto;
+}
+
+.ant-upload-hint{
+  max-width: 480px;
+}
+
+.ant-upload-drag-icon{
+  font-size: 64px;
+  margin-bottom: .3em;
+  margin-top: 0em;
+  color: #40a9ff;
+  padding: 0em;
+}
+
+.ant-upload-text {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin-bottom: .5em;
+}

@@ -1,17 +1,31 @@
+import logging
 from pythonjsonlogger import jsonlogger
+from aiofiles import open as aiopen
+from aiofiles.os import wrap
+from aiofiles.tempfile import NamedTemporaryFile
 
 from fastapi import UploadFile
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 import shutil
 
+copyfileobj = wrap(shutil.copyfileobj)
 
-def save_upload_file_tmp(upload_file: UploadFile) -> Path:
+logger = logging.getLogger(__file__)
+
+async def save_upload_file_tmp(upload_file: UploadFile) -> Path:
     try:
         suffix = Path(upload_file.filename).suffix
-        with NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(upload_file.file, tmp)
+
+        async with NamedTemporaryFile(delete=False, suffix=suffix, mode='wb') as tmp:
+            content = True
+            while content:
+                content = await upload_file.read(1024)
+                await tmp.write(content)
+            # await copyfileobj(upload_file.file, tmp)
             tmp_path = Path(tmp.name)
+
+        logger.debug(f'Uploaded to {tmp_path}')
+
     finally:
         upload_file.file.close()
     return tmp_path

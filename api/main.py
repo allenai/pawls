@@ -1,13 +1,13 @@
-import tempfile
 from typing import List, Optional, Dict, Any
 import logging
 import os
 import json
 import glob
+import time
 
 from fastapi import \
     FastAPI, HTTPException, Header, Response, Body, Request, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from app.utils import save_upload_file_tmp
@@ -326,22 +326,25 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
 
 
 @app.post("/api/upload")
-def upload_paper_ui(request: Request, file: UploadFile = File(...)):
+async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
+
     user = request.headers.get('X-Auth-Request-User', None)
     email = request.headers.get('X-Auth-Request-Email', None)
 
     pdf_name = file.filename
-    temp_loc = save_upload_file_tmp(file)
+    temp_loc = await save_upload_file_tmp(file)
     pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
     preprocess_pdf(pdf_hash=pdf_hash)
     assign_pdf_to_user(email, pdf_hash)
 
-    logger.info({'user': user,
-                 'email': email,
-                 'pdf_hash': pdf_hash,
-                 'file': pdf_name,
-                 'tmpfile': temp_loc})
-
     os.remove(temp_loc)
 
-    return 200
+    response = {'user': user,
+                'email': email,
+                'pdf_hash': pdf_hash,
+                'file': pdf_name,
+                'tmpfile': str(temp_loc)}
+
+    logger.info(response)
+
+    return JSONResponse(content=response, status_code=200)
