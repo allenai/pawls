@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import IntEnum
+from functools import partial
 import logging
 from typing import Optional, Sequence, Union, Any
 
@@ -72,16 +73,21 @@ class MmdaUtils:
             "lp://efficientdet/PubLayNet"
         )
 
-        self.pdfplumber_parser = PDFPlumberParser()
-        self.rasterizer = PDF2ImageRasterizer()
+        self.parse_fn = PDFPlumberParser().parse
+        self.rasterize_fn = partial(PDF2ImageRasterizer().rasterize,
+                                    dpi=rasterize_dpi)
 
         valid_doc_labels = (valid_doc_labels or
                             [DocLabels.paragraph, DocLabels.list])
         self.valid_doc_labels = [DocLabels(l) for l in valid_doc_labels]
 
     async def __call__(self, pdf_file: str) -> Any:
-        doc = self.pdfplumber_parser.parse(input_pdf_path=pdf_file)
-        images = self.rasterizer.rasterize(input_pdf_path=pdf_file, dpi=72)
+
+        logging.info(f'Parsing {pdf_file} with pdfplumber')
+        doc = self.parse_fn(pdf_file)
+
+        logging.info(f'Rasterizing {pdf_file} to images')
+        images = self.rasterize_fn(input_pdf_path=pdf_file, dpi=72)
         doc.annotate_images(images)
 
         # Obtaining Layout Predictions
