@@ -35,26 +35,49 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
     };
 
     const pdfStore = useContext(PDFStore);
-    // const totalPdfTokens = pdfStore.pages.map((page) => page?.tokens.length).reduce((a, b) => a + b, 0);
-    const totalPdfTokens =
-        pdfStore.pages?.map((page) => page?.tokens.length || 0).reduce((a, b) => a + b, 0) || 100;
+
+    // provided, we use the valid flag for each token. If
+    // not provided or set to -1, we simply sum the total number of
+    // tokens for each page.
+    let totalPdfTokens = 0;
+    pdfStore.pages?.forEach((page) => {
+        const pagePdfTokens = page.tokens
+            .map((token) => (token?.valid !== null && token?.valid >= 0 ? token.valid : 1))
+            .reduce((a, b) => a + b, 0);
+        totalPdfTokens += pagePdfTokens;
+    });
+
+    // counting the number of total annotated tokens is much easier;
+    // it's the length of each span.
     const totalAnnotatedTokens = annotations
         .map((annotation) => annotation.tokens?.length || 0)
         .reduce((a, b) => a + b, 0);
-    // const totalAnnotatedTokens = annotations.length === 0 ? 0 : (annotations.map(annotation => (annotation.tokens?.length || 0)).reduce((a, b) => a + b, 0));
-    // const totalAnnotatedTokens = 5;
-    // const totalPdfTokens = 100;
+
+    // finally we want the percentage of annotated tokens.
     const ratioTokenAnnotated = ((totalAnnotatedTokens / totalPdfTokens) * 100).toFixed(2);
-    // const ratioTokenAnnotated = 0;
-    // console.log(pdfStore);
-    // console.log(annotations);
+
+    const totalAnnotatedTokensFormatted = totalAnnotatedTokens.toLocaleString();
+    const totalPdfTokensFormatted = totalPdfTokens.toLocaleString();
 
     return (
         <SidebarItem>
             <SidebarItemTitle>Annotations</SidebarItemTitle>
-            <div>ratioTokenAnnotated: {ratioTokenAnnotated} %</div>
-            <div>totalAnnotatedTokens: {totalAnnotatedTokens}</div>
-            <div>totalPdfTokens: {totalPdfTokens}</div>
+            <AnnotationStatusInfoBlock>
+                <AnnotationStatusInfo>
+                    Percent annotated:
+                    <AnnotationStatusInfoCount>{ratioTokenAnnotated}%</AnnotationStatusInfoCount>
+                </AnnotationStatusInfo>
+                <AnnotationStatusInfo>
+                    Annotated words:
+                    <AnnotationStatusInfoCount>
+                        {totalAnnotatedTokensFormatted}
+                    </AnnotationStatusInfoCount>
+                </AnnotationStatusInfo>
+                <AnnotationStatusInfo>
+                    Total words:
+                    <AnnotationStatusInfoCount>{totalPdfTokensFormatted}</AnnotationStatusInfoCount>
+                </AnnotationStatusInfo>
+            </AnnotationStatusInfoBlock>
             <ExplainerText>
                 <InfoCircleOutlined style={{ marginRight: '3px' }} />
                 Use CMD + z to undo the last annotation.
@@ -95,6 +118,23 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
         </SidebarItem>
     );
 };
+
+const AnnotationStatusInfoBlock = styled.div(
+    ({ theme }) => `
+        margin-bottom: 1em;
+        padding-bottom: .5em;
+        border-bottom: 1px solid ${theme.color.N8};
+    `
+);
+
+const AnnotationStatusInfo = styled.div`
+    size: 1em;
+`;
+
+const AnnotationStatusInfoCount = styled.span`
+    font-weight: bold;
+    margin-left: 0.5em;
+`;
 
 const ExplainerText = styled.div`
     font-size: ${({ theme }) => theme.spacing.sm};

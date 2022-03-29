@@ -30,16 +30,23 @@ if IN_PRODUCTION == "prod":
     json_handler.setFormatter(StackdriverJsonFormatter())
     handlers = [json_handler]
 
-logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", default=logging.INFO), handlers=handlers
-)
-logger = logging.getLogger("uvicorn")
+logging.basicConfig(level=os.environ.get("LOG_LEVEL", default=logging.INFO),
+                    handlers=handlers)
 
 # boto3 logging is _super_ verbose.
 logging.getLogger("boto3").setLevel(logging.CRITICAL)
 logging.getLogger("botocore").setLevel(logging.CRITICAL)
 logging.getLogger("nose").setLevel(logging.CRITICAL)
 logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
+
+# pdf miner is also very verbose;
+for name in logging.root.manager.loggerDict:
+    if name.startswith('pdfminer'):
+        chatty_logger = logging.getLogger(name)
+        logging_level = max(chatty_logger.level, logging.INFO)
+        chatty_logger.setLevel(logging_level)
+
+logger = logging.getLogger("uvicorn")
 
 # The annotation app requires a bit of set up.
 configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
@@ -325,6 +332,10 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     return response
 
 
+from app.mmda_utils import MmdaUtils
+
+mmda = MmdaUtils()
+
 @app.post("/api/upload")
 async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
 
@@ -334,7 +345,7 @@ async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
     pdf_name = file.filename
     temp_loc = await save_upload_file_tmp(file)
     pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
-    preprocess_pdf(pdf_hash=pdf_hash)
+    await preprocess_pdf(pdf_hash=pdf_hash, processor=mmda)
     assign_pdf_to_user(email, pdf_hash)
 
     os.remove(temp_loc)

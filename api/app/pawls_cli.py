@@ -1,3 +1,4 @@
+from ast import ImportFrom
 import hashlib
 import json
 import logging
@@ -7,17 +8,19 @@ from pathlib import Path
 from typing import Optional, Union
 import aiofiles
 
-from pawls.preprocessors.grobid import process_grobid
-from pawls.preprocessors.pdfplumber import process_pdfplumber
+try:
+    from pawls.preprocessors.grobid import process_grobid
+except ImportError:
+    process_grobid = None
+
+try:
+    from pawls.preprocessors.pdfplumber import process_pdfplumber
+except ImportError:
+    process_pdfplumber = None
 
 BASE_DIR = Path("/skiff_files/apps/pawls/papers")
 
 logger = logging.getLogger("uvicorn")
-
-for name in logging.root.manager.loggerDict:
-    if name.startswith('pdfminer'):
-        logging.getLogger(name).setLevel(logging.WARNING)
-
 
 def hash_pdf(file: Union[str, Path]) -> str:
     block_size = 65536
@@ -67,14 +70,14 @@ class PDFsMetadata:
 
     async def _update(self):
         if self.path.exists():
-            async with aiopen.open(self.path, mode='r', encoding='utf-8') as f:
+            async with aiofiles.open(self.path, mode='r', encoding='utf-8') as f:
                 new_metadata = json.load(await f.read())
         else:
             new_metadata = {}
 
         self.metadata.update(new_metadata)
 
-        async with open(self.path, mode='w', encoding='utf-8') as f:
+        async with aiofiles.open(self.path, mode='w', encoding='utf-8') as f:
             await f.write(json.dumps(self.metadata))
 
     def get_name(self, hash):
@@ -85,7 +88,7 @@ class PDFsMetadata:
         self._update()
 
 
-def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber'):
+async def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber'):
     """
     Run a pre-processor on a pdf/directory of pawls pdfs and
     write the resulting token information to the pdf location.
@@ -107,8 +110,12 @@ def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber'):
         elif processor == "pdfplumber":
             data = process_pdfplumber(str(path))
         else:
-            msg = "PDF Processor {processor} not found"
-            raise ValueError(msg)
+            data = await processor(str(path))
+
+        # set the valid flag to -1 in case that's not info that
+        # is from the parser
+        [token.setdefault('valid', -1)
+         for page in data for token in page['tokens']]
 
         with open(structure_path, mode="w+", encoding='utf-8') as f:
             json.dump(data, f)

@@ -49,59 +49,63 @@ export const Labels = () => {
         };
     }, [annotationStore]);
 
-    // TODO(Mark): Style the tags so it's clear you can select them with the numeric keys.
-    return (
-        <SidebarItem>
-            <SidebarItemTitle>Labels</SidebarItemTitle>
-            <ExplainerText>
-                <InfoCircleOutlined style={{ marginRight: '3px' }} />
-                Use arrow keys to select labels to annotate.
-            </ExplainerText>
-            <Container>
-                <div>
-                    {annotationStore.labels.map((label) => (
-                        <LabelTag
-                            key={label.text}
-                            onClick={() => {
-                                annotationStore.setActiveLabel(label);
-                            }}
-                            checked={label === annotationStore.activeLabel}
-                            style={{ color: label.color }}>
-                            {label.text}
-                        </LabelTag>
-                    ))}
-                </div>
-                {annotationStore.relationLabels.length !== 0 ? (
-                    <>
-                        <SidebarItemTitle>Relations</SidebarItemTitle>
-                        <div>
-                            {annotationStore.relationLabels.map((relation) => (
-                                <LabelTag
-                                    key={relation.text}
-                                    onClick={() => {
-                                        annotationStore.setActiveRelationLabel(relation);
-                                    }}
-                                    checked={relation === annotationStore.activeRelationLabel}
-                                    style={{ color: relation.color }}>
-                                    {relation.text}
-                                </LabelTag>
-                            ))}
-                        </div>
-                    </>
-                ) : null}
+    if (annotationStore.labels.length > 1) {
+        // TODO(Mark): Style the tags so it's clear you can select them with the numeric keys.
+        return (
+            <SidebarItem>
+                <SidebarItemTitle>Labels</SidebarItemTitle>
+                <ExplainerText>
+                    <InfoCircleOutlined style={{ marginRight: '3px' }} />
+                    Use arrow keys to select labels to annotate.
+                </ExplainerText>
+                <Container>
+                    <div>
+                        {annotationStore.labels.map((label) => (
+                            <LabelTag
+                                key={label.text}
+                                onClick={() => {
+                                    annotationStore.setActiveLabel(label);
+                                }}
+                                checked={label === annotationStore.activeLabel}
+                                style={{ color: label.color }}>
+                                {label.text}
+                            </LabelTag>
+                        ))}
+                    </div>
+                    {annotationStore.relationLabels.length !== 0 ? (
+                        <>
+                            <SidebarItemTitle>Relations</SidebarItemTitle>
+                            <div>
+                                {annotationStore.relationLabels.map((relation) => (
+                                    <LabelTag
+                                        key={relation.text}
+                                        onClick={() => {
+                                            annotationStore.setActiveRelationLabel(relation);
+                                        }}
+                                        checked={relation === annotationStore.activeRelationLabel}
+                                        style={{ color: relation.color }}>
+                                        {relation.text}
+                                    </LabelTag>
+                                ))}
+                            </div>
+                        </>
+                    ) : null}
 
-                <div>
-                    Free Form Annotations
-                    <Toggle
-                        size="small"
-                        onChange={onToggle}
-                        checkedChildren={<CheckOutlined />}
-                        unCheckedChildren={<CloseOutlined />}
-                    />
-                </div>
-            </Container>
-        </SidebarItem>
-    );
+                    <div>
+                        Free Form Annotations
+                        <Toggle
+                            size="small"
+                            onChange={onToggle}
+                            checkedChildren={<CheckOutlined />}
+                            unCheckedChildren={<CloseOutlined />}
+                        />
+                    </div>
+                </Container>
+            </SidebarItem>
+        );
+    } else {
+        return null;
+    }
 };
 
 const ExplainerText = styled.div`
