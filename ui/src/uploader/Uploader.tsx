@@ -35,9 +35,6 @@ const Uploader = () => {
                 state.hasLogged = true;
             }
             if (info.file.status === 'done') {
-                console.log(info.file.response);
-                console.log(state);
-                console.log(history);
                 if (state.toHide != null) {
                     setTimeout(state.toHide, 0);
                 }
@@ -46,6 +43,9 @@ const Uploader = () => {
                 history.push(redirectUrl);
                 history.go(0);
             } else if (info.file.status === 'error') {
+                if (state.toHide != null) {
+                    setTimeout(state.toHide, 0);
+                }
                 message.error(`${info.file.name} file upload failed.`);
             }
         },

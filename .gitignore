@@ -162,3 +162,5 @@ cython_debug/
 # macOS
 .DS_Store
 node_modules/
+.vscode
+/tmp
