@@ -164,3 +164,4 @@ cython_debug/
 node_modules/
 .vscode
 /tmp
+ui/package-lock.json

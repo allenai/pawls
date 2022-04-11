@@ -21,7 +21,6 @@ async def save_upload_file_tmp(upload_file: UploadFile) -> Path:
             while content:
                 content = await upload_file.read(1024)
                 await tmp.write(content)
-            # await copyfileobj(upload_file.file, tmp)
             tmp_path = Path(tmp.name)
 
         logger.debug(f'Uploaded to {tmp_path}')

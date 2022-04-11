@@ -1,6 +1,4 @@
 import asyncio
-from email.policy import default
-import pickle
 import logging
 import multiprocessing
 import os
@@ -13,8 +11,6 @@ from typing import List, Optional, Sequence, Tuple, Union
 import torch
 from pydantic import BaseModel, Field, validator
 from PyPDF2 import PdfFileReader, PdfFileWriter
-from minimal_server import minimal_server, MinimalClient
-import click
 
 from mmda.parsers.pdfplumber_parser import PDFPlumberParser
 from mmda.predictors.hf_predictors.vila_predictor import (HVILAPredictor,
@@ -153,22 +149,6 @@ class MmdaUtils:
     def get_logger(self) -> logging.Logger:
         return get_logger(self)
 
-    # async def async_process_pdf(
-    #     self,
-    #     pdf_file: str,
-    #     nproc: int = 0,
-    #     use_pyd: bool = False,
-    #     loop: Optional[asyncio.BaseEventLoop] = None) -> Sequence[Page]:
-    #     with ProcessPoolExecutor(max_workers=nproc,
-    #                              mp_context=self.mp_context) as pool:
-    #         # futures = [loop.run_in_executor(pool, process_page, fn, queue) for fn in temp_pages]
-    #         futures = [
-    #             loop.run_in_executor(pool, mmda.run, page)
-    #             # loop.run_in_executor(pool, test, queue, page[0])
-    #             for page in temp_pages
-    #         ]
-    #         data = await asyncio.gather(*futures)
-
     def process_pdf(self,
                     pdf_file: str,
                     nproc: int = 0,
@@ -253,39 +233,3 @@ class MmdaUtils:
         logger.info(f'Done with {pdf_file}')
 
         return doc
-
-
-def mmda_client(port: int = 5555, buffersize: int = 2048) -> MmdaUtils:
-    return MinimalClient(MmdaUtils, port=port, buffersize=buffersize)
-
-
-@click.command()
-@click.option('--port', default=5555, type=int)
-@click.option('--buffersize', default=2048, type=int)
-@click.option('--host', default='localhost', type=str)
-@click.option('--mp-context', default='spawn', type=str)
-@click.option('--pickle-protocol', default=pickle.HIGHEST_PROTOCOL, type=int)
-def mmda_server(port: int,
-                buffersize: int,
-                host: str,
-                mp_context: str,
-                pickle_protocol: int):
-
-    torch.multiprocessing.set_start_method(mp_context)
-
-    logger = get_logger('__main__')
-
-    logger.info('Getting MMDA...')
-    mmda = MmdaUtils(mp_context=mp_context)
-    mmda.eval()
-    mmda.share_memory()
-    logger.info('Starting server...')
-    minimal_server(mmda,
-                   port=port,
-                   buffersize=buffersize,
-                   host=host,
-                   pickle_protocol=pickle_protocol)
-
-
-if __name__ == '__main__':
-    mmda_server()

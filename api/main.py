@@ -79,6 +79,9 @@ def user_is_allowed(user_email: str) -> bool:
     """
     Return True if the user_email is in the users file, False otherwise.
     """
+    if IN_PRODUCTION != 'prod':
+        return True
+
     try:
         with open(configuration.users_file) as file:
             for line in file:
@@ -340,38 +343,40 @@ mmda = MmdaUtils()
 def startup_event():
     mmda.eval()
     mmda.share_memory()
+    logger.info('MMDA init completed')
 
 
 @app.post("/api/upload")
-async def upload_paper_ui(request: Request, file_: UploadFile = File(...)):
-    try:
+async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
 
-        user = request.headers.get('X-Auth-Request-User')
-        email = request.headers.get('X-Auth-Request-Email')
+    user = request.headers['X-Auth-Request-User']
+    email = request.headers['X-Auth-Request-Email']
 
-        pdf_name = file_.filename
-        temp_loc = await save_upload_file_tmp(file_)
-        pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
-        os.remove(temp_loc)
+    if not user_is_allowed(email):
+        raise HTTPException(403, "Forbidden")
 
-        pdf_file = os.path.join(configuration.output_directory,
-                                f"{pdf_hash}/{pdf_hash}.pdf")
+    pdf_name = file.filename
+    temp_loc = await save_upload_file_tmp(file)
+    pdf_hash = add_pdf(file_path=temp_loc,
+                       pdf_name=pdf_name,
+                       base_path=configuration.output_directory)
 
-        data = mmda.process_pdf(pdf_file)
+    await preprocess_pdf(pdf_hash=pdf_hash,
+                         processor=mmda.process_pdf,
+                         base_path=configuration.output_directory)
 
-        await preprocess_pdf(pdf_hash=pdf_hash, data=data)
-        await assign_pdf_to_user(email, pdf_hash)
+    assign_pdf_to_user(annotator=email,
+                       pdf_hash=pdf_hash,
+                       base_path=configuration.output_directory)
 
-        response = {'user': user,
-                    'email': email,
-                    'pdf_hash': pdf_hash,
-                    'file': pdf_file,
-                    'name': pdf_name,
-                    'tmpfile': str(temp_loc)}
+    os.remove(temp_loc)
 
-        logger.info(response)
+    response = {'user': user,
+                'email': email,
+                'pdf_hash': pdf_hash,
+                'file': pdf_name,
+                'tmpfile': str(temp_loc)}
 
-        return JSONResponse(content=response, status_code=200)
+    logger.info(response)
 
-    except Exception as e:
-        return JSONResponse(content={'exception': str(e)}, status_code=500)
+    return JSONResponse(content=response, status_code=200)
