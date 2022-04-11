@@ -266,14 +266,6 @@ function(
                                 periodSeconds: 10,
                                 failureThreshold: 3
                             },
-                            livenessProbe: {
-                                httpGet: apiHealthCheck + {
-                                    path: '/?check=liveness_probe'
-                                },
-                                periodSeconds: 10,
-                                failureThreshold: 9,
-                                initialDelaySeconds: 30
-                            },
                             # This tells Kubernetes what CPU and memory resources your API needs.
                             # We set these values low by default, as most applications receive
                             # bursts of activity and accordingly don't need dedicated resources
@@ -309,12 +301,6 @@ function(
                             readinessProbe: {
                                 httpGet: proxyHealthCheck + {
                                     path: '/?check=rdy'
-                                }
-                            },
-                            livenessProbe: {
-                                failureThreshold: 6,
-                                httpGet: proxyHealthCheck + {
-                                    path: '/?check=live'
                                 }
                             },
                             resources: {
