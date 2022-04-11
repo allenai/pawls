@@ -15,7 +15,7 @@ ARG GITHUB_ACCESS_TOKEN
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel
-COPY api/requirements.txt .
+COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
@@ -40,16 +40,13 @@ RUN pip install PyPDF2==1.26.0
 # avoid unnecessary forking with the huggingface tokenizer
 ENV TOKENIZERS_PARALLELISM="false"
 
-# install the pawls CLI
-COPY cli /tmp/cli/
-RUN python /tmp/cli/setup.py install
 
 ########## COPYING SOURCE CODE FROM HERE ON ##########
 
 # Copy over the source code
-COPY api/app app/
-COPY api/config config/
-COPY api/main.py main.py
+COPY app app/
+COPY config config/
+COPY main.py main.py
 
 # Kick things off
 ENTRYPOINT [ "uvicorn" ]

@@ -10,8 +10,7 @@ services:
         build:
             # need to build from root directory because I need accrees to
             # the CLI files.
-            context: ./
-            dockerfile: ./api/Dockerfile
+            context: ./api
         volumes:
             - ./api:/usr/local/src/skiff/app/api
             # - ./cli:/usr/local/src/skiff/app/cli

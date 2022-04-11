@@ -6,10 +6,9 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor
 from enum import IntEnum
 from tempfile import NamedTemporaryFile
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import torch
-from pydantic import BaseModel, Field, validator
 from PyPDF2 import PdfFileReader, PdfFileWriter
 
 from mmda.parsers.pdfplumber_parser import PDFPlumberParser
@@ -19,30 +18,7 @@ from mmda.predictors.lp_predictors import LayoutParserPredictor
 from mmda.rasterizers.rasterizer import PDF2ImageRasterizer
 from mmda.types.document import Document
 
-
-class PageSpec(BaseModel):
-    width: int
-    height: int
-    index: int
-
-
-class PageToken(BaseModel):
-    text: str
-    width: float
-    height: float
-    x: float
-    y: float
-    valid: int
-
-    @validator('valid')
-    def valid_flag_range(cls, value):
-        assert value in {-1, 0, 1}
-        return int(value)
-
-
-class Page(BaseModel):
-    page: PageSpec
-    tokens: List[PageToken] = Field(default_factory=lambda: [])
+from .annotations import PageSpec, PageToken, Page
 
 
 class DocLabels(IntEnum):

@@ -6,15 +6,9 @@ import shutil
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-try:
-    from pawls.preprocessors.grobid import process_grobid
-except ImportError:
-    process_grobid = None
+from .grobid import process_grobid
+from .pdfplumber import process_pdfplumber
 
-try:
-    from pawls.preprocessors.pdfplumber import process_pdfplumber
-except ImportError:
-    process_pdfplumber = None
 
 logger = logging.getLogger("uvicorn")
 
