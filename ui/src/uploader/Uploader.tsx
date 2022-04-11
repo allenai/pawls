@@ -55,7 +55,7 @@ const Uploader = () => {
         <Layout>
             <Content className="site-layout-background">
                 <Row justify="center" align="middle">
-                    <Logo src={annotateSvg} alt="My Happy SVG" />
+                    <Logo src={annotateSvg} alt="PAWLS uploader logo" />
                 </Row>
                 <Row justify="center" align="middle">
                     <PageHeader title="PAWLS PDF Uploading Tool" backIcon={false}></PageHeader>

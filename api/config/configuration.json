@@ -1,5 +1,5 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/papers/",
+    "output_directory": "/skiff_files/apps/pawls/skimming-annotations/",
     "labels": [
         {
             "text": "RemoveText",
