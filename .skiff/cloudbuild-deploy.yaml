@@ -36,7 +36,9 @@ steps:
     'docker build -t gcr.io/$PROJECT_ID/$REPO_NAME-api:latest -t gcr.io/$PROJECT_ID/$REPO_NAME-api:$COMMIT_SHA --cache-from gcr.io/$PROJECT_ID/$REPO_NAME-api:latest .'
   ]
   waitFor: [ 'api.pull' ]
-  dir: 'api'
+  # we build from main directory rather than "api" so we can install pawls
+  # CLI if we want to.
+  dir: '.'
 - id: 'ui.build'
   name: 'gcr.io/cloud-builders/docker'
   args: [

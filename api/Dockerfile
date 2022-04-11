@@ -40,6 +40,10 @@ RUN pip install PyPDF2==1.26.0
 # avoid unnecessary forking with the huggingface tokenizer
 ENV TOKENIZERS_PARALLELISM="false"
 
+# install the pawls CLI
+COPY cli /tmp/cli/
+RUN python /tmp/cli/setup.py install
+
 ########## COPYING SOURCE CODE FROM HERE ON ##########
 
 # Copy over the source code

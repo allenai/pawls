@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
+import os
+from pathlib import Path
 
-with open("readme.md", "r") as readme_file:
+current_dir = Path(os.path.dirname(__file__))
+with open(current_dir / "readme.md", "r") as readme_file:
     readme = readme_file.read()
 
 

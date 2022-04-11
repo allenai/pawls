@@ -5,7 +5,6 @@ import os
 import shutil
 from pathlib import Path
 from typing import Callable, Optional, Union
-import aiofiles
 
 try:
     from pawls.preprocessors.grobid import process_grobid
