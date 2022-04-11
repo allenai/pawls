@@ -1,6 +1,6 @@
 import 'antd/dist/antd.css';
 import './styles.css';
-import { Upload, message, Layout, Row, PageHeader } from 'antd';
+import { Upload, message, Layout, Row, PageHeader } from 'antd/es';
 import { useHistory } from 'react-router-dom';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadChangeParam } from 'antd/lib/upload/interface';
@@ -18,6 +18,7 @@ interface uploadMessagingState {
 
 const Uploader = () => {
     const history = useHistory();
+    // eslint-disable-next-line
     var state: uploadMessagingState = { toHide: null, hasLogged: false };
 
     const props = {
