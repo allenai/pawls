@@ -342,7 +342,7 @@ mmda = MmdaUtils()
 @app.on_event("startup")
 def startup_event():
     mmda.eval()
-    mmda.share_memory()
+    # mmda.share_memory()
     logger.info('MMDA init completed')
 
 
