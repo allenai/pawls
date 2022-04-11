@@ -22,6 +22,10 @@ services:
             # makes debugging easier.
             - PYTHONUNBUFFERED=1
             - LOG_LEVEL=DEBUG
+
+        # needed to ensure being able to run mmda models over multiple
+        # processes.
+        shm_size: '4gb'
         command: ["main:app", "--host", "0.0.0.0", "--reload"]
     ui:
         build:
@@ -43,13 +47,13 @@ services:
             - api
             - ui
 
-    # This service is optional!
-    # It is not used during deployment, but simply runs a grobid service
-    # which the CLI can use for pre-processing PDFs, using grobid to provide
-    # the detailed token information.
-    grobid:
-        hostname: grobid-pawls
-        image: 'allenai/grobid:0.5.6-pdf-structure'
-        ports:
-            - '8070:8070'
-            - '8071:8071'
+    # # This service is optional!
+    # # It is not used during deployment, but simply runs a grobid service
+    # # which the CLI can use for pre-processing PDFs, using grobid to provide
+    # # the detailed token information.
+    # grobid:
+    #     hostname: grobid-pawls
+    #     image: 'allenai/grobid:0.5.6-pdf-structure'
+    #     ports:
+    #         - '8070:8070'
+    #         - '8071:8071'

@@ -1,4 +1,3 @@
-from ast import ImportFrom
 import hashlib
 import json
 import logging
@@ -53,7 +52,7 @@ def add_pdf(file_path: Union[str, Path], pdf_name: Optional[str] = None) -> str:
         output_dir.mkdir(exist_ok=True)
         shutil.copy(str(file_path),
                     str(output_dir / f'{pdf_hash}.pdf'))
-        PDFsMetadata().set_name(hash, pdf_name)
+        PDFsMetadata().set_name(pdf_hash, pdf_name)
 
     return pdf_hash
 
@@ -88,7 +87,7 @@ class PDFsMetadata:
         self._update()
 
 
-async def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber'):
+async def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber', data: dict = None):
     """
     Run a pre-processor on a pdf/directory of pawls pdfs and
     write the resulting token information to the pdf location.
@@ -105,12 +104,11 @@ async def preprocess_pdf(pdf_hash: str, processor: str = 'pdfplumber'):
 
         logging.info(f"Processing {path} using {processor}...")
 
-        if processor == "grobid":
-            data = process_grobid(str(path))
-        elif processor == "pdfplumber":
-            data = process_pdfplumber(str(path))
-        else:
-            data = await processor(str(path))
+        if data is None:
+            if processor == "grobid":
+                data = process_grobid(str(path))
+            elif processor == "pdfplumber":
+                data = process_pdfplumber(str(path))
 
         # set the valid flag to -1 in case that's not info that
         # is from the parser
@@ -148,3 +146,5 @@ def assign_pdf_to_user(annotator: str, pdf_hash: str):
 
     with open(status_path, mode="w+", encoding='utf-8') as out:
         json.dump(pdf_status, out)
+
+    return pdf_status

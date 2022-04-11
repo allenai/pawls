@@ -4,7 +4,7 @@ FROM python:3.8.12
 WORKDIR /tmp
 RUN curl https://sh.rustup.rs -sSf > rustup.sh
 RUN chmod 755 rustup.sh
-RUN ./rustup.sh -y
+RUN ./rustup.sh -y --default-toolchain 1.59
 RUN rm /tmp/rustup.sh
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -19,19 +19,25 @@ COPY api/requirements.txt .
 
 RUN pip install -r requirements.txt
 
-# # we need to install the pawls CLI, but we do so
-# # by first moving the code to a temp location.
-# COPY cli /tmp/pawls-cli/
-# RUN pip install -r /tmp/pawls-cli/requirements.txt
-# RUN pip install /tmp/pawls-cli
 
-# dependecies for MMDA
+# dependecies for MMDA; we need to install them here cuz
+# they are not version-locked on github
 RUN apt-get update && \
     apt-get install -y curl ffmpeg libsm6 libxext6 poppler-utils
+RUN pip install --upgrade torch==1.9.0
+RUN pip install --upgrade torchvision==0.10.0
+RUN pip install PyPDF2==1.26.0
+RUN pip install layoutparser==0.3.2
+RUN pip install transformers==4.5
+RUN pip install vila==0.2.1
 
 # Installing MMDA
-RUN pip install 'mmda[lp_predictors,vila_predictors] @ git+https://github.com/allenai/mmda.git'
+RUN pip install 'mmda[lp_predictors,vila_predictors] @ https://github.com/allenai/mmda/archive/refs/tags/0.0.5.zip'
 
+# additional package for for app/mmda_utils.py
+RUN pip install PyPDF2==1.26.0
+
+# avoid unnecessary forking with the huggingface tokenizer
 ENV TOKENIZERS_PARALLELISM="false"
 
 ########## COPYING SOURCE CODE FROM HERE ON ##########

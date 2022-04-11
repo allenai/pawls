@@ -3,10 +3,10 @@ import logging
 import os
 import json
 import glob
-import time
 
 from fastapi import \
-    FastAPI, HTTPException, Header, Response, Body, Request, File, UploadFile
+    FastAPI, HTTPException, Header, Response, Body, \
+    Request, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
@@ -16,6 +16,7 @@ from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
 from app.pawls_cli import add_pdf, assign_pdf_to_user, preprocess_pdf
+from app.mmda_utils import MmdaUtils
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
@@ -332,30 +333,45 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     return response
 
 
-from app.mmda_utils import MmdaUtils
-
 mmda = MmdaUtils()
 
+
+@app.on_event("startup")
+def startup_event():
+    mmda.eval()
+    mmda.share_memory()
+
+
 @app.post("/api/upload")
-async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
+async def upload_paper_ui(request: Request, file_: UploadFile = File(...)):
+    try:
 
-    user = request.headers.get('X-Auth-Request-User', None)
-    email = request.headers.get('X-Auth-Request-Email', None)
+        user = request.headers.get('X-Auth-Request-User')
+        email = request.headers.get('X-Auth-Request-Email')
 
-    pdf_name = file.filename
-    temp_loc = await save_upload_file_tmp(file)
-    pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
-    await preprocess_pdf(pdf_hash=pdf_hash, processor=mmda)
-    assign_pdf_to_user(email, pdf_hash)
+        pdf_name = file_.filename
+        temp_loc = await save_upload_file_tmp(file_)
+        pdf_hash = add_pdf(temp_loc, pdf_name=pdf_name)
+        os.remove(temp_loc)
 
-    os.remove(temp_loc)
+        pdf_file = os.path.join(configuration.output_directory,
+                                f"{pdf_hash}/{pdf_hash}.pdf")
 
-    response = {'user': user,
-                'email': email,
-                'pdf_hash': pdf_hash,
-                'file': pdf_name,
-                'tmpfile': str(temp_loc)}
+        data = mmda.process_pdf(pdf_file)
 
-    logger.info(response)
+        await preprocess_pdf(pdf_hash=pdf_hash, data=data)
+        await assign_pdf_to_user(email, pdf_hash)
 
-    return JSONResponse(content=response, status_code=200)
+        response = {'user': user,
+                    'email': email,
+                    'pdf_hash': pdf_hash,
+                    'file': pdf_file,
+                    'name': pdf_name,
+                    'tmpfile': str(temp_loc)}
+
+        logger.info(response)
+
+        return JSONResponse(content=response, status_code=200)
+
+    except Exception as e:
+        return JSONResponse(content={'exception': str(e)}, status_code=500)

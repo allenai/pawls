@@ -122,7 +122,8 @@ function(
                 'nginx.ingress.kubernetes.io/ssl-redirect': 'true',
                 'nginx.ingress.kubernetes.io/auth-url': 'https://google.login.apps.allenai.org/oauth2/auth',
                 'nginx.ingress.kubernetes.io/auth-signin': 'https://google.login.apps.allenai.org/oauth2/start?rd=https://$host$request_uri',
-                'nginx.ingress.kubernetes.io/auth-response-headers': 'X-Auth-Request-User, X-Auth-Request-Email'
+                'nginx.ingress.kubernetes.io/auth-response-headers': 'X-Auth-Request-User, X-Auth-Request-Email',
+                'nginx.ingress.kubernetes.io/proxy-read-timeout': '300'
             }
         },
         spec: {
