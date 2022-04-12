@@ -74,12 +74,13 @@ class PDFPlumberTokenExtractor:
         df = pd.DataFrame(words)
 
         # Avoid boxes outside the page
-        df[["x0", "x1"]] = (
-            df[["x0", "x1"]].clip(lower=0, upper=int(cur_page.width)).astype("float")
-        )
-        df[["top", "bottom"]] = (
-            df[["top", "bottom"]].clip(lower=0, upper=int(cur_page.height)).astype("float")
-        )
+        df[["x0", "x1"]] = df[["x0", "x1"]].\
+            clip(lower=0, upper=int(cur_page.width)).\
+                astype("float")
+
+        df[["top", "bottom"]] = df[["top", "bottom"]].\
+            clip(lower=0, upper=int(cur_page.height)).\
+                astype("float")
 
         df["height"] = df["bottom"] - df["top"]
         df["width"] = df["x1"] - df["x0"]

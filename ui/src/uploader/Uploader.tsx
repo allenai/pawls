@@ -72,9 +72,8 @@ const Uploader = () => {
                             Click or drag a PDF to this area to begin annotation.
                         </div>
                         <div className="ant-upload-hint">
-                            Please be patient while the PDF is being processed.
-                            <b> It might take up to 2 minutes to process a file. </b>
-                            Once done, you will be automatically redirected to the annotation page.
+                            Please be patient while the PDF is being processed. Once done, you will
+                            be automatically redirected to the annotation page.
                         </div>
                     </Dragger>
                 </Row>

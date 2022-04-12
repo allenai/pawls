@@ -50,12 +50,6 @@ class PageToken(BaseModel):
     height: float
     x: float
     y: float
-    valid: int
-
-    @validator('valid')
-    def valid_flag_range(cls, value):
-        assert value in {-1, 0, 1}
-        return int(value)
 
 
 class Page(BaseModel):
