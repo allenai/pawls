@@ -80,8 +80,8 @@ export const SelectionBoundary = ({
                 // lucas@: hacky way to keep the background solid no matter
                 //         what selected is, but still not have the compiler
                 //         get angry about selected not being used
-                background: `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${
-                    selected ? 1.0 : 1.0
+                background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${
+                    selected ? 0.3 : 0.1
                 })`,
             }}>
             {children || null}
@@ -94,12 +94,10 @@ interface TokenSpanProps {
 }
 
 const TokenSpan = styled.span<TokenSpanProps>(
-    // lucas@: Setting color for highlight to white opaque
-    // N1 is Varnish's #FFFFFF, and opacity is set to 0.9
     ({ theme, isSelected }) => `
     position: absolute;
-    background: ${isSelected ? theme.color.N1 : 'none'};
-    opacity: 0.9;
+    background: ${isSelected ? theme.color.B3 : 'none'};
+    opacity: 0.2;
     border-radius: 3px;
 `
 );

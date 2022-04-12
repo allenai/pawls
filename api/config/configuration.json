@@ -2,8 +2,8 @@
     "output_directory": "/skiff_files/apps/pawls/skimming-annotations/",
     "labels": [
         {
-            "text": "RemoveText",
-            "color": "#FFFFFF"
+            "text": "To Keep",
+            "color": "#70DDBA"
         }
     ],
     "relations": [],

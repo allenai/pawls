@@ -15,13 +15,13 @@ from app.metadata import PaperStatus, Allocation
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
 from app.utils import StackdriverJsonFormatter
 from app import pre_serve
-from app.pawls_cli import add_pdf, assign_pdf_to_user, preprocess_pdf
-from app.mmda_utils import MmdaUtils
+from app.upload import add_pdf, assign_pdf_to_user, preprocess_pdf
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
 CONFIGURATION_FILE = os.getenv(
-    "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
+    "PAWLS_CONFIGURATION_FILE",
+    "/usr/local/src/skiff/app/api/config/configuration.json"
 )
 
 handlers = None
@@ -336,16 +336,6 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     return response
 
 
-mmda = MmdaUtils()
-
-
-@app.on_event("startup")
-def startup_event():
-    mmda.eval()
-    # mmda.share_memory()
-    logger.info('MMDA init completed')
-
-
 @app.post("/api/upload")
 async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
 
@@ -362,7 +352,6 @@ async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
                        base_path=configuration.output_directory)
 
     await preprocess_pdf(pdf_hash=pdf_hash,
-                         processor=mmda.process_pdf,
                          base_path=configuration.output_directory)
 
     assign_pdf_to_user(annotator=email,

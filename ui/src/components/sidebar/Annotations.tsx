@@ -36,16 +36,9 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
 
     const pdfStore = useContext(PDFStore);
 
-    // provided, we use the valid flag for each token. If
-    // not provided or set to -1, we simply sum the total number of
-    // tokens for each page.
-    let totalPdfTokens = 0;
-    pdfStore.pages?.forEach((page) => {
-        const pagePdfTokens = page.tokens
-            .map((token) => (token?.valid !== null && token?.valid >= 0 ? token.valid : 1))
-            .reduce((a, b) => a + b, 0);
-        totalPdfTokens += pagePdfTokens;
-    });
+    // total number of PDF tokens of any type
+    const totalPdfTokens =
+        pdfStore.pages?.map((page) => page?.tokens.length || 0).reduce((a, b) => a + b, 0) || 100;
 
     // counting the number of total annotated tokens is much easier;
     // it's the length of each span.

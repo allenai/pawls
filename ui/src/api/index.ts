@@ -7,7 +7,6 @@ export interface Token {
     height: number;
     width: number;
     text: string;
-    valid: number | null;
 }
 
 interface Page {

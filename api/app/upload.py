@@ -6,7 +6,6 @@ import shutil
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from .grobid import process_grobid
 from .pdfplumber import process_pdfplumber
 
 
@@ -82,10 +81,7 @@ class PDFsMetadata:
         self._update()
 
 
-async def preprocess_pdf(pdf_hash: str,
-                         base_path: Union[str, Path],
-                         processor: Union[str, Callable] = 'pdfplumber',
-                         data: dict = None):
+async def preprocess_pdf(pdf_hash: str, base_path: Union[str, Path]):
     """
     Run a pre-processor on a pdf/directory of pawls pdfs and
     write the resulting token information to the pdf location.
@@ -102,22 +98,9 @@ async def preprocess_pdf(pdf_hash: str,
 
     if not structure_path.exists():
 
-        logging.info(f"Processing {path} using {processor}...")
+        logging.info(f"Processing {path} using pdfplumber...")
 
-        if data is None:
-            if isinstance(processor, str) and processor == "grobid":
-                data = process_grobid(str(path))
-            elif isinstance(processor, str) and processor == "pdfplumber":
-                data = process_pdfplumber(str(path))
-            elif isinstance(processor, str):
-                raise ValueError(f'processor {processor} not recognized')
-            else:
-                data = processor(str(path))
-
-        # set the valid flag to -1 in case that's not info that
-        # is from the parser
-        [token.setdefault('valid', -1)
-         for page in data for token in page['tokens']]
+        data = process_pdfplumber(str(path))
 
         with open(structure_path, mode="w+", encoding='utf-8') as f:
             json.dump(data, f)
