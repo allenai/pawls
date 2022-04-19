@@ -24,16 +24,6 @@ function(
             config.appName + '.' + env + topLevelDomain
     ];
 
-    // In production we run two versions of your application, as to ensure that
-    // if one instance goes down or is busy, end users can still use the application.
-    // In all other environments we run a single instance to save money.
-    local replicas = (
-        if env == 'prod' then
-            2
-        else
-            1
-    );
-
     // Each app gets it's own namespace.
     local namespaceName = config.appName;
 
@@ -164,7 +154,7 @@ function(
         },
         spec: {
             revisionHistoryLimit: 3,
-            replicas: replicas,
+            replicas: config.replicas,
             selector: {
                 matchLabels: selectorLabels
             },
