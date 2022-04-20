@@ -197,3 +197,42 @@ To fix this, run this command from the root of the repository:
 ---
 
 PAWLS is an open-source project developed by [the Allen Institute for Artificial Intelligence (AI2)](http://www.allenai.org). AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
+
+## Replica Management
+
+Because the application is used in short bursts for annotation projects, we manually turn
+the application on and off. We do this by managing the number or replicas, toggling it from
+`0` to `1` and vice versa.
+
+To adjust the number of replicas, edit the `skiff.json` and change the replica
+count. For instance, you can turn the application "off" like so:
+
+```diff
+{
+    "appName": "pawls",
+    "contact": "lucas",
+    "team": "s2research",
+-    "replicas": 1
++    "replicas": 0
+}
+```
+
+...and turn it back "on" by reversing that change:
+
+```diff
+{
+    "appName": "pawls",
+    "contact": "lucas",
+    "team": "s2research",
+-    "replicas": 0
++    "replicas": 1
+}
+```
+
+The change will be applied after committing and pushing your change. It usually
+takes around 5 minutes or so for things to take effect.
+
+You can confirm the change by visiting [Marina](https://marina.apps.allenai.org/a/pawls)
+and inspecting the "Replicas" list for the `skimming-annotations` environment. 
+The number of replicas displayed there should match match the value in `skiff.json`.
+
