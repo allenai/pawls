@@ -314,8 +314,6 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
 
-    print(user, x_auth_request_email)
-
     status_dir = os.path.join(configuration.output_directory, "status")
     status_path = os.path.join(status_dir, f"{user}.json")
     exists = os.path.exists(status_path)
@@ -338,20 +336,26 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
         for _, status in status_json.items():
             papers.append(PaperStatus(**status))
 
-        response = Allocation(papers=papers, hasAllocatedPapers=True)
+        response = Allocation(papers=papers,
+                              hasAllocatedPapers=len(papers) > 0)
 
     return response
 
 
-@app.get('/api/authorized')
+@app.get('/api/user')
 def is_authorized(x_auth_request_email: str = Header(None)):
     # cheap endpoint to call to check if we can show a UI to
     # a user or not.
+
     try:
-        get_user_from_header(x_auth_request_email)
-        return JSONResponse(status_code=200)
+        user = get_user_from_header(x_auth_request_email)
+        return JSONResponse(content={'email': x_auth_request_email,
+                                     'user': user},
+                            status_code=200)
     except Exception:
-        return JSONResponse(status_code=403)
+        return JSONResponse(content={'email': x_auth_request_email,
+                                     'user': ''},
+                            status_code=403)
 
 
 @app.post("/api/upload")

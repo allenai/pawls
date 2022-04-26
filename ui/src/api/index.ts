@@ -79,9 +79,21 @@ export async function getAllocatedPaperStatus(): Promise<Allocation> {
 
 export async function isAuthorized(): Promise<boolean> {
     return axios
-        .get('/api/authorized')
+        .get('/api/user')
         .then((r) => r.status === 200)
         .catch(() => false);
+}
+
+export interface UserInfo {
+    user: string;
+    email: string;
+}
+
+export async function getUsername(): Promise<UserInfo> {
+    return axios.get('/api/user').then((response) => {
+        const user: UserInfo = response.data;
+        return user;
+    });
 }
 
 export function saveAnnotations(sha: string, pdfAnnotations: PdfAnnotations): Promise<any> {

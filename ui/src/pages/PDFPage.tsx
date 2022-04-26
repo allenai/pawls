@@ -16,6 +16,7 @@ import {
     AssignedPaperList,
     Header,
     Comment,
+    DisplayUserInfo,
 } from '../components/sidebar';
 import {
     pdfURL,
@@ -266,6 +267,7 @@ export const PDFPage = () => {
                             <WithSidebar width={sidebarWidth}>
                                 <SidebarContainer width={sidebarWidth}>
                                     <Header />
+                                    <DisplayUserInfo />
                                     <Labels />
                                     <AssignedPaperList papers={assignedPaperStatuses} />
                                     {activePaperStatus ? (
