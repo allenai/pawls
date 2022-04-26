@@ -339,6 +339,8 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
         response = Allocation(papers=papers,
                               hasAllocatedPapers=len(papers) > 0)
 
+    logger.info({'user': user, 'response': response.dict()})
+
     return response
 
 
