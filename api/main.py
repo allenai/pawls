@@ -363,29 +363,36 @@ def is_authorized(x_auth_request_email: str = Header(None)):
 @app.post("/api/upload")
 async def upload_paper_ui(file: UploadFile = File(...),
                           x_auth_request_email: str = Header(None)):
+    try:
+        user = get_user_from_header(x_auth_request_email)
 
-    user = get_user_from_header(x_auth_request_email)
+        pdf_name = file.filename
+        temp_loc = await save_upload_file_tmp(file)
+        pdf_hash = add_pdf(file_path=temp_loc,
+                            pdf_name=pdf_name,
+                            base_path=configuration.output_directory)
 
-    pdf_name = file.filename
-    temp_loc = await save_upload_file_tmp(file)
-    pdf_hash = add_pdf(file_path=temp_loc,
-                       pdf_name=pdf_name,
-                       base_path=configuration.output_directory)
+        await preprocess_pdf(pdf_hash=pdf_hash,
+                                base_path=configuration.output_directory)
 
-    await preprocess_pdf(pdf_hash=pdf_hash,
-                         base_path=configuration.output_directory)
+        assign_pdf_to_user(annotator=user,
+                            pdf_hash=pdf_hash,
+                            base_path=configuration.output_directory)
 
-    assign_pdf_to_user(annotator=user,
-                       pdf_hash=pdf_hash,
-                       base_path=configuration.output_directory)
+        os.remove(temp_loc)
 
-    os.remove(temp_loc)
+        response = {'user': user,
+                    'pdf_hash': pdf_hash,
+                    'file': pdf_name,
+                    'tmpfile': str(temp_loc)}
 
-    response = {'user': user,
-                'pdf_hash': pdf_hash,
-                'file': pdf_name,
-                'tmpfile': str(temp_loc)}
+        logger.info({'respose': response,
+                     'status_code': 200,
+                     'endpoint': '/api/upload'})
 
-    logger.info(response)
-
-    return JSONResponse(content=response, status_code=200)
+        response = JSONResponse(content=response, status_code=200)
+    except Exception as e:
+        logger.info({'exception': e.args[0],
+                     'traceback': e.__traceback__,
+                     'endpoint': '/api/upload'})
+        raise e
