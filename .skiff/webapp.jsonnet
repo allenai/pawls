@@ -295,8 +295,8 @@ function(
                             },
                             resources: {
                                 requests: {
-                                   cpu: '50m',
-                                   memory: '100Mi'
+                                   cpu: '500m',
+                                   memory: '500Mi'
                                 }
                             }
                         }

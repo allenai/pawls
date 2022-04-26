@@ -3,6 +3,7 @@ import logging
 import os
 import json
 import glob
+from pathlib import Path
 
 from fastapi import \
     FastAPI, HTTPException, Header, Response, Body, \
@@ -19,10 +20,12 @@ from app.upload import add_pdf, assign_pdf_to_user, preprocess_pdf
 
 IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
 
-CONFIGURATION_FILE = os.getenv(
-    "PAWLS_CONFIGURATION_FILE",
-    "/usr/local/src/skiff/app/api/config/configuration.json"
+CONFIGURATION_FILE = Path(
+    os.getenv("PAWLS_CONFIGURATION_FILE",
+              "/usr/local/src/skiff/app/api/config/configuration.json")
 )
+ALLOWED_USERS = (CONFIGURATION_FILE.parent /
+                 'allowed_users_local_development.txt')
 
 handlers = None
 
@@ -79,12 +82,11 @@ def user_is_allowed(user_email: str) -> bool:
     """
     Return True if the user_email is in the users file, False otherwise.
     """
-    if IN_PRODUCTION != 'prod':
-        return True
-
+    allowed_users_file = (configuration.users_file
+                          if IN_PRODUCTION == 'prod' else ALLOWED_USERS)
     try:
-        with open(configuration.users_file) as file:
-            for line in file:
+        with open(allowed_users_file, 'r', encoding='utf-8') as f:
+            for line in f:
                 entry = line.strip()
                 if user_email == entry:
                     return True
@@ -92,7 +94,7 @@ def user_is_allowed(user_email: str) -> bool:
                 if entry.startswith("@") and user_email.endswith(entry):
                     return True
     except FileNotFoundError:
-        logger.warning("file not found: %s", configuration.users_file)
+        logger.warning("file not found: %s", allowed_users_file)
         pass
 
     return False
@@ -196,7 +198,9 @@ def set_pdf_finished(
     sha: str, finished: bool = Body(...), x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
+    status_path = os.path.join(configuration.output_directory,
+                               "status",
+                               f"{user}.json")
     exists = os.path.exists(status_path)
     if not exists:
         # Not an allocated user. Do nothing.
@@ -310,25 +314,28 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     # mechanism.
     user = get_user_from_header(x_auth_request_email)
 
+    print(user, x_auth_request_email)
+
     status_dir = os.path.join(configuration.output_directory, "status")
     status_path = os.path.join(status_dir, f"{user}.json")
     exists = os.path.exists(status_path)
 
     if not exists:
-        # If the user doesn't have allocated papers, they can see all the
-        # pdfs but they can't save anything.
-        papers = [PaperStatus.empty(sha, sha) for sha in all_pdf_shas()]
-        response = Allocation(
-            papers=papers,
-            hasAllocatedPapers=False
-        )
+
+        if configuration.allow_unassigned_users_to_see_everything:
+            # If the user doesn't have allocated papers, they can see
+            # all the PDFs but they can't save anything.
+            papers = [PaperStatus.empty(sha, sha) for sha in all_pdf_shas()]
+        else:
+            papers = []
+        response = Allocation(papers=papers, hasAllocatedPapers=False)
 
     else:
         with open(status_path) as f:
             status_json = json.load(f)
 
         papers = []
-        for sha, status in status_json.items():
+        for _, status in status_json.items():
             papers.append(PaperStatus(**status))
 
         response = Allocation(papers=papers, hasAllocatedPapers=True)
@@ -336,14 +343,22 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     return response
 
 
+@app.get('/api/authorized')
+def is_authorized(x_auth_request_email: str = Header(None)):
+    # cheap endpoint to call to check if we can show a UI to
+    # a user or not.
+    try:
+        get_user_from_header(x_auth_request_email)
+        return JSONResponse(status_code=200)
+    except Exception:
+        return JSONResponse(status_code=403)
+
+
 @app.post("/api/upload")
-async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
+async def upload_paper_ui(file: UploadFile = File(...),
+                          x_auth_request_email: str = Header(None)):
 
-    user = request.headers['X-Auth-Request-User']
-    email = request.headers['X-Auth-Request-Email']
-
-    if not user_is_allowed(email):
-        raise HTTPException(403, "Forbidden")
+    user = get_user_from_header(x_auth_request_email)
 
     pdf_name = file.filename
     temp_loc = await save_upload_file_tmp(file)
@@ -354,14 +369,13 @@ async def upload_paper_ui(request: Request, file: UploadFile = File(...)):
     await preprocess_pdf(pdf_hash=pdf_hash,
                          base_path=configuration.output_directory)
 
-    assign_pdf_to_user(annotator=email,
+    assign_pdf_to_user(annotator=user,
                        pdf_hash=pdf_hash,
                        base_path=configuration.output_directory)
 
     os.remove(temp_loc)
 
     response = {'user': user,
-                'email': email,
                 'pdf_hash': pdf_hash,
                 'file': pdf_name,
                 'tmpfile': str(temp_loc)}

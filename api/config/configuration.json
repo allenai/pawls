@@ -1,5 +1,5 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/skimming-annotations/",
+    "output_directory": "/skiff_files/apps/pawls/skimming-annotations-rw/",
     "labels": [
         {
             "text": "To Keep",
@@ -7,5 +7,6 @@
         }
     ],
     "relations": [],
-    "users_file": "/users/allowed-skimming-annotations.txt"
+    "users_file": "/users/allowed-skimming-annotations.txt",
+    "allow_unassigned_users_to_see_everything": false
 }

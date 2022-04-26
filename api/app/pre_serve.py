@@ -15,12 +15,16 @@ class Configuration(NamedTuple):
         The relations in use for annotation.
     users_file: Name str, required
         Filename where list of allowed users is specified.
+    allow_unassigned_users_to_see_everything:  bool, required
+        If True, users who have no papers assigned can see
+        all papers that have been uploaded.
     """
 
     output_directory: str
     labels: List[Dict[str, str]]
     relations: List[Dict[str, str]]
     users_file: str
+    allow_unassigned_users_to_see_everything: bool
 
 
 def load_configuration(filepath: str) -> Configuration:

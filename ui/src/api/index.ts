@@ -77,6 +77,13 @@ export async function getAllocatedPaperStatus(): Promise<Allocation> {
     return axios.get('/api/annotation/allocation/info').then((r) => r.data);
 }
 
+export async function isAuthorized(): Promise<boolean> {
+    return axios
+        .get('/api/authorized')
+        .then((r) => r.status === 200)
+        .catch(() => false);
+}
+
 export function saveAnnotations(sha: string, pdfAnnotations: PdfAnnotations): Promise<any> {
     return axios.post(`/api/doc/${sha}/annotations`, {
         annotations: pdfAnnotations.annotations,

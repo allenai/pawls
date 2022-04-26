@@ -4,7 +4,8 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Optional, Union
+
 
 from .pdfplumber import process_pdfplumber
 

@@ -10,13 +10,24 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { createGlobalStyle } from 'styled-components';
-import { Result, Spin } from '@allenai/varnish';
-import { BrowserRouter, Route, Redirect } from 'react-router-dom';
+import { Result, Button } from '@allenai/varnish';
+import { BrowserRouter, Route, Redirect, useHistory } from 'react-router-dom';
 
 import { PDFPage } from './pages';
 import { CenterOnPage } from './components';
 import { getAllocatedPaperStatus, PaperStatus } from './api';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { FolderOpenTwoTone } from '@ant-design/icons';
+
+export const UnauthorizedInterface = () => {
+    return (
+        <CenterOnPage>
+            <Result
+                status="error"
+                title="Access Denied"
+                subTitle="You are not authorized to access this application. If you think this is a mistake, contact the Semantic Scholar team."></Result>
+        </CenterOnPage>
+    );
+};
 
 const RedirectToFirstPaper = () => {
     const [papers, setPapers] = useState<PaperStatus[] | null>(null);
@@ -27,12 +38,16 @@ const RedirectToFirstPaper = () => {
 
     const content = useMemo(() => {
         if (!papers) {
-            return (
-                <CenterOnPage>
-                    <Spin size="large" />
-                </CenterOnPage>
-            );
+            return UnauthorizedInterface();
         }
+
+        const history = useHistory();
+        const goToUploadPage = () => {
+            history.push('/upload');
+            history.go(0);
+        };
+
+        console.log(papers);
 
         /** First available sha */
         const sha = papers.find((p) => !!p.sha)?.sha;
@@ -40,7 +55,15 @@ const RedirectToFirstPaper = () => {
         if (!papers.length || !sha) {
             return (
                 <CenterOnPage>
-                    <Result icon={<QuestionCircleOutlined />} title="PDFs Not Found" />
+                    <Result
+                        icon={<FolderOpenTwoTone />}
+                        title="No PDFs Found for you!"
+                        extra={
+                            <Button type="primary" onClick={goToUploadPage}>
+                                Upload a PDF?
+                            </Button>
+                        }
+                    />
                 </CenterOnPage>
             );
         }
