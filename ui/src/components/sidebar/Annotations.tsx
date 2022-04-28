@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { SidebarItem, SidebarItemTitle } from './common';
 import { Switch, notification } from '@allenai/varnish';
@@ -6,7 +6,7 @@ import { Annotation, PDFStore } from '../../context';
 
 import { CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { AnnotationSummary } from '../AnnotationSummary';
-import { setPdfJunk, setPdfFinished } from '../../api';
+import { setPdfJunk, getPdfJunk, setPdfFinished, getPdfFinished } from '../../api';
 
 interface AnnotationsProps {
     sha: string;
@@ -14,6 +14,17 @@ interface AnnotationsProps {
 }
 
 export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
+    const [finishedButtonState, setFinishedButtonState] = useState<boolean>(false);
+    const [junkButtonState, setJunkButtonState] = useState<boolean>(false);
+
+    useEffect(() => {
+        getPdfFinished(sha).then((isFinished) => setFinishedButtonState(isFinished));
+    }, [sha]);
+    useEffect(() => {
+        getPdfJunk(sha).then((isJunk) => setJunkButtonState(isJunk));
+    }, [sha]);
+
+    // eslint-disable-next-line
     const onFinishToggle = (isFinished: boolean) => {
         setPdfFinished(sha, isFinished).then(() => {
             if (isFinished) {
@@ -21,6 +32,7 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
             } else {
                 notification.info({ message: 'Marked paper as In Progress.' });
             }
+            setFinishedButtonState(isFinished);
         });
     };
 
@@ -31,6 +43,7 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
             } else {
                 notification.info({ message: 'Marked paper as In Progress.' });
             }
+            setJunkButtonState(isJunk);
         });
     };
 
@@ -83,6 +96,7 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
                 <ToggleDescription>Finished?</ToggleDescription>
                 <Toggle
                     size="small"
+                    checked={finishedButtonState}
                     onChange={(e) => onFinishToggle(e)}
                     checkedChildren={<CheckOutlined />}
                     unCheckedChildren={<CloseOutlined />}
@@ -92,6 +106,8 @@ export const Annotations = ({ sha, annotations }: AnnotationsProps) => {
                 <ToggleDescription>Junk</ToggleDescription>
                 <Toggle
                     size="small"
+                    defaultChecked={false}
+                    checked={junkButtonState}
                     onChange={(e) => onJunkToggle(e)}
                     checkedChildren={<CheckOutlined />}
                     unCheckedChildren={<CloseOutlined />}

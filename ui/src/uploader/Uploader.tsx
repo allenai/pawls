@@ -117,8 +117,6 @@ class Uploader extends Component<{}, { authorized: boolean }> {
     render () {
         const authorized = this.state.authorized;
 
-        console.log(authorized);
-
         if (authorized) {
             return <AuthorizedUploader></AuthorizedUploader>
         } else {

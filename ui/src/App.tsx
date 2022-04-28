@@ -50,9 +50,6 @@ const RedirectToFirstPaper = () => {
         /** First available sha */
         const sha = papers.find((p) => !!p.sha)?.sha;
 
-        console.log('sha', sha);
-        console.log('papers', papers);
-
         if (!papers.length || !sha) {
             return (
                 <CenterOnPage>
