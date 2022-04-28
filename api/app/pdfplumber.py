@@ -3,7 +3,15 @@ from typing import List
 import pandas as pd
 import pdfplumber
 
-from .annotations import PageSpec, PageToken, Page
+from .annotations import PageToken, Page
+
+import json
+import logging
+from pathlib import Path
+from typing import Union
+
+
+logger = logging.getLogger("uvicorn")
 
 
 class PDFPlumberTokenExtractor:
@@ -89,13 +97,30 @@ class PDFPlumberTokenExtractor:
         return word_tokens
 
 
-def process_pdfplumber(pdf_file: str):
-    """
-    Integration for importing annotations from pdfplumber.
-    pdf_file: str
-        The path to the pdf file to process.
-    """
-    pdf_extractors = PDFPlumberTokenExtractor()
-    annotations = pdf_extractors.extract(pdf_file)
 
-    return annotations
+def process_pdfplumber(file_path: Union[str, Path]) -> Path:
+    """
+    Run a pre-processor on a pdf/directory of pawls pdfs and
+    write the resulting token information to the pdf location.
+    """
+    file_path = Path(file_path)
+
+    if not file_path.exists():
+        msg = f'Cannot find {file_path}'
+        raise ValueError(msg)
+
+    structure_path = file_path.parent / "pdf_structure.json"
+
+    if not structure_path.exists():
+
+        logging.info(f"Processing {file_path} using pdfplumber...")
+
+        pdf_extractors = PDFPlumberTokenExtractor()
+        data = pdf_extractors.extract(file_path)
+
+        with open(structure_path, mode="w+", encoding='utf-8') as f:
+            json.dump(data, f)
+    else:
+        logging.warn(f"Parsed {structure_path} exists, skipping...")
+
+    return structure_path

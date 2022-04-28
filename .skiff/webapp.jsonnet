@@ -206,7 +206,27 @@ function(
                         {
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
-                            env: [ { name: "IN_PRODUCTION", value: "prod" }],
+                            env: [
+                                { name: "IN_PRODUCTION", value: "prod" },
+                                {
+                                    name: "AWS_ACCESS_KEY_ID",
+                                    valueFrom: {
+                                        secretKeyRef: {
+                                            name: "aws-pdf-iam",
+                                            key: "AWS_ACCESS_KEY_ID"
+                                        }
+                                    }
+                                },
+                                {
+                                    name: "AWS_SECRET_ACCESS_KEY",
+                                    valueFrom: {
+                                        secretKeyRef: {
+                                            name: "aws-pdf-iam",
+                                            key: "AWS_SECRET_ACCESS_KEY"
+                                        }
+                                    }
+                                },
+                            ],
                             volumeMounts: [
                                 {
                                     mountPath: '/skiff_files/apps/pawls',

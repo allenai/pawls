@@ -8,14 +8,18 @@ services:
             - proxy
     api:
         build:
-            # need to build from root directory because I need accrees to
-            # the CLI files.
             context: ./api
         volumes:
+            # this enables auto-reload
             - ./api:/usr/local/src/skiff/app/api
-            # - ./cli:/usr/local/src/skiff/app/cli
+            # location of skiff files
             - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
+            # list all allowed users (this is for local development,
+            # in skiff this is passed in as a secret)
             - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
+            # mount aws credentials (with skiff they are passed as env
+            # variables)
+            - $HOME/.aws/credentials:/root/.aws/credentials:ro
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
@@ -45,14 +49,3 @@ services:
         depends_on:
             - api
             - ui
-
-    # # This service is optional!
-    # # It is not used during deployment, but simply runs a grobid service
-    # # which the CLI can use for pre-processing PDFs, using grobid to provide
-    # # the detailed token information.
-    # grobid:
-    #     hostname: grobid-pawls
-    #     image: 'allenai/grobid:0.5.6-pdf-structure'
-    #     ports:
-    #         - '8070:8070'
-    #         - '8071:8071'

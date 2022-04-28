@@ -1,5 +1,5 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/skimming-annotations-rw/",
+    "output_directory": "ai2-s2-research-pawls/skimming-annotations/",
     "labels": [
         {
             "text": "To Keep",
@@ -8,5 +8,6 @@
     ],
     "relations": [],
     "users_file": "/users/allowed-skimming-annotations.txt",
-    "allow_unassigned_users_to_see_everything": false
+    "allow_unassigned_users_to_see_everything": false,
+    "protocol": "s3"
 }

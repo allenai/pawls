@@ -18,6 +18,7 @@ python-multipart
 
 # Allows us to use FastAPI's FileResponse for serving pdfs.
 aiofiles
+fsspec[file,s3]
 
 # process uploaded PDFs
 pdfplumber==0.6.0
