@@ -123,12 +123,28 @@ export const PDFPage = () => {
         getAllocatedPaperStatus()
             .then((allocation) => {
                 setAssignedPaperStatuses(allocation.papers);
-                setActivePaperStatus(allocation.papers.filter((p) => p.sha === sha)[0]);
-                if (!allocation.hasAllocatedPapers) {
+                const foundActivePaperStatus = allocation.papers.filter((p) => p.sha === sha)[0];
+                setActivePaperStatus(foundActivePaperStatus);
+
+                /* eslint-disable */
+                const description = (
+                    (
+                        allocation.hasAllocatedPapers
+                            ? 'This paper is not assigned to you in this project. '
+                            : 'This project has no assigned papers for your email address. '
+                    ) + "Your annotations won't be saved. If you think this is a mistake, contact the Semantic Scholar research team."
+                );
+                /* eslint-enable */
+
+                console.log(allocation);
+                console.log(foundActivePaperStatus);
+                console.log(sha);
+
+                if (!allocation.hasAllocatedPapers || foundActivePaperStatus == null) {
                     notification.warn({
                         message: 'Read Only Mode!',
-                        description:
-                            "This annotation project has no assigned papers for your email address. You can make annotations but they won't be saved.",
+                        duration: 0, // do not dismiss
+                        description: description,
                     });
                 }
             })

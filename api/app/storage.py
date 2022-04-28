@@ -1,15 +1,13 @@
 from pathlib import Path
 from typing import (
-    IO,
-    BinaryIO,
     Callable,
-    Iterator,
     Literal,
     List,
     Sequence,
     Set,
     Dict,
     Any,
+    Type,
     Union
 )
 import fsspec
@@ -50,6 +48,12 @@ class StorageManager():
             with self.fs.open(path, 'r', encoding='utf-8') as st:
                 return json.load(st)
 
+    @staticmethod
+    def default_paper_user_status(sha: str):
+        return {"sha": sha, "name": sha, "annotations": 0,
+                "relations": 0, "finished": False, "junk": False,
+                "comments": "", "completedAt": None}
+
     def write_user_status(self,
                           user: str,
                           sha: str,
@@ -61,13 +65,22 @@ class StorageManager():
 
         # we create a user via creating their user status,
         # but only if create_if_missing is True
-        status_json = status_json or ({} if create_if_missing else None)
+        status_json = (status_json or
+                       ({sha: None} if create_if_missing else None))
 
-        if status_json is not None:
+        is_a_valid_user = (status_json is not None)
+        paper_is_assigned_to_user = (sha in status_json)
+
+        if is_a_valid_user and paper_is_assigned_to_user:
             self.fs.mkdirs(path.parent, exist_ok=True)
 
             with self.fs.open(path, 'w', encoding='utf-8') as st:
-                status_json[sha] = {**status_json.get(sha, {}), **data}
+                # in case this status is just an uninitialized stub,
+                # use default_paper_user_status to create a new status
+                previous_paper_status = (status_json.get(sha, None) or
+                                         self.default_paper_user_status(sha))
+
+                status_json[sha] = {**previous_paper_status, **data}
                 json.dump(status_json, st)
 
     def read_pdf_metadata(self) -> Dict[str, str]:
@@ -112,7 +125,10 @@ class StorageManager():
                                relations: Sequence[Dict[str, Any]]):
         path = self.root / sha / f"{user}_annotations.json"
         user_status = self.read_user_status(user)
-        if user_status:
+
+        is_a_valid_user = (user_status is not None)
+        paper_is_assigned_to_user = (sha in user_status)
+        if is_a_valid_user and paper_is_assigned_to_user:
             data = {"annotations": annotations, "relations": relations}
             with self.fs.open(path, 'w', encoding='utf-8') as f:
                 json.dump(data, f)

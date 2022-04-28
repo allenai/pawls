@@ -308,10 +308,10 @@ async def upload_paper_ui(file: UploadFile = File(...),
     # create a user and add this paper to the user
     # (user will be create if they don't exist in the system)
     storage_manager.write_user_status(
-        user=user, sha=sha, create_if_missing=True,
-        data={"sha": sha, "name": file_name, "annotations": 0,
-              "relations": 0, "finished": False, "junk": False,
-              "comments": "", "completedAt": None}
+        user=user,
+        sha=sha,
+        create_if_missing=True,
+        data={"name": file_name}
     )
 
     response = {'user': user,
