@@ -69,7 +69,7 @@ class StorageManager():
                        ({sha: None} if create_if_missing else None))
 
         is_a_valid_user = (status_json is not None)
-        paper_is_assigned_to_user = (sha in status_json)
+        paper_is_assigned_to_user = ((sha in status_json) or create_if_missing)
 
         if is_a_valid_user and paper_is_assigned_to_user:
             self.fs.mkdirs(path.parent, exist_ok=True)
@@ -81,7 +81,7 @@ class StorageManager():
                                          self.default_paper_user_status(sha))
 
                 status_json[sha] = {**previous_paper_status, **data}
-                json.dump(status_json, st)
+                json.dump(status_json, st, sort_keys=True, indent=2)
 
     def read_pdf_metadata(self) -> Dict[str, str]:
         path = self.root / "pdf_metadata.json"
@@ -94,7 +94,7 @@ class StorageManager():
         pdf_metadata = {**self.read_pdf_metadata(), **data}
         path = self.root / "pdf_metadata.json"
         with self.fs.open(path, 'w', encoding='utf-8') as f:
-            return json.dump(pdf_metadata, f)
+            return json.dump(pdf_metadata, f, sort_keys=True, indent=2)
 
     def read_user_annotations(
         self,
