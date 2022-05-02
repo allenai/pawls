@@ -256,6 +256,19 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     return response
 
 
+@app.get("/api/debug")
+def get_debug(x_auth_request_email: str = Header(None)):
+    response = {'email': x_auth_request_email}
+    try:
+        response['user'] = get_user_from_header(x_auth_request_email)
+        response['status'] = storage_manager.read_user_status(response['user'])
+    except Exception:
+        response['status'] = None
+        response['status'] = None
+
+    return JSONResponse(response)
+
+
 @app.get('/api/user')
 def is_authorized(x_auth_request_email: str = Header(None)):
     # cheap endpoint to call to check if we can show a UI to
