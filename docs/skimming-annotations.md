@@ -2,18 +2,22 @@
 
 This document contains the annotation guidelines for the paper skimming project.
 If you have been hired to provide annotation services, please read it carefully.
-For any question, email us to [paper-skimming-annotations@allenai.org][7],
-or get in touch through the hiring platform you signed up with (e.g. UpWork).
+For any question, email us to [paper-skimming-annotations@allenai.org][7], or get in touch through the hiring platform you signed up with (e.g. UpWork).
+
+Jump to:
+
+- [Annotation Guidelines](#annotation-guidelines)
+- [Workflow](#workflow)
+- [Goal](#goal)
+- [Tips](#tips)
+
+--------------------
 
 ## Annotation Guidelines
 
 To help you complete this task, imagine being part of the following scenario.
 
-You have been hired by a scientific communication magazine (for example,
-[Communications of the ACM][8] or [MIT Technology Review][9]) to help
-**create abridged versions of scientific papers**. These are shorter versions
-of full academic papers that are often read by researchers from the same academic
-field who might not have time to read full-length manuscript.
+You have been hired by a scientific communication magazine (for example, [Communications of the ACM][8] or [MIT Technology Review][9]) to help **create abridged versions of scientific papers**. These are shorter versions of full academic papers that are often read by researchers from the same academic field who might not have time to read full-length manuscript.
 
 Your boss, the editor, has given you a target length of **200 words per paper  page**,
 with some wiggle room. For example:
@@ -46,27 +50,52 @@ Ideally, someone can read the set of chosen sentences like a coherent
 document--our editor is lazy, and does not want to rewrite any of the shortened
 paper before it is published.
 
+--------------------
+
 ## Workflow
 
-### Step 1: Open one of the Papers to Annotate
+### Step 1: Download Papers to Annotate
 
-Use the links in the ["Papers" section](#papers) below to open a paper.
+Download all papers from [this Google Drive link][10].
+Once you open the link, you can start the download by clicking in the top right corner:
 
-### Step 2: Familiarize Yourself with the Annotation Interface
+![Download link on Google Drive](static/how-to-download.png)
+
+### Step 2: Upload a Paper to the Annotation interface
+
+Visit [pawls.skimming-annotations.apps.allenai.org/upload][11] to upload a paper.
+
+![Upload Interface](static/upload-interface.png)
+
+Please keep in mind the following order and target length when working on papers:
+
+| Annotation Order |     File Name     |            Target Length           |
+|:----------------:|:-----------------:|:----------------------------------:|
+|        1         | short_paper_1.pdf | 1,000 words (min 950; max 1,050)   |
+|        2         |  long_paper_1.pdf | 1,600 words (min 1,520; max 1,680) |
+|        3         |  long_paper_2.pdf | 1,600 words (min 1,520; max 1,680) |
+|        4         |  long_paper_3.pdf | 1,600 words (min 1,520; max 1,680) |
+|        5         |  long_paper_4.pdf | 1,600 words (min 1,520; max 1,680) |
+|        6         |  long_paper_5.pdf | 1,600 words (min 1,520; max 1,680) |
+
+
+### Step 3: Familiarize Yourself with the Annotation Interface
 
 ![Annotation interface](static/full-interface.png)
 
 
-
-### Step 3: Highlighting Sentences
+### Step 4: Highlighting Sentences
 
 To highlight a sentence, hold your mouse down while spanning across the text you want to highlight.
 
 ![A gif showing how to highlight sentences.](static/highlighting.gif)
 
-### Step 4: Mark a Paper as Finished When Done
+### Step 5: Mark a Paper as Finished When Done
 
-Don't forget to use the toggle to mark a paper as finished as shown in [Step 2](#step-2-familiarize-yourself-with-the-annotation-interface).
+Don't forget to use the toggle to mark a paper as finished as shown in [Step 3](#step-3-familiarize-yourself-with-the-annotation-interface).
+
+
+--------------------
 
 ## Goal
 
@@ -80,23 +109,11 @@ Here's an example of a potential interface for this system:
 
 Highlighted passages could contain key background information, contribution statements, important results, and so on.
 
-## Papers
+--------------------
 
-The following papers have been chosen for you for the first round of annotations.
+## Tips
 
-- [Short Paper 1][6] (5 pages) Target: **1,000** ± 50 words.
-- [Long Paper 1][1] (8 pages) Target: **1,600** ± 80 words.
-- [Long Paper 2][2] (8 pages) Target: **1,600** ± 80 words.
-- [Long Paper 3][3] (8 pages) Target: **1,600** ± 80 words.
-- [Long Paper 4][4] (8 pages) Target: **1,600** ± 80 words.
-- [Long Paper 5][5] (8 pages) Target: **1,600** ± 80 words.
-
-If you get a read only note like the one shown below, it means the paper hasn't
-been assigned to you yet. If we did tell you otherwise, please send us a message
-at [paper-skimming-annotations@allenai.org][7]. If we haven't confirmed yet that
-the a paper has been assigned to you, please wait a little while.
-
-![A warning if the paper is in read only mode](static/read-only-warning.png)
+- **Try adopting a two passes strategy when selecting sentences**: During the first phase, highlight all sentences you think are significant without relying on the word count too much; during the second phase, remove/add sentences till you get to the target length.
 
 [1]: https://pawls.skimming-annotations.apps.allenai.org/pdf/07fe8482df88405b718fe77db2f46e51fee4aed512dc7179aae3c70804ae0e8a
 [2]: https://pawls.skimming-annotations.apps.allenai.org/pdf/056002826389e5c8222071117b2c5a358fcbfd72536d7d87ed6ab5f5b8afaa32
@@ -107,3 +124,5 @@ the a paper has been assigned to you, please wait a little while.
 [7]: mailto:paper-skimming-annotations@allenai.org
 [8]: https://cacm.acm.org
 [9]: https://www.technologyreview.com
+[10]: https://drive.google.com/file/d/1e4XWqpucOFef1ZmZ9yAn0Er3p736itPz/view?usp=sharing
+[11]: https://pawls.skimming-annotations.apps.allenai.org/upload
