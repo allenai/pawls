@@ -63,7 +63,8 @@
     "follow-redirects": "1.14.8",
     "minipass": "^3.1.6",
     "tar": "^6.1.11",
-    "tmpl": "^1.0.5"
+    "tmpl": "^1.0.5",
+    "nanoid": "^3.3.4"
   },
   "devDependencies": {}
 }
