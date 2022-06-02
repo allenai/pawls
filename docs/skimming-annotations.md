@@ -56,7 +56,11 @@ paper before it is published.
 
 ### Step 1: Download Papers to Annotate
 
-Download all papers from [this Google Drive link][10].
+Download all papers from one of the following links (if you are not sure which one to download, get in contact with us through Upwork):
+
+- [First annotation round][10] (6 papers, NLP, 5 long + 1 short).
+- [Second annotation round][12] (14 papers, NLP, 14 long).
+
 Once you open the link, you can start the download by clicking in the top right corner:
 
 ![Download link on Google Drive](static/how-to-download.png)
@@ -126,3 +130,4 @@ Highlighted passages could contain key background information, contribution stat
 [9]: https://www.technologyreview.com
 [10]: https://drive.google.com/file/d/1e4XWqpucOFef1ZmZ9yAn0Er3p736itPz/view?usp=sharing
 [11]: https://pawls.skimming-annotations.apps.allenai.org/upload
+[12]: https://drive.google.com/file/d/1zgTWilFz6gPYnLxBsk04CoP8z6hW3ecz/view?usp=sharing
