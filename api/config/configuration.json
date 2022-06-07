@@ -12,6 +12,5 @@
       "color": "#D9E4DD"
     }
   ],
-  "allow_unassigned_users_to_see_everything": false,
   "users_file": "/users/allowed-sections-annotation.txt"
 }
