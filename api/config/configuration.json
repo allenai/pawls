@@ -1,16 +1,17 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/papers/",
-    "labels": [
-        {
-            "text": "Section",
-            "color": "#FFDA77"
-        }
-    ],
-    "relations": [
-        {
-            "text": "Split Section",
-            "color": "#D9E4DD"
-        }
-    ],
-    "users_file": "/users/allowed.txt"
+  "output_directory": "ai2-s2-research-pawls/sections-annotation/",
+  "labels": [
+    {
+      "text": "Section",
+      "color": "#FFDA77"
+    }
+  ],
+  "relations": [
+    {
+      "text": "Split Section",
+      "color": "#D9E4DD"
+    }
+  ],
+  "allow_unassigned_users_to_see_everything": false,
+  "users_file": "/users/allowed-sections-annotation.txt"
 }
