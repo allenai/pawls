@@ -1,5 +1,5 @@
 {
-  "output_directory": "ai2-s2-research-pawls/sections-annotation/",
+  "output_directory": "/skiff_files/apps/pawls/sections-annotation/",
   "labels": [
     {
       "text": "Section",
