@@ -77,7 +77,7 @@ skip_shas = set(
         "311a185718716b56d9a3dff3bd4a96d2bab1a19a",
         "335ab0ef648562cf9c35ffb25b0169fd14327502",
         "33c8f4ed9c1f247b97506f964ae06d49f9b2b7d2",
-        "348a852a6cd58d1500aa81789b4fc1e8452a087e",
+        # "348a852a6cd58d1500aa81789b4fc1e8452a087e", Re-doing this one
         "36909e01d9f51870068521562e107289aeb5bd34",
         "36ac62e68d60d79e572d635e86725ee92bb5f43a",
         "376c3d068c61292bd4f74e4499104ff8856d8d56",
@@ -163,9 +163,6 @@ for sha in completed_items:
             annot_tokens = [
                 page_to_tokens[t["pageIndex"]][t["tokenIndex"]] for t in annot["tokens"]
             ]
-
-        print(annot["id"])
-        print(" ".join([t.text for t in annot_tokens]))
 
         id_to_annot[annot["id"]] = Annotation(
             id=annot["id"],
