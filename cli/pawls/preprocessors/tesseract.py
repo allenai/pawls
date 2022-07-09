@@ -2,9 +2,14 @@ from typing import List, Tuple, Dict
 import csv
 import io
 
-import pytesseract
 import pandas as pd
+import numpy as np
+import cv2
+import pytesseract
 from pdf2image import convert_from_path
+from google.oauth2 import service_account
+from google.cloud import vision
+from pathlib import Path
 
 from pawls.preprocessors.model import Token, PageInfo, Page
 from pawls.commands.utils import get_pdf_pages_and_sizes
@@ -18,16 +23,39 @@ def calculate_image_scale_factor(pdf_size, image_size):
 
 
 def extract_page_tokens(
-    pdf_image: "PIL.Image", pdf_size=Tuple[float, float], language="eng"
+    pdf_image: "PIL.Image", ocr_args: dict, pdf_size=Tuple[float, float]
 ) -> List[Dict]:
 
-    _data = pytesseract.image_to_data(pdf_image, lang=language)
+    if ocr_args["engine"] == "tesseract" or not ocr_args["engine"]:
+        lang = ocr_args["lang"]
+        psm = int(ocr_args["psm"])
+        tokens = tesseract_extractor(pdf_image, lang, psm, pdf_size)
+        
+    elif ocr_args["engine"] == "cloud-vision":
+        lang = ocr_args["lang"]
+        if lang:
+            lang = lang.split("+")
+        tokens = gcv_extractor(pdf_image, lang, pdf_size)
+    else:
+        raise ValueError("The specified ocr engine was not found. Available options are tesseract or cloud-vision.")
 
+    return tokens
+
+
+def tesseract_extractor(pdf_image: "PIL.Image", lang: str, psm: str, pdf_size=Tuple[float, float]) -> List[Dict]:
+
+    if not lang:
+        lang = "eng"
+
+    if not psm:
+        psm = 3
+
+    _data = pytesseract.image_to_data(pdf_image, lang=lang, config=f"--psm {psm}")
     scale_w, scale_h = calculate_image_scale_factor(pdf_size, pdf_image.size)
-
     res = pd.read_csv(
         io.StringIO(_data), quoting=csv.QUOTE_NONE, encoding="utf-8", sep="\t"
     )
+
     # An implementation adopted from https://github.com/Layout-Parser/layout-parser/blob/20de8e7adb0a7d7740aed23484fa8b943126f881/src/layoutparser/ocr.py#L475
     tokens = (
         res[~res.text.isna()]
@@ -70,14 +98,49 @@ def extract_page_tokens(
 
     return tokens
 
+def gcv_extractor(pdf_image: "PIL.Image", lang: str, pdf_size=Tuple[float, float]) -> List[Dict]:
 
-def parse_annotations(pdf_file: str) -> List[Page]:
+    cwd = Path.cwd()
+    credential_path = list(Path(cwd).glob('*gcv-*.json'))[0]
+
+    credentials = service_account.Credentials.from_service_account_file(filename=credential_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    client = vision.ImageAnnotatorClient(credentials=credentials)
+    
+    arr_img = np.asarray(pdf_image)
+    byteImage = cv2.imencode('.jpg', arr_img)[1].tobytes()
+
+    print("[INFO] making request to Google Cloud Vision API...")
+    image = vision.Image(content=byteImage)
+    response = client.document_text_detection(image=image, image_context={"language_hints": lang})
+    if response.error.message:
+        raise Exception(f"{response.error.message}\nFor more info on errors, check:\nhttps://cloud.google.com/apis/design/errors")
+    print("[INFO] response from Google Cloud Vision API returned successfully.")
+
+    tokens = []
+    scale_w, scale_h = calculate_image_scale_factor(pdf_size, pdf_image.size)
+    for text in response.text_annotations[1::]:
+        ocr = text.description
+        startX = text.bounding_poly.vertices[0].x
+        startY = text.bounding_poly.vertices[0].y
+        endX = text.bounding_poly.vertices[1].x
+        endY = text.bounding_poly.vertices[2].y
+
+        tokens.append({
+            "x": startX * scale_w,
+            "y": startY * scale_h,
+            "width": (endX-startX) * scale_w,
+            "height": (endY-startY) * scale_h,
+            "text": ocr
+        })
+    return tokens
+
+def parse_annotations(pdf_file: str, ocr_args: dict) -> List[Page]:
 
     pdf_images = convert_from_path(pdf_file)
     _, pdf_sizes = get_pdf_pages_and_sizes(pdf_file)
     pages = []
     for page_index, (pdf_image, pdf_size) in enumerate(zip(pdf_images, pdf_sizes)):
-        tokens = extract_page_tokens(pdf_image, pdf_size)
+        tokens = extract_page_tokens(pdf_image, ocr_args, pdf_size)
         w, h = pdf_size
         page = dict(
             page=dict(
@@ -92,12 +155,12 @@ def parse_annotations(pdf_file: str) -> List[Page]:
     return pages
 
 
-def process_tesseract(pdf_file: str):
+def process_ocr(pdf_file: str, ocr_args: dict):
     """
     Integration for importing annotations from pdfplumber.
     pdf_file: str
         The path to the pdf file to process.
     """
-    annotations = parse_annotations(pdf_file)
+    annotations = parse_annotations(pdf_file, ocr_args)
 
     return annotations

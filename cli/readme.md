@@ -36,7 +36,7 @@ You can instead retain the original PDF name by passing the `--no-hash` flag to 
     Currently we support the following preprocessors:
     1. pdfplumber
     2. grobid *Note: to use the grobid preprocessor, you need to run `docker-compose up` in a separate shell, because grobid needs to be running as a service.*
-    3. ocr *Note: you might need to install [tesseract-ocr](https://tesseract-ocr.github.io/tessdoc/Installation.html) for using this preprocessor.*
+    3. ocr *Note: you might need to install [tesseract-ocr](https://tesseract-ocr.github.io/tessdoc/Installation.html) for using this preprocessor. It also accepts extra parameters for language and page segmentation mode (eg: `pawls preprocess ocr <path> ocr-param lang=eng+ara psm=11`). If you want to use Google Cloud Vision instead, you can run the command with `ocr-param engine=cloud-vision` and `lang="en+ar"` after downloading your credential file from GCP to `<current-working-dir>/gcv-*.json`.*
 
 3. [assign] Assign annotation tasks (<PDF_SHA>s) to specific users <user>:
     ```bash

@@ -23,3 +23,5 @@ pycocotools
 
 # Used for OCR
 pytesseract
+google-cloud-vision
+opencv-python
