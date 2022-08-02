@@ -1,6 +1,6 @@
 import json
 import logging
-import shutil
+import os
 from dataclasses import asdict, dataclass
 from typing import Dict, List, OrderedDict
 
@@ -34,8 +34,14 @@ with open(status_fn(), encoding="utf-8") as f:
 
 SHAS = {sha for sha, item in status.items() if item["finished"]}
 
-# FIXME: Remove this assignment for debugging
-SHAS = ["d9b146cc7444d4aa68136366e929d8c76b809b5e"]
+
+logger = logging.getLogger("output_gold")
+logger.setLevel(logging.DEBUG)
+_console_log = logging.StreamHandler()
+_console_log.setLevel(logging.DEBUG)
+_console_fmt = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s - %(message)s")
+_console_log.setFormatter(_console_fmt)
+logger.addHandler(_console_log)
 
 
 @dataclass
@@ -97,19 +103,43 @@ class NestingRelation:
 def parse_nesting(n: str) -> Nesting:
     parts = n.strip().split(" ")
 
-    if parts[0].startswith("-"):
-        level = len(parts[0])
-        _id = int(parts[1])
-        text = " ".join(parts[2:])
-    else:
-        level = 0
-        _id = int(parts[0])
-        text = " ".join(parts[1:])
+    try:
+        if parts[0].startswith("-"):
+            level = len(parts[0])
+            _id = int(parts[1])
+            text = " ".join(parts[2:])
+        else:
+            level = 0
+            _id = int(parts[0])
+            text = " ".join(parts[1:])
 
-    return Nesting(id=_id, level=level, text=text)
+        return Nesting(id=_id, level=level, text=text)
+    except Exception as ex:
+        logger.warning("Nesting parse exception: %s on line '%s'", ex, n)
+        raise ex
+
+
+def debug_page(sha: str, section: ConsolidatedAnnotation):
+    boxes = [
+        (t.box.x, t.box.y, t.box.x + t.box.width, t.box.y + t.box.height)
+        for t in section.tokens
+    ]
+
+    with pp.open(pdf_fn(sha)) as pdf:
+        im = pdf.pages[section.page].to_image()
+        im.draw_rects(boxes)
+
+        fn = f"debug/{sha}-page-{section.page}-{section.id}.png"
+        logger.debug(f"Output {fn}")
+        im.save(fn)
 
 
 for sha in SHAS:
+    if not os.path.exists(nesting_fn(sha)):
+        logger.info("Skipping %s (nesting not found)!", sha)
+        continue
+
+    logger.debug("Processing %s", sha)
 
     with open(struct_fn(sha), encoding="utf-8") as f:
         structure = json.loads(f.read())
@@ -132,7 +162,7 @@ for sha in SHAS:
 
         # Custom bounding box (manual annotation)
         if not annot["tokens"]:
-            logging.warning("Manual review required for %s\n%s", sha, annot)
+            logger.warning("Manual review required for %s\n%s", sha, annot)
 
             with pp.open(pdf_fn(sha)) as pdf:
                 target_page = pdf.pages[annot["page"]]
@@ -212,44 +242,59 @@ for sha in SHAS:
 
     # 2) Load the indentations with their parents
     with open(nesting_fn(sha), encoding="utf-8") as f:
-        nestings = [parse_nesting(l) for l in f]
+        nestings = [parse_nesting(l) for l in f if len(l.strip()) > 0]
 
     # 3) Validate nestings vs expected
     nestings_by_id: Dict[int, Nesting] = {n.id: n for n in nestings}
+    skip_ids = set()
 
     for _id, section in sections_by_id.items():
         nesting = nestings_by_id.get(_id)
 
         if nesting is None:
-            raise f"No nesting match for {sha}: {_id}"
+            debug_page(sha, section)
+            logger.warning("No nesting match for %s: {%s}", sha, section)
+            # Remove from sections so we don't output it later
+            skip_ids.add(_id)
+            continue
 
         if nesting.text != section.text:
-            raise f"Nesting '{nesting.text}' does not match section '{section.text}'!"
+            import pdb
 
-    # 4) Build the parent-child relations
-    prev = nestings[0]
-    if prev.level != 0:
-        raise f"Invalid starting level for PDF: {sha}!"
+            pdb.set_trace()
+            raise ValueError(
+                f"Nesting '{nesting.text}' does not match section '{section.text}'!"
+            )
+
+    logger.info("Found %i nestings for %s", len(nestings), sha)
 
     stack = []
     pairs = []
 
-    for nesting in nestings[1:]:
-        if nesting.level > prev.level:
-            stack.append(prev)
+    # 4) Build the parent-child relations
+    if len(nestings) > 0:
+        prev = nestings[0]
+        if prev.level != 0:
+            raise f"Invalid starting level for PDF: {sha}!"
 
-        elif len(stack) > 0 and nesting.level == stack[-1].level:
-            stack.pop()
+        for nesting in nestings[1:]:
+            if nesting.level > prev.level:
+                stack.append(prev)
 
-        if nesting.level > 0:
-            result = NestingRelation(parent=stack[-1], child=nesting)
-            pairs.append(result)
+            elif len(stack) > 0 and nesting.level == stack[-1].level:
+                stack.pop()
 
-        prev = nesting
+            if nesting.level > 0:
+                result = NestingRelation(parent=stack[-1], child=nesting)
+                pairs.append(result)
+
+            prev = nesting
 
     blob = {
         "structure": structure,
-        "sections": {k: asdict(v) for k, v in sections_by_id.items()},
+        "sections": {
+            k: asdict(v) for k, v in sections_by_id.items() if k not in skip_ids
+        },
         "relations": [asdict(n) for n in pairs],
     }
 
