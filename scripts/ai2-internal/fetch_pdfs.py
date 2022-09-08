@@ -86,7 +86,7 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
 
 
 # settings for S3 buckets
-S3_BUCKET_PDFS = {"default": "ai2-s2-pdfs", "private": "ai2-s2-pdfs-private"}
+PDF_BUCKET_NAME = "ai2-s2-pdfs"
 
 
 def _per_dir_pdf_download(target_dir: str, sha: str):
@@ -124,15 +124,14 @@ def bulk_fetch_pdfs_for_s2_ids(
 
     os.makedirs(target_dir, exist_ok=True)
     s3 = boto3.resource("s3")
-    default_bucket = s3.Bucket(S3_BUCKET_PDFS["default"])
-    private_bucket = s3.Bucket(S3_BUCKET_PDFS["private"])
+    pdf_bucket = s3.Bucket(PDF_BUCKET_NAME)
 
     not_found = set()
     error = set()
     success = set()
     for s2_id in s2_ids:
         try:
-            default_bucket.download_file(
+            pdf_bucket.download_file(
                 os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
                 pdf_path_func(target_dir, s2_id),
             )
@@ -140,18 +139,7 @@ def bulk_fetch_pdfs_for_s2_ids(
 
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "404":
-                try:
-                    private_bucket.download_file(
-                        os.path.join(s2_id[:4], f"{s2_id[4:]}.pdf"),
-                        pdf_path_func(target_dir, s2_id),
-                    )
-                    success.add(s2_id)
-
-                except botocore.exceptions.ClientError as e:
-                    if e.response["Error"]["Code"] == "404":
-                        not_found.add(s2_id)
-                    else:
-                        error.add(s2_id)
+                not_found.add(s2_id)
             else:
                 error.add(s2_id)
 
@@ -178,6 +166,7 @@ def get_paper_title(paper_sha: str) -> Optional[str]:
         return data["paper"]["title"]["text"]
     else:
         return None
+
 
 if __name__ == "__main__":
 
