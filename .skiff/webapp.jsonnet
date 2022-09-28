@@ -301,8 +301,8 @@ function(
                             # https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-requests-are-scheduled
                             resources: {
                                 requests: {
-                                    cpu: '500m',
-                                    memory: '4Gi'
+                                    cpu: '50m',
+                                    memory: '500Mi'
                                 }
                             },
                         },
