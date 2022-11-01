@@ -31,8 +31,8 @@
     "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
+    "axios": "^0.21.2",
     "antd": "^4.19.3",
-    "axios": "^0.21.1",
     "eslint": "^7.25.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard": "^16.0.2",
@@ -57,7 +57,15 @@
     "webpack": "^4.41.3"
   },
   "resolutions": {
-    "react-scripts/webpack": "^4.41.3"
+    "react-scripts/webpack": "^4.41.3",
+    "moment": "^2.29.2",
+    "minimist": "^1.2.6",
+    "url-parse": "^1.5.10",
+    "follow-redirects": "1.14.8",
+    "minipass": "^3.1.6",
+    "tar": "^6.1.11",
+    "tmpl": "^1.0.5",
+    "nanoid": "^3.3.4"
   },
   "devDependencies": {}
 }
