@@ -1,5 +1,5 @@
 {
-    "output_directory": "ai2-s2-research-pawls/skimming-annotations/",
+    "output_directory": "ai2-s2-research-pawls/figure_table_equation_annotation/",
     "labels": [
         {
             "text": "To Keep",
