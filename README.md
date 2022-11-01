@@ -168,7 +168,25 @@ location /docs/ {
 }
 ```
 
-### Cite PAWLS
+### Troubleshooting
+
+#### Updating UI Dependencies based on Dependabot Alerts
+
+1. Add the package and version reqs in the `resolutions` field from the [`package.json`](/ui/package.json) file;
+2. Run `yarn install` to update the `yarn.lock` file 
+3. Start the docker and test whether the UI still works `docker-compose up --build` 
+
+#### Windows EOL format (CRLF) vs Linux (LF)
+
+The application was developed for Linux, and might fail to start on Windows because of line-ending differences.
+
+To fix this, run this command from the root of the repository:
+
+```bash
+~ (cd ./ui && yarn && yarn lint:fix) # with parenthesis, to stay in same directory
+```
+
+## Cite PAWLS
 
 If you find PAWLS helpful for your research, please consider cite PAWLS. 
 ```
@@ -180,18 +198,6 @@ If you find PAWLS helpful for your research, please consider cite PAWLS.
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }
-```
-
-### Troubleshooting
-
-#### Windows EOL format (CRLF) vs Linux (LF)
-
-The application was developed for Linux, and might fail to start on Windows because of line-ending differences.
-
-To fix this, run this command from the root of the repository:
-
-```bash
-~ (cd ./ui && yarn && yarn lint:fix) # with parenthesis, to stay in same directory
 ```
 
 ---
