@@ -19,12 +19,15 @@ services:
             - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
             # mount aws credentials (with skiff they are passed as env
             # variables)
-            - $HOME/.aws/credentials:/root/.aws/credentials:ro
+            #- $HOME/.aws/credentials:/root/.aws/credentials:ro
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
-            - PYTHONUNBUFFERED=1
-            - LOG_LEVEL=DEBUG
+            PYTHONUNBUFFERED: 1
+            LOG_LEVEL: DEBUG
+            # Import local variables for accessing aws buckets
+            AWS_ACCESS_KEY_ID:
+            AWS_SECRET_ACCESS_KEY:
 
         # needed to ensure being able to run mmda models over multiple
         # processes.
