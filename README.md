@@ -53,7 +53,11 @@ For instance, you can run the following commands to download, preprocess, and as
   pawls assign skiff_files/apps/pawls/papers development_user@example.com --all --name-file skiff_files/apps/pawls/papers/name_mapping.json
 ```
 
-and then open up the UI locally by running `docker-compose up`.
+#### Getting annotation files to s3
+PDFs and assignment files from status folder need to be copied to s3 bucket `output_directory` specified in `api/config/configuration.json`
+Annotations are going to be uploaded to the `output_directory`.
+
+And then open up the UI locally by running `docker-compose up`.
 
 ### Authentication and Authorization
 
