@@ -110,7 +110,7 @@ function(
     };
 
     local ingress = {
-        apiVersion: 'extensions/v1beta1',
+        apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
             name: fullyQualifiedName,
@@ -138,9 +138,15 @@ function(
                     http: {
                         paths: [
                             {
+                                pathType: 'Prefix',
+                                path: '/',
                                 backend: {
-                                    serviceName: fullyQualifiedName,
-                                    servicePort: proxyPort
+                                    service: {
+                                        name: fullyQualifiedName,
+                                        port: {
+                                            number: proxyPort
+                                        }
+                                    }
                                 }
                             }
                         ]
