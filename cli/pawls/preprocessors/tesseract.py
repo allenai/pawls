@@ -40,7 +40,7 @@ def extract_page_tokens(
                     gp["width"].max(),
                     gp["height"].max(),
                     gp["conf"].mean(),
-                    gp["text"].str.cat(sep=" "),
+                    gp["text"].astype(str).str.cat(sep=" "),
                 ]
             )
         )
