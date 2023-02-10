@@ -35,6 +35,8 @@ interface SelectionBoundaryProps {
     children?: React.ReactNode;
     annotationId?: string;
     onClick?: () => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
 export const SelectionBoundary = ({
@@ -42,6 +44,8 @@ export const SelectionBoundary = ({
     bounds,
     children,
     onClick,
+    onMouseEnter,
+    onMouseLeave,
     selected,
 }: SelectionBoundaryProps) => {
     const width = bounds.right - bounds.left;
@@ -63,6 +67,16 @@ export const SelectionBoundary = ({
                     onClick();
                 }
             }}
+            onMouseEnter={(_) => {
+                if (onMouseEnter) {
+                    onMouseEnter();
+                }
+            }}
+            onMouseLeave={(_) => {
+                if (onMouseLeave) {
+                    onMouseLeave();
+                }
+            }}
             onMouseDown={(e) => {
                 if (e.shiftKey && onClick) {
                     e.stopPropagation();
@@ -77,7 +91,7 @@ export const SelectionBoundary = ({
                 transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
                 transformOrigin: 'top left',
                 border: `${border}px solid ${color}`,
-                background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${
+                background: `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b},${
                     selected ? 0.3 : 0.1
                 })`,
             }}>
@@ -221,6 +235,8 @@ export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionPr
 
     const [isEditLabelModalVisible, setIsEditLabelModalVisible] = useState(false);
 
+    const [isHovering, setHovering] = useState(false);
+
     const annotationStore = useContext(AnnotationStore);
 
     let color;
@@ -253,6 +269,10 @@ export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionPr
         }
     };
 
+    const toggleHover = () => {
+        setHovering(!isHovering);
+    };
+
     const selected = annotationStore.selectedAnnotations.includes(annotation);
 
     return (
@@ -260,20 +280,24 @@ export const Selection = ({ pageInfo, annotation, showInfo = true }: SelectionPr
             <SelectionBoundary
                 color={color}
                 bounds={bounds}
+                onMouseEnter={toggleHover}
+                onMouseLeave={toggleHover}
                 onClick={onShiftClick}
                 selected={selected}>
                 {showInfo && !annotationStore.hideLabels ? (
                     <SelectionInfo border={border} color={color}>
-                        <span>{label.text}</span>
-                        <EditFilled
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsEditLabelModalVisible(true);
-                            }}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                            }}
-                        />
+                        {isHovering ? <span> {label.text} </span> : null}
+                        {isHovering ? (
+                            <EditFilled
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsEditLabelModalVisible(true);
+                                }}
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            />
+                        ) : null}
                         <CloseCircleFilled
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -321,7 +345,7 @@ const SelectionInfo = styled.div<SelectionInfoProps>(
         position: absolute;
         right: -${border}px;
         transform:translateY(-100%);
-        border: ${border} solid  ${color};
+        border: ${border} solid ${color};
         background: ${color};
         font-weight: bold;
         font-size: 12px;

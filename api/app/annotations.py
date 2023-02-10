@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 
 
 class Bounds(BaseModel):
@@ -36,3 +36,22 @@ class RelationGroup(BaseModel):
 class PdfAnnotation(BaseModel):
     annotations: List[Annotation]
     relations: List[RelationGroup]
+
+
+class PageSpec(BaseModel):
+    width: int
+    height: int
+    index: int
+
+
+class PageToken(BaseModel):
+    text: str
+    width: float
+    height: float
+    x: float
+    y: float
+
+
+class Page(BaseModel):
+    page: PageSpec
+    tokens: List[PageToken] = Field(default_factory=lambda: [])

@@ -12,11 +12,13 @@ import { ThemeProvider } from '@allenai/varnish';
 import '@allenai/varnish/dist/varnish.css';
 
 import App from './App';
+import Uploader from './uploader/Uploader';
 
 ReactDOM.render(
     <BrowserRouter>
         <ThemeProvider>
             <Route path="/" component={App} />
+            <Route path="/upload" component={Uploader} />
         </ThemeProvider>
     </BrowserRouter>,
     document.getElementById('root')

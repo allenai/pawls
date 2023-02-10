@@ -1,44 +1,61 @@
-from typing import List, Optional, Dict, Any
+import tempfile
+from typing import List, Optional, Dict
 import logging
 import os
-import json
-import glob
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Header, Response, Body
-from fastapi.responses import FileResponse
+from fastapi import (
+    FastAPI, HTTPException, Header, Response, Body, File, UploadFile
+)
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
+from app.storage import StorageManager, UsersManager
 from app.metadata import PaperStatus, Allocation
 from app.annotations import Annotation, RelationGroup, PdfAnnotation
-from app.utils import StackdriverJsonFormatter
+from app.utils import (
+    StackdriverJsonFormatter,
+    async_save_received_file_to_disk,
+    move_file,
+    hash_file
+)
+from app.pdfplumber import process_pdfplumber
 from app import pre_serve
 
-IN_PRODUCTION = os.getenv("IN_PRODUCTION", "dev")
-
-CONFIGURATION_FILE = os.getenv(
-    "PAWLS_CONFIGURATION_FILE", "/usr/local/src/skiff/app/api/config/configuration.json"
+CONFIGURATION_FILE = Path(
+    os.getenv("PAWLS_CONFIGURATION_FILE",
+              "/usr/local/src/skiff/app/api/config/configuration.json")
 )
+
+# The annotation app requires a bit of set up.
+configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
+
+storage_manager = StorageManager(protocol=configuration.protocol,
+                                 root=configuration.output_directory,
+                                 **configuration.storage_options)
+users_manager = UsersManager(configuration.users_file)
 
 handlers = None
 
-if IN_PRODUCTION == "prod":
+if configuration.in_production == "prod":
     json_handler = logging.StreamHandler()
     json_handler.setFormatter(StackdriverJsonFormatter())
     handlers = [json_handler]
 
-logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", default=logging.INFO), handlers=handlers
-)
-logger = logging.getLogger("uvicorn")
+logging.basicConfig(level=os.environ.get("LOG_LEVEL", default=logging.INFO),
+                    handlers=handlers)
 
 # boto3 logging is _super_ verbose.
 logging.getLogger("boto3").setLevel(logging.CRITICAL)
 logging.getLogger("botocore").setLevel(logging.CRITICAL)
 logging.getLogger("nose").setLevel(logging.CRITICAL)
 logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
+logging.getLogger("pdfminer").setLevel(logging.CRITICAL)
+logging.getLogger("fsspec").setLevel(logging.CRITICAL)
+logging.getLogger("s3fs").setLevel(logging.CRITICAL)
+logging.getLogger("aiobotocore").setLevel(logging.CRITICAL)
 
-# The annotation app requires a bit of set up.
-configuration = pre_serve.load_configuration(CONFIGURATION_FILE)
+logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
@@ -57,45 +74,10 @@ def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     if "@" not in user_email:
         raise HTTPException(403, "Forbidden")
 
-    if not user_is_allowed(user_email):
+    if not users_manager.is_valid_user(user_email):
         raise HTTPException(403, "Forbidden")
 
     return user_email
-
-
-def user_is_allowed(user_email: str) -> bool:
-    """
-    Return True if the user_email is in the users file, False otherwise.
-    """
-    try:
-        with open(configuration.users_file) as file:
-            for line in file:
-                entry = line.strip()
-                if user_email == entry:
-                    return True
-                # entries like "@allenai.org" mean anyone in that domain @allenai.org is granted access
-                if entry.startswith("@") and user_email.endswith(entry):
-                    return True
-    except FileNotFoundError:
-        logger.warning("file not found: %s", configuration.users_file)
-        pass
-
-    return False
-
-
-def all_pdf_shas() -> List[str]:
-    pdfs = glob.glob(f"{configuration.output_directory}/*/*.pdf")
-    return [p.split("/")[-2] for p in pdfs]
-
-
-def update_status_json(status_path: str, sha: str, data: Dict[str, Any]):
-
-    with open(status_path, "r+") as st:
-        status_json = json.load(st)
-        status_json[sha] = {**status_json[sha], **data}
-        st.seek(0)
-        json.dump(status_json, st)
-        st.truncate()
 
 
 @app.get("/", status_code=204)
@@ -116,12 +98,11 @@ async def get_pdf(sha: str):
     sha: str
         The sha of the pdf to return.
     """
-    pdf = os.path.join(configuration.output_directory, sha, f"{sha}.pdf")
-    pdf_exists = os.path.exists(pdf)
-    if not pdf_exists:
+    file_like = storage_manager.read_pdf_file_reader(sha)
+    if file_like is not None:
+        return StreamingResponse(file_like(), media_type="application/pdf")
+    else:
         raise HTTPException(status_code=404, detail=f"pdf {sha} not found.")
-
-    return FileResponse(pdf, media_type="application/pdf")
 
 
 @app.get("/api/doc/{sha}/title")
@@ -132,17 +113,8 @@ async def get_pdf_title(sha: str) -> Optional[str]:
     sha: str
         The sha of the pdf title to return.
     """
-    pdf_info = os.path.join(configuration.output_directory, "pdf_metadata.json")
-
-    with open(pdf_info, "r") as f:
-        info = json.load(f)
-
-    data = info.get("sha", None)
-
-    if data is None:
-        return None
-
-    return data.get("title", None)
+    data = storage_manager.read_pdf_metadata()
+    return data.get(sha, None)
 
 
 @app.post("/api/doc/{sha}/comments")
@@ -150,44 +122,53 @@ def set_pdf_comments(
     sha: str, comments: str = Body(...), x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    exists = os.path.exists(status_path)
 
-    if not exists:
-        # Not an allocated user. Do nothing.
-        return {}
+    storage_manager.write_user_status(
+        user=user, sha=sha, data={"comments": comments}
+    )
 
-    update_status_json(status_path, sha, {"comments": comments})
     return {}
+
+
+@app.get("/api/doc/{sha}/junk")
+def get_pdf_junk(sha: str,
+                     x_auth_request_email: str = Header(None)):
+
+    user = get_user_from_header(x_auth_request_email)
+    status = storage_manager.read_user_status(user=user)
+    return (status or {}).get(sha, {}).get('junk', False)
 
 
 @app.post("/api/doc/{sha}/junk")
-def set_pdf_junk(
-    sha: str, junk: bool = Body(...), x_auth_request_email: str = Header(None)
+def set_pdf_junk(sha: str,
+                 junk: bool = Body(...),
+                 x_auth_request_email: str = Header(None)
 ):
     user = get_user_from_header(x_auth_request_email)
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    exists = os.path.exists(status_path)
-    if not exists:
-        # Not an allocated user. Do nothing.
-        return {}
-
-    update_status_json(status_path, sha, {"junk": junk})
+    storage_manager.write_user_status(
+        user=user, sha=sha, data={"junk": junk}
+    )
     return {}
 
 
-@app.post("/api/doc/{sha}/finished")
-def set_pdf_finished(
-    sha: str, finished: bool = Body(...), x_auth_request_email: str = Header(None)
-):
-    user = get_user_from_header(x_auth_request_email)
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    exists = os.path.exists(status_path)
-    if not exists:
-        # Not an allocated user. Do nothing.
-        return {}
+@app.get("/api/doc/{sha}/finished")
+def get_pdf_finished(sha: str,
+                     x_auth_request_email: str = Header(None)):
 
-    update_status_json(status_path, sha, {"finished": finished})
+    user = get_user_from_header(x_auth_request_email)
+    status = storage_manager.read_user_status(user=user)
+    return (status or {}).get(sha, {}).get('finished', False)
+
+
+@app.post("/api/doc/{sha}/finished")
+def set_pdf_finished(sha: str,
+                     finished: bool = Body( ... ),
+                     x_auth_request_email: str = Header(None)):
+
+    user = get_user_from_header(x_auth_request_email)
+    storage_manager.write_user_status(
+        user=user, sha=sha, data={"finished": finished}
+    )
     return {}
 
 
@@ -196,19 +177,7 @@ def get_annotations(
     sha: str, x_auth_request_email: str = Header(None)
 ) -> PdfAnnotation:
     user = get_user_from_header(x_auth_request_email)
-    annotations = os.path.join(
-        configuration.output_directory, sha, f"{user}_annotations.json"
-    )
-    exists = os.path.exists(annotations)
-
-    if exists:
-        with open(annotations) as f:
-            blob = json.load(f)
-
-        return blob
-
-    else:
-        return {"annotations": [], "relations": []}
+    return storage_manager.read_user_annotations(user=user, sha=sha)
 
 
 @app.post("/api/doc/{sha}/annotations")
@@ -218,38 +187,14 @@ def save_annotations(
     relations: List[RelationGroup],
     x_auth_request_email: str = Header(None),
 ):
-    """
-    sha: str
-        PDF sha to save annotations for.
-    annotations: List[Annotation]
-        A json blob of the annotations to save.
-    relations: List[RelationGroup]
-        A json blob of the relations between the annotations to save.
-    x_auth_request_email: str
-        This is a header sent with the requests which specifies the user login.
-        For local development, this will be None, because the authentication
-        is controlled by the Skiff Kubernetes cluster.
-    """
     # Update the annotations in the annotation json file.
     user = get_user_from_header(x_auth_request_email)
-    annotations_path = os.path.join(
-        configuration.output_directory, sha, f"{user}_annotations.json"
-    )
-    json_annotations = [jsonable_encoder(a) for a in annotations]
-    json_relations = [jsonable_encoder(r) for r in relations]
 
-    # Update the annotation counts in the status file.
-    status_path = os.path.join(configuration.output_directory, "status", f"{user}.json")
-    exists = os.path.exists(status_path)
-    if not exists:
-        # Not an allocated user. Do nothing.
-        return {}
-
-    with open(annotations_path, "w+") as f:
-        json.dump({"annotations": json_annotations, "relations": json_relations}, f)
-
-    update_status_json(
-        status_path, sha, {"annotations": len(annotations), "relations": len(relations)}
+    storage_manager.write_user_annotations(
+        user=user,
+        sha=sha,
+        annotations=[jsonable_encoder(a) for a in annotations],
+        relations=[jsonable_encoder(r) for r in relations]
     )
 
     return {}
@@ -261,13 +206,11 @@ def get_tokens(sha: str):
     sha: str
         PDF sha to retrieve tokens for.
     """
-    pdf_tokens = os.path.join(configuration.output_directory, sha, "pdf_structure.json")
-    if not os.path.exists(pdf_tokens):
+    pdf_tokens = storage_manager.get_pdf_structure(sha)
+    if pdf_tokens is None:
         raise HTTPException(status_code=404, detail="No tokens for pdf.")
-    with open(pdf_tokens, "r") as f:
-        response = json.load(f)
 
-    return response
+    return pdf_tokens
 
 
 @app.get("/api/annotation/labels")
@@ -288,34 +231,105 @@ def get_relations() -> List[Dict[str, str]]:
 
 @app.get("/api/annotation/allocation/info")
 def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
-
-    # In development, the app isn't passed the x_auth_request_email header,
-    # meaning this would always fail. Instead, to smooth local development,
-    # we always return all pdfs, essentially short-circuiting the allocation
-    # mechanism.
     user = get_user_from_header(x_auth_request_email)
+    status = storage_manager.read_user_status(user)
 
-    status_dir = os.path.join(configuration.output_directory, "status")
-    status_path = os.path.join(status_dir, f"{user}.json")
-    exists = os.path.exists(status_path)
-
-    if not exists:
-        # If the user doesn't have allocated papers, they can see all the
-        # pdfs but they can't save anything.
-        papers = [PaperStatus.empty(sha, sha) for sha in all_pdf_shas()]
-        response = Allocation(
-            papers=papers,
-            hasAllocatedPapers=False
-        )
-
+    if status is None:
+        hasAllocatedPapers = False
+        if configuration.allow_unassigned_users_to_see_everything:
+            # If the user doesn't have allocated papers, they can see
+            # all the PDFs but they can't save anything.
+            papers = [PaperStatus.empty(sha, sha) for sha
+                      in storage_manager.get_all_pdf_shas()]
+        else:
+            papers = []
     else:
-        with open(status_path) as f:
-            status_json = json.load(f)
+        hasAllocatedPapers = True
+        papers = [PaperStatus(**paper_status)
+                  for paper_status in status.values()]
 
-        papers = []
-        for sha, status in status_json.items():
-            papers.append(PaperStatus(**status))
+    response = Allocation(papers=papers,
+                          hasAllocatedPapers=hasAllocatedPapers)
 
-        response = Allocation(papers=papers, hasAllocatedPapers=True)
+    logger.info({'user': user, 'response': response.dict()})
 
     return response
+
+
+@app.get("/api/debug")
+def get_debug(x_auth_request_email: str = Header(None)):
+    response = {'email': x_auth_request_email}
+    try:
+        response['user'] = get_user_from_header(x_auth_request_email)
+        response['status'] = storage_manager.read_user_status(response['user'])
+    except Exception:
+        response['status'] = None
+        response['status'] = None
+
+    return JSONResponse(response)
+
+
+@app.get('/api/user')
+def is_authorized(x_auth_request_email: str = Header(None)):
+    # cheap endpoint to call to check if we can show a UI to
+    # a user or not.
+
+    try:
+        user = get_user_from_header(x_auth_request_email)
+        return JSONResponse(content={'email': x_auth_request_email,
+                                     'user': user},
+                            status_code=200)
+    except Exception:
+        return JSONResponse(content={'email': x_auth_request_email,
+                                     'user': ''},
+                            status_code=403)
+
+
+@app.post("/api/upload")
+async def upload_paper_ui(file: UploadFile = File(...),
+                          x_auth_request_email: str = Header(None)):
+
+    user = get_user_from_header(x_auth_request_email)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        logger.info(tmpdir)
+
+        # get file, save to temp location, get hash
+        file_name = file.filename
+        tmp_fp = await async_save_received_file_to_disk(
+            upload_file=file, dest_dir=tmpdir, dest_filename='tmp.pdf'
+        )
+        sha = hash_file(tmp_fp)
+
+        # check if paper does not exist
+        if sha not in storage_manager.read_pdf_metadata():
+
+            # move newly received pdf to the right directory structure
+            sha_fp = move_file(src=tmp_fp, dst=(tmpdir / sha / f'{sha}.pdf'))
+
+            # this processes the pdf with pdfplumber
+            process_pdfplumber(file_path=sha_fp)
+
+            # move the entire directory to the target destination
+            dst = storage_manager.add_pdf_dir(tmpdir / sha)
+
+            # add the metadata for this pdf to the global metadata
+            storage_manager.write_pdf_metadata({sha: file_name})
+        else:
+            dst = storage_manager.root / sha
+
+    # create a user and add this paper to the user
+    # (user will be create if they don't exist in the system)
+    storage_manager.write_user_status(
+        user=user,
+        sha=sha,
+        create_if_missing=True,
+        data={"name": file_name}
+    )
+
+    response = {'user': user,
+                'pdf_hash': sha,
+                'file': str(file_name),
+                'storage': str(dst)}
+    logger.info(f'/api/upload', response)
+    return JSONResponse(content=response, status_code=200)

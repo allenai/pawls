@@ -65,16 +65,51 @@ export async function setPdfComment(sha: string, comments: string) {
     return axios.post(`/api/doc/${sha}/comments`, comments);
 }
 
+export async function getPdfFinished(sha: string): Promise<boolean> {
+    return axios.get(`/api/doc/${sha}/finished`).then((response) => {
+        return Boolean(response.data);
+    });
+}
+
+export async function getPdfJunk(sha: string): Promise<boolean> {
+    return axios.get(`/api/doc/${sha}/junk`).then((response) => {
+        return Boolean(response.data);
+    });
+}
+
 export async function setPdfFinished(sha: string, finished: boolean) {
-    return axios.post(`/api/doc/${sha}/finished`, finished);
+    // Have to cast `finished` to boolean otherwise when `finished`
+    // is false, it results in an empty body for this POST request
+    return axios.post(`/api/doc/${sha}/finished`, String(finished));
 }
 
 export async function setPdfJunk(sha: string, junk: boolean) {
-    return axios.post(`/api/doc/${sha}/junk`, junk);
+    // Have to cast `junk` to boolean otherwise when `junk`
+    // is false, it results in an empty body for this POST request
+    return axios.post(`/api/doc/${sha}/junk`, String(junk));
 }
 
 export async function getAllocatedPaperStatus(): Promise<Allocation> {
     return axios.get('/api/annotation/allocation/info').then((r) => r.data);
+}
+
+export async function isAuthorized(): Promise<boolean> {
+    return axios
+        .get('/api/user')
+        .then((r) => r.status === 200)
+        .catch(() => false);
+}
+
+export interface UserInfo {
+    user: string;
+    email: string;
+}
+
+export async function getUsername(): Promise<UserInfo> {
+    return axios.get('/api/user').then((response) => {
+        const user: UserInfo = response.data;
+        return user;
+    });
 }
 
 export function saveAnnotations(sha: string, pdfAnnotations: PdfAnnotations): Promise<any> {

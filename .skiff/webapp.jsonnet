@@ -24,16 +24,6 @@ function(
             config.appName + '.' + env + topLevelDomain
     ];
 
-    // In production we run two versions of your application, as to ensure that
-    // if one instance goes down or is busy, end users can still use the application.
-    // In all other environments we run a single instance to save money.
-    local replicas = (
-        if env == 'prod' then
-            2
-        else
-            1
-    );
-
     // Each app gets it's own namespace.
     local namespaceName = config.appName;
 
@@ -122,7 +112,9 @@ function(
                 'nginx.ingress.kubernetes.io/ssl-redirect': 'true',
                 'nginx.ingress.kubernetes.io/auth-url': 'https://google.login.apps.allenai.org/oauth2/auth',
                 'nginx.ingress.kubernetes.io/auth-signin': 'https://google.login.apps.allenai.org/oauth2/start?rd=https://$host$request_uri',
-                'nginx.ingress.kubernetes.io/auth-response-headers': 'X-Auth-Request-User, X-Auth-Request-Email'
+                'nginx.ingress.kubernetes.io/auth-response-headers': 'X-Auth-Request-User, X-Auth-Request-Email',
+                'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
+                'nginx.ingress.kubernetes.io/proxy-body-size': '50m'
             }
         },
         spec: {
@@ -169,7 +161,7 @@ function(
         },
         spec: {
             revisionHistoryLimit: 3,
-            replicas: replicas,
+            replicas: config.replicas,
             selector: {
                 matchLabels: selectorLabels
             },
@@ -221,7 +213,27 @@ function(
                         {
                             name: fullyQualifiedName + '-api',
                             image: apiImage,
-                            env: [ { name: "IN_PRODUCTION", value: "prod" }],
+                            env: [
+                                { name: "IN_PRODUCTION", value: "prod" },
+                                {
+                                    name: "AWS_ACCESS_KEY_ID",
+                                    valueFrom: {
+                                        secretKeyRef: {
+                                            name: "aws-pdf-iam",
+                                            key: "AWS_ACCESS_KEY_ID"
+                                        }
+                                    }
+                                },
+                                {
+                                    name: "AWS_SECRET_ACCESS_KEY",
+                                    valueFrom: {
+                                        secretKeyRef: {
+                                            name: "aws-pdf-iam",
+                                            key: "AWS_SECRET_ACCESS_KEY"
+                                        }
+                                    }
+                                },
+                            ],
                             volumeMounts: [
                                 {
                                     mountPath: '/skiff_files/apps/pawls',
@@ -271,14 +283,6 @@ function(
                                 periodSeconds: 10,
                                 failureThreshold: 3
                             },
-                            livenessProbe: {
-                                httpGet: apiHealthCheck + {
-                                    path: '/?check=liveness_probe'
-                                },
-                                periodSeconds: 10,
-                                failureThreshold: 9,
-                                initialDelaySeconds: 30
-                            },
                             # This tells Kubernetes what CPU and memory resources your API needs.
                             # We set these values low by default, as most applications receive
                             # bursts of activity and accordingly don't need dedicated resources
@@ -316,16 +320,10 @@ function(
                                     path: '/?check=rdy'
                                 }
                             },
-                            livenessProbe: {
-                                failureThreshold: 6,
-                                httpGet: proxyHealthCheck + {
-                                    path: '/?check=live'
-                                }
-                            },
                             resources: {
                                 requests: {
-                                   cpu: '50m',
-                                   memory: '100Mi'
+                                   cpu: '500m',
+                                   memory: '500Mi'
                                 }
                             }
                         }

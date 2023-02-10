@@ -8,16 +8,30 @@ services:
             - proxy
     api:
         build:
-          context: ./api
+            context: ./api
         volumes:
+            # this enables auto-reload
             - ./api:/usr/local/src/skiff/app/api
+            # location of skiff files
             - ./skiff_files/apps/pawls:/skiff_files/apps/pawls
+            # list all allowed users (this is for local development,
+            # in skiff this is passed in as a secret)
             - ./api/config/allowed_users_local_development.txt:/users/allowed.txt
+            # mount aws credentials (with skiff they are passed as env
+            # variables)
+            #- $HOME/.aws/credentials:/root/.aws/credentials:ro
         environment:
             # This ensures that errors are printed as they occur, which
             # makes debugging easier.
-            - PYTHONUNBUFFERED=1
-            - LOG_LEVEL=DEBUG
+            PYTHONUNBUFFERED: 1
+            LOG_LEVEL: DEBUG
+            # Import local variables for accessing aws buckets
+            AWS_ACCESS_KEY_ID:
+            AWS_SECRET_ACCESS_KEY:
+
+        # needed to ensure being able to run mmda models over multiple
+        # processes.
+        shm_size: '4gb'
         command: ["main:app", "--host", "0.0.0.0", "--reload"]
     ui:
         build:
@@ -38,13 +52,3 @@ services:
         depends_on:
             - api
             - ui
-
-    # This service is optional!
-    # It is not used during deployment, but simply runs a grobid service
-    # which the CLI can use for pre-processing PDFs, using grobid to provide
-    # the detailed token information.
-    grobid:
-        image: 'allenai/grobid:0.5.6-pdf-structure'
-        ports:
-            - '8070:8070'
-            - '8071:8071'

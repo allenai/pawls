@@ -57,7 +57,7 @@ export const AssignedPaperList = ({ papers }: { papers: PaperStatus[] }) => {
     const papersToShow = showFinished ? ordered : unfinished;
 
     return (
-        <SidebarItem>
+        <CompactSidebarItem>
             <SidebarItemTitle>Papers</SidebarItemTitle>
             <ToggleDescription>Show Finished Papers:</ToggleDescription>
             <Toggle
@@ -75,9 +75,13 @@ export const AssignedPaperList = ({ papers }: { papers: PaperStatus[] }) => {
             ) : (
                 <>No Pdfs Allocated!</>
             )}
-        </SidebarItem>
+        </CompactSidebarItem>
     );
 };
+
+const CompactSidebarItem = styled(SidebarItem)`
+    min-height: 0px;
+`;
 
 const Toggle = styled(Switch)`
     margin: 4px;

@@ -1,5 +1,6 @@
 {
     "appName": "pawls",
-    "contact": "s2-research",
-    "team": "s2research"
+    "contact": "s2research",
+    "team": "s2research",
+    "replicas": 1
 }

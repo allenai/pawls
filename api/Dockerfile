@@ -1,4 +1,5 @@
-FROM python:3.7.2
+FROM python:3.8.12
+
 
 # Setup a spot for the api code
 WORKDIR /usr/local/src/skiff/app/api
@@ -11,6 +12,7 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
+########## COPYING SOURCE CODE FROM HERE ON ##########
 
 # Copy over the source code
 COPY app app/

@@ -1,5 +1,5 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/papers/",
+    "output_directory": "ai2-s2-research-pawls/<name_of_s3_directory>/",
     "labels": [
         {
             "text": "Title",
@@ -82,15 +82,8 @@
             "color": "#34626C"
         }
     ],
-    "relations": [
-        {
-            "text": "Caption of",
-            "color": "#D9E4DD"
-        },
-        {
-            "text": "Affiliated with",
-            "color": "#D9E4DD"
-        }
-    ],
-    "users_file": "/users/allowed.txt"
+    "relations": [],
+    "users_file": "/users/allowed-skimming-annotations.txt",
+    "allow_unassigned_users_to_see_everything": false,
+    "protocol": "s3"
 }
