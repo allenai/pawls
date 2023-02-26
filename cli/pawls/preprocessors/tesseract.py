@@ -28,10 +28,17 @@ def extract_page_tokens(
     res = pd.read_csv(
         io.StringIO(_data), quoting=csv.QUOTE_NONE, encoding="utf-8", sep="\t"
     )
-    # An implementation adopted from https://github.com/Layout-Parser/layout-parser/blob/20de8e7adb0a7d7740aed23484fa8b943126f881/src/layoutparser/ocr.py#L475
+
+    # An implementation adopted from https://github.com/Layout-Parser/layout-parser/blob
+    # /20de8e7adb0a7d7740aed23484fa8b943126f881/src/layoutparser/ocr.py#L475
+    res_without_na_text_rows = res[~res.text.isna()]
+
+    if res_without_na_text_rows.empty:
+        return []
+
     tokens = (
         res[~res.text.isna()]
-        .groupby(["page_num", "block_num", "par_num", "line_num", "word_num"])
+        .groupby(["page_num", "block_num", "par_num", "line_num", "word_num"], group_keys=False)
         .apply(
             lambda gp: pd.Series(
                 [
