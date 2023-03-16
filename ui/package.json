@@ -5,8 +5,8 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "lint": "eslint '**/*.{js,ts,tsx,json}' && echo 'Lint complete.'",
-    "lint:fix": "eslint '**/*.{js,ts,tsx,json}' --fix && echo 'Lint --fix complete.'",
+    "lint": "eslint src/**/*.{js,ts,tsx,json} && echo 'Lint complete.'",
+    "lint:fix": "eslint src/**/*.{js,ts,tsx,json} --fix && echo 'Lint --fix complete.'",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test"
