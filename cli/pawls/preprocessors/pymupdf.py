@@ -1,8 +1,6 @@
 from typing import List
 
 import pandas as pd
-import pdfplumber
-
 import fitz as pymupdf
 
 from pawls.preprocessors.model import Page, Token
@@ -31,10 +29,9 @@ class PymupdfTokenExtractor:
             PdfAnnotations: A `PdfAnnotations` containing all the paper token information.
         """
         with open(pdf_path, "rb") as fp:
-            file_stream = fp.read()
-        pdf_object = pymupdf.Document(stream=file_stream)
+            pdf_object = pymupdf.Document(stream=fp.read())
         if pdf_object.is_encrypted:
-            print(f"Abandon encrypted file: {file_stream}")
+            print(f"Abandon encrypted file: {pdf_path}")
             return None
 
         pages = []
@@ -55,7 +52,7 @@ class PymupdfTokenExtractor:
 
         return pages
 
-    def obtain_word_tokens(self, cur_page) -> List[Token]:
+    def obtain_word_tokens(self, cur_page: pymupdf.fitz.TextPage) -> List[Token]:
         """Obtain all words from the current page.
         Args:
             cur_page (pdfplumber.page.Page):
