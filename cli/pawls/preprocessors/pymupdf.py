@@ -94,7 +94,7 @@ class PymupdfTokenExtractor:
 
 def process_pymupdf(pdf_file: str):
     """
-    Integration for importing annotations from pdfplumber.
+    Integration for importing annotations from pymupdf.
     pdf_file: str
         The path to the pdf file to process.
     """

@@ -11,7 +11,6 @@ from pawls.preprocessors.pdfplumber import process_pdfplumber
 from pawls.preprocessors.pymupdf import process_pymupdf
 from pawls.preprocessors.tesseract import process_tesseract
 
-
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
 @click.argument("path", type=click.Path(exists=True, file_okay=True, dir_okay=True))
