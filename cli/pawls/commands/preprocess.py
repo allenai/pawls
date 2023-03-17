@@ -8,6 +8,7 @@ import glob
 
 from pawls.preprocessors.grobid import process_grobid
 from pawls.preprocessors.pdfplumber import process_pdfplumber
+from pawls.preprocessors.pymupdf import process_pymupdf
 from pawls.preprocessors.tesseract import process_tesseract
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
@@ -41,14 +42,16 @@ def preprocess(preprocessor: str, path: click.Path):
         path = Path(p)
         sha = path.name.strip(".pdf")
         pbar.set_description(f"Processing {sha[:10]}...")
+        data = None
         if preprocessor == "grobid":
             data = process_grobid(str(path))
+        elif preprocessor == "pymupdf":
+            data = process_pymupdf(str(path))
         elif preprocessor == "pdfplumber":
             data = process_pdfplumber(str(path))
         elif preprocessor == "ocr":
-            # Currently there's only a OCR preprocessor. 
+            # Currently there's only a OCR preprocessor.
             data = process_tesseract(str(path))
-        with open(path.parent / "pdf_structure.json", "w+") as f:
-
-            json.dump(data, f)
-
+        if data:
+            with open(path.parent / "pdf_structure.json", "w+") as f:
+                json.dump(data, f)
