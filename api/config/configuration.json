@@ -1,96 +1,16 @@
 {
-    "output_directory": "/skiff_files/apps/pawls/papers/",
-    "labels": [
-        {
-            "text": "Title",
-            "color": "#70DDBA"
-        },
-        {
-            "text": "Author",
-            "color": "#B8DE6F"
-        },
-        {
-            "text": "Abstract",
-            "color": "#A8DDA8"
-        },
-        {
-            "text": "Keywords",
-            "color": "#64ED96"
-        },
-        {
-            "text": "Section",
-            "color": "#FFDA77"
-        },
-        {
-            "text": "Paragraph",
-            "color": "#D9E4DD"
-        },
-        {
-            "text": "ListItem",
-            "color": "#CEEBFC"
-        },
-        {
-            "text": "BibItem",
-            "color": "#C6CC82"
-        },
-        {
-            "text": "Default",
-            "color": "#BFBFBF"
-        },
-        {
-            "text": "Equation",
-            "color": "#D6D2C4"
-        },
-        {
-            "text": "Figure",
-            "color": "#EFDDF5"
-        },
-        {
-            "text": "Table",
-            "color": "#C7C2EB"
-        },
-        {
-            "text": "Algorithm",
-            "color": "#CFD4DF"
-        },
-        {
-            "text": "Caption",
-            "color": "#2F85F7"
-        },
-        {
-            "text": "Footer",
-            "color": "#FFB2A7"
-        },
-        {
-            "text": "Header",
-            "color": "#FFB2A7"
-        },
-        {
-            "text": "Author/Name",
-            "color": "#F5A25D"
-        },
-        {
-            "text": "Author/Affiliation",
-            "color": "#28ABB9"
-        },
-        {
-            "text": "Author/Email",
-            "color": "#706897"
-        },
-        {
-            "text": "Paper/Venue",
-            "color": "#34626C"
-        }
-    ],
-    "relations": [
-        {
-            "text": "Caption of",
-            "color": "#D9E4DD"
-        },
-        {
-            "text": "Affiliated with",
-            "color": "#D9E4DD"
-        }
-    ],
-    "users_file": "/users/allowed.txt"
+  "output_directory": "/skiff_files/apps/pawls/papers/",
+  "labels": [
+    {
+      "text": "Author/Name",
+      "color": "#70DDBA"
+    }
+  ],
+  "relations": [
+    {
+      "text": "Name Parts",
+      "color": "#D9E4DD"
+    }
+  ],
+  "users_file": "/users/allowed.txt"
 }
