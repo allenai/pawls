@@ -1,6 +1,8 @@
 # Python cache files
 __pycache__
 **/*.pyc
+.python-version
+.vscode/
 
 # UI dependencies
 ui/node_modules/
