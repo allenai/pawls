@@ -1,11 +1,11 @@
+import json
 import os
 import sys
-from typing import List, Callable, Set, Dict, Tuple, Optional
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
-import click
 import boto3
 import botocore
-import json
+import click
 import requests
 
 
@@ -36,7 +36,9 @@ def fetch(path: click.Path, shas: Tuple[str], sha_file: click.Path = None):
         shas.extend(extra_ids)
 
     result = bulk_fetch_pdfs_for_s2_ids(
-        shas, path, pdf_path_func=_per_dir_pdf_download,
+        shas,
+        path,
+        pdf_path_func=_per_dir_pdf_download,
     )
 
     metadata_failed = []
@@ -163,11 +165,13 @@ def get_paper_title(paper_sha: str) -> Optional[str]:
     response = requests.get(S2_API + paper_sha)
     if response.ok:
         data = response.json()
-        return data["paper"]["title"]["text"]
+        try:
+            return data["paper"]["title"]["text"]
+        except KeyError:
+            return None
     else:
         return None
 
 
 if __name__ == "__main__":
-
     fetch()

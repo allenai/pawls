@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("readme.md", "r") as readme_file:
     readme = readme_file.read()
@@ -28,15 +28,14 @@ setup(
         "requests",
         "boto3",
         "tqdm",
-        "pdf2image==1.14.0",
-        "pdfminer",
-        "pandas",
+        "pdf2image",
+        "pandas<2",
         "pdfplumber",
         "pytesseract",
         "tabulate",
-        "pycocotools",
         "cython",
-        "sklearn",
+        "scikit-learn",
+        "mmda@git+https://github.com/allenai/mmda@0.3.8",
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},

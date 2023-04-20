@@ -1,14 +1,15 @@
+import glob
+import json
 import os
 from pathlib import Path
-import json
 
-from tqdm import tqdm
 import click
-import glob
-
 from pawls.preprocessors.grobid import process_grobid
+from pawls.preprocessors.mmda import process_mmda
 from pawls.preprocessors.pdfplumber import process_pdfplumber
 from pawls.preprocessors.tesseract import process_tesseract
+from tqdm import tqdm
+
 
 @click.command(context_settings={"help_option_names": ["--help", "-h"]})
 @click.argument("preprocessor", type=str)
@@ -45,10 +46,10 @@ def preprocess(preprocessor: str, path: click.Path):
             data = process_grobid(str(path))
         elif preprocessor == "pdfplumber":
             data = process_pdfplumber(str(path))
+        elif preprocessor == "mmda":
+            data = process_mmda(str(path))
         elif preprocessor == "ocr":
-            # Currently there's only a OCR preprocessor. 
+            # Currently there's only a OCR preprocessor.
             data = process_tesseract(str(path))
         with open(path.parent / "pdf_structure.json", "w+") as f:
-
             json.dump(data, f)
-

@@ -38,13 +38,3 @@ services:
         depends_on:
             - api
             - ui
-
-    # This service is optional!
-    # It is not used during deployment, but simply runs a grobid service
-    # which the CLI can use for pre-processing PDFs, using grobid to provide
-    # the detailed token information.
-    grobid:
-        image: 'allenai/grobid:0.5.6-pdf-structure'
-        ports:
-            - '8070:8070'
-            - '8071:8071'
