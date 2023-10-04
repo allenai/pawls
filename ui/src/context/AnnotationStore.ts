@@ -12,6 +12,7 @@ export interface TokenId {
 export class RelationGroup {
     constructor(public sourceIds: string[], public targetIds: string[], public label: Label) {}
 
+    // Delete a relation if it is no longer defined due to deleted source/target annotations
     updateForAnnotationDeletion(a: Annotation): RelationGroup | undefined {
         const sourceEmpty = this.sourceIds.length === 0;
         const targetEmpty = this.targetIds.length === 0;
@@ -19,8 +20,8 @@ export class RelationGroup {
         const newSourceIds = this.sourceIds.filter((id) => id !== a.id);
         const newTargetIds = this.targetIds.filter((id) => id !== a.id);
 
-        const nowSourceEmpty = this.sourceIds.length === 0;
-        const nowTargetEmpty = this.targetIds.length === 0;
+        const nowSourceEmpty = newSourceIds.length === 0;
+        const nowTargetEmpty = newTargetIds.length === 0;
 
         // Only target had any annotations, now it has none,
         // so delete.
