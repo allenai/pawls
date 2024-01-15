@@ -36,7 +36,7 @@ setup(
         "tabulate",
         "pycocotools",
         "cython",
-        "sklearn",
+        "scikit-learn",
     ],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pawls=pawls.__main__:pawls_cli"]},
