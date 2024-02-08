@@ -50,7 +50,7 @@ def preprocess(preprocessor: str, path: click.Path):
                 # Currently there's only a OCR preprocessor. 
                 data = process_tesseract(str(path))
         except Exception as e:
-            tqdm.write(f"💥 Error while processing pdf with sha: {sha[:10]}...}")
+            tqdm.write(f"💥 Error while processing pdf with sha: {sha[:10]}...")
         else:
             with open(path.parent / "pdf_structure.json", "w+") as f:
                 json.dump(data, f)
