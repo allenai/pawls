@@ -41,14 +41,17 @@ def preprocess(preprocessor: str, path: click.Path):
         path = Path(p)
         sha = path.name.strip(".pdf")
         pbar.set_description(f"Processing {sha[:10]}...")
-        if preprocessor == "grobid":
-            data = process_grobid(str(path))
-        elif preprocessor == "pdfplumber":
-            data = process_pdfplumber(str(path))
-        elif preprocessor == "ocr":
-            # Currently there's only a OCR preprocessor. 
-            data = process_tesseract(str(path))
-        with open(path.parent / "pdf_structure.json", "w+") as f:
-
-            json.dump(data, f)
+        try:
+            if preprocessor == "grobid":
+                data = process_grobid(str(path))
+            elif preprocessor == "pdfplumber":
+                data = process_pdfplumber(str(path))
+            elif preprocessor == "ocr":
+                # Currently there's only a OCR preprocessor. 
+                data = process_tesseract(str(path))
+        except Exception as e:
+            tqdm.write(f"💥 Error while processing pdf with sha: {sha[:10]}...}")
+        else:
+            with open(path.parent / "pdf_structure.json", "w+") as f:
+                json.dump(data, f)
 
