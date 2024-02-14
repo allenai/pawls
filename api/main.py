@@ -54,6 +54,7 @@ def get_user_from_header(user_email: Optional[str]) -> Optional[str]:
     If the value isn't well formed, or the user isn't allowed, an exception is
     thrown.
     """
+    logger.debug(f"👤 user: {user_email}")
     if "@" not in user_email:
         raise HTTPException(403, "Forbidden")
 
@@ -68,6 +69,7 @@ def user_is_allowed(user_email: str) -> bool:
     Return True if the user_email is in the users file, False otherwise.
     """
     try:
+        logger.debug(f"Checking '{user_email}' vs users file ({configuration.users_file})")
         with open(configuration.users_file) as file:
             for line in file:
                 entry = line.strip()
@@ -299,9 +301,13 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
     status_path = os.path.join(status_dir, f"{user}.json")
     exists = os.path.exists(status_path)
 
+    logger.debug(f"User '{user}' -> status dir exists? {exists}")
+    logger.debug(f"status_path: {status_path}")
+
     if not exists:
         # If the user doesn't have allocated papers, they can see all the
         # pdfs but they can't save anything.
+        logger.info(f"User '{user}' has no allocated papers. Returning all...")
         papers = [PaperStatus.empty(sha, sha) for sha in all_pdf_shas()]
         response = Allocation(
             papers=papers,
@@ -309,11 +315,13 @@ def get_allocation_info(x_auth_request_email: str = Header(None)) -> Allocation:
         )
 
     else:
+        logger.info(f"🎉 User '{user}' has allocated files!")
         with open(status_path) as f:
             status_json = json.load(f)
 
         papers = []
         for sha, status in status_json.items():
+            logger.debug(f"SHA:{sha} -> status: {status}")
             papers.append(PaperStatus(**status))
 
         response = Allocation(papers=papers, hasAllocatedPapers=True)

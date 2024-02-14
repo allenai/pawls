@@ -203,7 +203,7 @@ class AnnotationFiles:
         self,
         labeling_folder: str,
         annotator: str,
-        include_unfinished: bool = True,
+        include_unfinished: bool = False,
         pdf_shas: List[str] = None,
     ):
         """AnnotationFiles is an iterator for selected annotation files
@@ -219,7 +219,7 @@ class AnnotationFiles:
                 `AnnotationFiles.DEVELOPMENT_USER`.
             include_unfinished (bool, optional):
                 Whether output unfinished annotations of the given user.
-                Defaults to True.
+                Defaults to False.
             pdf_shas (List[str], optional):
                 Only find pdf annotation from the given list of pdf_shas.
                 Defaults to None.
