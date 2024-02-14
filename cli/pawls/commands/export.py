@@ -31,7 +31,7 @@ def find_tokens_in_anno_block(
     """Given the annotated block, and page tokens, search for tokens within that block.
     Used for searching text from free-form annotations.
     TODO: This function ideally should be done in the UI rather than the cli. We need to
-    update this function in the future. 
+    update this function in the future.
 
     Returns:
         List[Tuple[int, int]]: [description]
@@ -275,33 +275,44 @@ class TokenTableBuilder:
         pbar = tqdm(anno_files)
 
         for anno_file in pbar:
-            paper_sha = anno_file["paper_sha"]
-            df = self.all_page_token_df[paper_sha]
-            page_token_data = self.all_page_token_data[paper_sha]
+            try:
+                paper_sha = anno_file["paper_sha"]
+                df = self.all_page_token_df[paper_sha]
+                page_token_data = self.all_page_token_data[paper_sha]
 
-            pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
-            for anno in pawls_annotations:
+                pawls_annotations = load_json(anno_file["annotation_path"])["annotations"]
+                for a_idx, anno in enumerate(pawls_annotations):
+                    try:
+                        # Skip if current category is not in the specified categories
+                        label = anno["label"]["text"]
+                        if label not in self.categories:
+                            continue
 
-                # Skip if current category is not in the specified categories
-                label = anno["label"]["text"]
-                if label not in self.categories:
-                    continue
+                        # Try to find the tokens if they are in free-form annotation mode
+                        if anno["tokens"] is None:
+                            anno_token_indices = find_tokens_in_anno_block(
+                                anno, page_token_data
+                            )
 
-                # Try to find the tokens if they are in free-form annotation mode
-                if anno["tokens"] is None:
-                    anno_token_indices = find_tokens_in_anno_block(
-                        anno, page_token_data
-                    )
+                            if len(anno_token_indices) == 0:
+                                continue
 
-                    if len(anno_token_indices) == 0:
-                        continue
+                        else:
+                            anno_token_indices = [
+                                (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
+                            ]
 
-                else:
-                    anno_token_indices = [
-                        (ele["pageIndex"], ele["tokenIndex"]) for ele in anno["tokens"]
-                    ]
-
-                df.loc[anno_token_indices, annotator] = label
+                        df.loc[anno_token_indices, annotator] = label
+                    except Exception as e:
+                        print(
+                            f"💥 Error in annotation {a_idx}, paper: {paper_sha} | "
+                            f"annotator: {anno_file.annotator}: {e}"
+                        )
+            except Exception as e:
+                print(
+                    f"💥 Couldn't produce export for file: {paper_sha} | "
+                    f"annotator: {anno_file.annotator}: {e}"
+                )
 
     def export(self):
 
@@ -382,6 +393,8 @@ def export(
     print(f"Export the annotations to the {format} format.")
 
     if len(pdf_shas) != 0:
+        if len(pdf_shas) == 1:
+            pdf_shas = pdf_shas[0].split(",") # so we can pass a list as a string...
         print(f"Export annotations from the following PDFs {pdf_shas}")
     else:
         pdf_shas = None
