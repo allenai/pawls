@@ -2,7 +2,7 @@
 # environment where the JavaScript build process can run. In production the
 # files built by this process are served from disk, while in development a HTTP
 # server that's distributed with the UI build tools is used.
-FROM node:14
+FROM node:24.22.1
 
 # Setup a spot for our code
 WORKDIR /usr/local/src/skiff/app/ui
